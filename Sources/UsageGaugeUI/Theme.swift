@@ -16,9 +16,9 @@ public enum Theme {
     public static let hairline = Color.white.opacity(0.10)
     public static let track = Color.white.opacity(0.10)
 
-    public static let panelCornerRadius: CGFloat = 22
-    public static let panelPadding: CGFloat = 14
-    public static let columnWidth: CGFloat = 136
+    public static let panelCornerRadius: CGFloat = 18
+    public static let panelPadding: CGFloat = 12
+    public static let columnWidth: CGFloat = 108
 
     public static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)

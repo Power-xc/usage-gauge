@@ -32,7 +32,7 @@ public struct GaugeView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             header.modifier(WindowDragArea())
             if isAdjustingOpacity, let opacity {
                 OpacityControl(value: opacity, range: opacityRange)
@@ -68,13 +68,13 @@ public struct GaugeView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Text("남은 사용량")
-                .font(Theme.font(11, .semibold))
+                .font(Theme.font(10, .semibold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.mutedText)
             Spacer(minLength: 24)
-            Text(status).font(Theme.number(11, .regular)).foregroundStyle(Theme.faintText)
+            Text(status).font(Theme.number(10, .regular)).foregroundStyle(Theme.faintText)
             if opacity != nil {
                 HeaderButton(symbol: "circle.lefthalf.filled", help: "투명도", isOn: isAdjustingOpacity) {
                     withAnimation(.easeOut(duration: 0.2)) { isAdjustingOpacity.toggle() }
@@ -108,9 +108,9 @@ private struct HeaderButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(isOn ? Theme.primaryText : Theme.mutedText)
-                .frame(width: 26, height: 26)
+                .frame(width: 22, height: 22)
                 .background(Circle().fill(.white.opacity(isOn ? 0.16 : 0.06)))
                 .overlay(Circle().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
         }
@@ -125,16 +125,16 @@ private struct OpacityControl: View {
     let range: ClosedRange<Double>
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text("투명도").font(Theme.font(11, .medium)).foregroundStyle(Theme.mutedText)
+        HStack(spacing: 10) {
+            Text("투명도").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
             OpacityBar(value: $value, range: range)
-                .frame(height: 22)
+                .frame(height: 20)
             Text("\(Int((value * 100).rounded()))%")
-                .font(Theme.number(11))
+                .font(Theme.number(10))
                 .frame(width: 36, alignment: .trailing)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .background(Capsule().fill(.white.opacity(0.05)))
         .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -146,20 +146,20 @@ private struct ProviderColumn: View {
     let now: Date
     let frozenAt: TimeInterval?
 
-    private let ringSize: CGFloat = 94
+    private let ringSize: CGFloat = 70
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Text(usage.title).font(Theme.font(13, .bold))
+        VStack(spacing: 7) {
+            HStack(spacing: 6) {
+                Text(usage.title).font(Theme.font(12, .bold))
                 Spacer()
                 if let plan = usage.plan {
                     Text(plan.uppercased())
-                        .font(Theme.font(9, .semibold))
+                        .font(Theme.font(8, .semibold))
                         .tracking(0.8)
                         .foregroundStyle(Theme.mutedText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(Capsule().fill(.white.opacity(0.06)))
                         .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
                 }
@@ -167,14 +167,14 @@ private struct ProviderColumn: View {
             if usage.isAvailable {
                 SessionGauge(window: usage.session, tint: Theme.brand(for: usage.id), size: ringSize, now: now, frozenAt: frozenAt)
                 Text("\(ResetCountdown.text(until: usage.session?.resetsAt, now: now)) 후 초기화")
-                    .font(Theme.number(11, .regular))
+                    .font(Theme.number(10, .regular))
                     .foregroundStyle(Theme.mutedText)
                 WindowPill(window: usage.weekly, tint: Theme.brand(for: usage.id), now: now, frozenAt: frozenAt)
             } else {
                 VStack(spacing: 6) {
-                    Text("연결 안 됨").font(Theme.font(13, .semibold)).foregroundStyle(Theme.mutedText)
+                    Text("연결 안 됨").font(Theme.font(12, .semibold)).foregroundStyle(Theme.mutedText)
                     Text(usage.errorMessage ?? "CodexBar 로그인을 확인하세요")
-                        .font(Theme.font(11))
+                        .font(Theme.font(10))
                         .foregroundStyle(Theme.faintText)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
@@ -212,10 +212,10 @@ public struct SessionGauge: View {
             VStack(spacing: size * 0.01) {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
                     figure(window.map { "\($0.displayPercent)" } ?? ResetCountdown.unknown, color: color)
-                    Text("%").font(Theme.font(size * 0.075, .medium)).foregroundStyle(Theme.mutedText)
+                    Text("%").font(Theme.font(size * 0.1, .medium)).foregroundStyle(Theme.mutedText)
                 }
                 Text(window?.label ?? "단기")
-                    .font(Theme.font(size * 0.07, .medium))
+                    .font(Theme.font(size * 0.105, .medium))
                     .tracking(size * 0.004)
                     .foregroundStyle(Theme.faintText)
             }
@@ -224,7 +224,7 @@ public struct SessionGauge: View {
     }
 
     private func figure(_ text: String, color: Color) -> some View {
-        let type = Text(text).font(Theme.display(size * 0.22)).tracking(-size * 0.006)
+        let type = Text(text).font(Theme.display(size * 0.27)).tracking(-size * 0.006)
         return type
             .foregroundStyle(LinearGradient(stops: [
                 .init(color: .white, location: 0.4),
@@ -243,26 +243,26 @@ private struct WindowPill: View {
     var body: some View {
         let remaining = window?.remainingPercent ?? 0
         let color = Theme.status(remaining, brand: tint)
-        VStack(spacing: 7) {
+        VStack(spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
-                Text(window?.label ?? "장기").font(Theme.font(11, .medium)).foregroundStyle(Theme.mutedText)
+                Text(window?.label ?? "장기").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
                 Spacer()
                 Text(window.map { "\($0.displayPercent)%" } ?? ResetCountdown.unknown)
-                    .font(Theme.number(13, .bold))
+                    .font(Theme.number(11, .bold))
             }
             CometBar(remainingPercent: window == nil ? 0 : remaining, thickness: 4, color: color, frozenAt: frozenAt)
             HStack {
-                Text("초기화").font(Theme.font(10)).foregroundStyle(Theme.faintText)
+                Text("초기화").font(Theme.font(9)).foregroundStyle(Theme.faintText)
                 Spacer()
                 Text(ResetCountdown.text(until: window?.resetsAt, now: now))
-                    .font(Theme.number(10, .regular))
+                    .font(Theme.number(9, .regular))
                     .foregroundStyle(Theme.faintText)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white.opacity(0.035)))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.035)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
     }
 }
 
@@ -271,7 +271,7 @@ private struct VerticalHairline: View {
         Rectangle()
             .fill(LinearGradient(colors: [.clear, Theme.hairline, .clear], startPoint: .top, endPoint: .bottom))
             .frame(width: 1)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 10)
     }
 }
 
