@@ -18,7 +18,8 @@ public enum Theme {
 
     public static let panelCornerRadius: CGFloat = 18
     public static let panelPadding: CGFloat = 12
-    public static let columnWidth: CGFloat = 108
+    public static let dialSize: CGFloat = 76
+    public static let detailWidth: CGFloat = 136
 
     public static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)

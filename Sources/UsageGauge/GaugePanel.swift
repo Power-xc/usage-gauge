@@ -26,12 +26,23 @@ final class GaugePanel: NSPanel {
 
     override var canBecomeKey: Bool { false }
 
-    /// Keeps the top-left corner fixed while the content grows or shrinks.
+    /// Keeps the top-left corner fixed while the content grows or shrinks, then nudges the panel
+    /// back inside the screen if it grew past an edge.
     func fitContent() {
-        guard let size = contentView?.fittingSize, size != frame.size else { return }
-        let topLeft = NSPoint(x: frame.minX, y: frame.maxY)
-        setContentSize(size)
-        setFrameTopLeftPoint(topLeft)
+        if let size = contentView?.fittingSize, size != frame.size {
+            let topLeft = NSPoint(x: frame.minX, y: frame.maxY)
+            setContentSize(size)
+            setFrameTopLeftPoint(topLeft)
+        }
+        keepOnScreen()
+    }
+
+    private func keepOnScreen() {
+        guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { return }
+        var origin = frame.origin
+        origin.x = min(max(origin.x, visible.minX), visible.maxX - frame.width)
+        origin.y = min(max(origin.y, visible.minY), visible.maxY - frame.height)
+        if origin != frame.origin { setFrameOrigin(origin) }
     }
 
     private func placeTopLeft() {

@@ -1,10 +1,11 @@
 import SwiftUI
 import UsageGaugeCore
 
-/// Panel content: a grid of providers, each with an iris dial for the short window and a glass
-/// pill for the long one.
+/// Panel content: a wide, low grid of provider cards. Each card puts the iris dial for the short
+/// window beside its reset time and a light-streak bar for the long one, so the panel grows
+/// sideways instead of crowding the dial.
 public struct GaugeView: View {
-    public static let columnsPerRow = 3
+    public static let cardsPerRow = 2
 
     let providers: [ProviderUsage]
     let status: String
@@ -32,7 +33,7 @@ public struct GaugeView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             header.modifier(WindowDragArea())
             if isAdjustingOpacity, let opacity {
                 OpacityControl(value: opacity, range: opacityRange)
@@ -41,16 +42,17 @@ public struct GaugeView: View {
                 Text("CodexBar에서 켠 서비스가 없어요")
                     .font(Theme.font(12))
                     .foregroundStyle(Theme.mutedText)
-                    .frame(width: Theme.columnWidth, height: 120)
+                    .frame(height: Theme.dialSize)
             }
             ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
                 if rowIndex > 0 { HorizontalHairline() }
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(Array(row.enumerated()), id: \.element.id) { index, usage in
                         if index > 0 { VerticalHairline() }
-                        ProviderColumn(usage: usage, now: now, frozenAt: frozenAt)
+                        ProviderCard(usage: usage, now: now, frozenAt: frozenAt)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .modifier(WindowDragArea())
             }
         }
@@ -62,8 +64,8 @@ public struct GaugeView: View {
     }
 
     private var rows: [[ProviderUsage]] {
-        stride(from: 0, to: providers.count, by: Self.columnsPerRow).map {
-            Array(providers[$0..<min($0 + Self.columnsPerRow, providers.count)])
+        stride(from: 0, to: providers.count, by: Self.cardsPerRow).map {
+            Array(providers[$0..<min($0 + Self.cardsPerRow, providers.count)])
         }
     }
 
@@ -73,7 +75,7 @@ public struct GaugeView: View {
                 .font(Theme.font(10, .semibold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.mutedText)
-            Spacer(minLength: 24)
+            Spacer(minLength: 16)
             Text(status).font(Theme.number(10, .regular)).foregroundStyle(Theme.faintText)
             if opacity != nil {
                 HeaderButton(symbol: "circle.lefthalf.filled", help: "투명도", isOn: isAdjustingOpacity) {
@@ -110,7 +112,7 @@ private struct HeaderButton: View {
             Image(systemName: symbol)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(isOn ? Theme.primaryText : Theme.mutedText)
-                .frame(width: 22, height: 22)
+                .frame(width: 20, height: 20)
                 .background(Circle().fill(.white.opacity(isOn ? 0.16 : 0.06)))
                 .overlay(Circle().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
         }
@@ -141,65 +143,90 @@ private struct OpacityControl: View {
     }
 }
 
-private struct ProviderColumn: View {
+/// One provider: the dial on the left, reset time and the long window on the right.
+private struct ProviderCard: View {
     let usage: ProviderUsage
     let now: Date
     let frozenAt: TimeInterval?
 
-    private let ringSize: CGFloat = 70
-
     var body: some View {
-        VStack(spacing: 7) {
-            HStack(spacing: 6) {
-                Text(usage.title).font(Theme.font(12, .bold))
-                Spacer()
-                if let plan = usage.plan {
-                    Text(plan.uppercased())
-                        .font(Theme.font(8, .semibold))
-                        .tracking(0.8)
+        let tint = Theme.brand(for: usage.id)
+        HStack(spacing: 12) {
+            SessionGauge(window: usage.isAvailable ? usage.session : nil, tint: tint, size: Theme.dialSize,
+                         now: now, showsLabel: false, frozenAt: frozenAt)
+            VStack(alignment: .leading, spacing: 0) {
+                titleRow
+                if usage.isAvailable {
+                    Text(sessionLine)
+                        .font(Theme.number(10, .regular))
                         .foregroundStyle(Theme.mutedText)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(.white.opacity(0.06)))
-                        .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
-                }
-            }
-            if usage.isAvailable {
-                SessionGauge(window: usage.session, tint: Theme.brand(for: usage.id), size: ringSize, now: now, frozenAt: frozenAt)
-                Text("\(ResetCountdown.text(until: usage.session?.resetsAt, now: now)) 후 초기화")
-                    .font(Theme.number(10, .regular))
-                    .foregroundStyle(Theme.mutedText)
-                WindowPill(window: usage.weekly, tint: Theme.brand(for: usage.id), now: now, frozenAt: frozenAt)
-            } else {
-                VStack(spacing: 6) {
-                    Text("연결 안 됨").font(Theme.font(12, .semibold)).foregroundStyle(Theme.mutedText)
+                        .padding(.top, 3)
+                    Spacer(minLength: 6)
+                    LongWindowBar(window: usage.weekly, tint: tint, now: now, frozenAt: frozenAt)
+                } else {
+                    Text("연결 안 됨")
+                        .font(Theme.font(11, .semibold))
+                        .foregroundStyle(Theme.mutedText)
+                        .padding(.top, 6)
                     Text(usage.errorMessage ?? "CodexBar 로그인을 확인하세요")
                         .font(Theme.font(10))
                         .foregroundStyle(Theme.faintText)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                    Spacer(minLength: 0)
                 }
-                .frame(height: ringSize)
+            }
+            .frame(width: Theme.detailWidth, height: Theme.dialSize, alignment: .topLeading)
+        }
+    }
+
+    private var titleRow: some View {
+        HStack(spacing: 6) {
+            Text(usage.title).font(Theme.font(13, .bold))
+            Spacer(minLength: 4)
+            if let plan = usage.plan {
+                Text(plan.uppercased())
+                    .font(Theme.font(8, .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.mutedText)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.white.opacity(0.06)))
+                    .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
             }
         }
-        .frame(width: Theme.columnWidth)
+    }
+
+    /// "5시간 · 3시간 50분 후 초기화": which window the dial shows and when it resets.
+    private var sessionLine: String {
+        let label = usage.session?.label ?? "단기"
+        return "\(label) · \(ResetCountdown.text(until: usage.session?.resetsAt, now: now)) 후 초기화"
     }
 }
 
 /// Iris dial + remaining percent for one window. The figure sits in the pupil, lit from below
 /// by the tool's colour.
 public struct SessionGauge: View {
+    /// Widest the figure may run, as a share of the dial, so "100%" stays inside the pupil.
+    private static let pupilTextWidth: CGFloat = 0.52
+
     let window: UsageWindow?
     let tint: Color
     let size: CGFloat
     let now: Date
+    let showsLabel: Bool
     let frozenAt: TimeInterval?
 
-    public init(window: UsageWindow?, tint: Color, size: CGFloat, now: Date = Date(), frozenAt: TimeInterval? = nil) {
+    /// - Parameter showsLabel: names the window ("5시간") under the figure; off when the caller
+    ///   names it beside the dial, which leaves the pupil to the figure alone.
+    public init(window: UsageWindow?, tint: Color, size: CGFloat, now: Date = Date(), showsLabel: Bool = true,
+                frozenAt: TimeInterval? = nil) {
         self.window = window
         self.tint = tint
         self.size = size
         self.now = now
+        self.showsLabel = showsLabel
         self.frozenAt = frozenAt
     }
 
@@ -212,19 +239,25 @@ public struct SessionGauge: View {
             VStack(spacing: size * 0.01) {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
                     figure(window.map { "\($0.displayPercent)" } ?? ResetCountdown.unknown, color: color)
-                    Text("%").font(Theme.font(size * 0.1, .medium)).foregroundStyle(Theme.mutedText)
+                    if window != nil {
+                        Text("%").font(Theme.font(size * 0.1, .medium)).foregroundStyle(Theme.mutedText)
+                    }
                 }
-                Text(window?.label ?? "단기")
-                    .font(Theme.font(size * 0.105, .medium))
-                    .tracking(size * 0.004)
-                    .foregroundStyle(Theme.faintText)
+                if showsLabel {
+                    Text(window?.label ?? "단기")
+                        .font(Theme.font(size * 0.105, .medium))
+                        .tracking(size * 0.004)
+                        .foregroundStyle(Theme.faintText)
+                }
             }
+            .frame(maxWidth: size * Self.pupilTextWidth)
+            .minimumScaleFactor(0.7)
         }
         .frame(width: size, height: size)
     }
 
     private func figure(_ text: String, color: Color) -> some View {
-        let type = Text(text).font(Theme.display(size * 0.27)).tracking(-size * 0.006)
+        let type = Text(text).font(Theme.display(size * (showsLabel ? 0.27 : 0.3))).tracking(-size * 0.006)
         return type
             .foregroundStyle(LinearGradient(stops: [
                 .init(color: .white, location: 0.4),
@@ -234,7 +267,8 @@ public struct SessionGauge: View {
     }
 }
 
-private struct WindowPill: View {
+/// The long window (weekly, monthly) as a light-streak bar with its share and reset time.
+private struct LongWindowBar: View {
     let window: UsageWindow?
     let tint: Color
     let now: Date
@@ -243,7 +277,7 @@ private struct WindowPill: View {
     var body: some View {
         let remaining = window?.remainingPercent ?? 0
         let color = Theme.status(remaining, brand: tint)
-        VStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(window?.label ?? "장기").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
                 Spacer()
@@ -251,18 +285,10 @@ private struct WindowPill: View {
                     .font(Theme.number(11, .bold))
             }
             CometBar(remainingPercent: window == nil ? 0 : remaining, thickness: 4, color: color, frozenAt: frozenAt)
-            HStack {
-                Text("초기화").font(Theme.font(9)).foregroundStyle(Theme.faintText)
-                Spacer()
-                Text(ResetCountdown.text(until: window?.resetsAt, now: now))
-                    .font(Theme.number(9, .regular))
-                    .foregroundStyle(Theme.faintText)
-            }
+            Text("\(ResetCountdown.text(until: window?.resetsAt, now: now)) 후 초기화")
+                .font(Theme.number(9, .regular))
+                .foregroundStyle(Theme.faintText)
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 7)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.035)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
     }
 }
 
@@ -271,7 +297,7 @@ private struct VerticalHairline: View {
         Rectangle()
             .fill(LinearGradient(colors: [.clear, Theme.hairline, .clear], startPoint: .top, endPoint: .bottom))
             .frame(width: 1)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 12)
     }
 }
 
