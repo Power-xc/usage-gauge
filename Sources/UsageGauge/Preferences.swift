@@ -13,6 +13,13 @@ enum Preferences {
     private static let panelStyleKey = "panelStyle"
     private static let panelLayoutKey = "panelLayout"
     private static let menuBarBarsKey = "menuBarBars"
+    private static let loginItemAskedKey = "loginItemAsked"
+
+    /// Whether the login item was already registered once by default (a later opt-out must stick).
+    static var hasAskedLoginItem: Bool {
+        get { defaults.bool(forKey: loginItemAskedKey) }
+        set { defaults.set(newValue, forKey: loginItemAskedKey) }
+    }
 
     /// Whether the menu bar item draws the small bars between each name and its figure.
     static var showsMenuBarBars: Bool {

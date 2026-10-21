@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var layoutItems: [NSMenuItem] = []
     private var menuBarBarsItem: NSMenuItem?
     private var backdropSampler: BackdropSampler?
+    private let loginItem = LoginItem()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menu = buildMenu()
@@ -52,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelState.isShown = panel.isVisible
         syncAdaptiveTint()
         syncChrome()
+        loginItem.registerOnFirstLaunch()
 
         store.refresh()
         timers = [
@@ -237,6 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarBarsItem = bars
         menu.addItem(bars)
         menu.addItem(.separator())
+        menu.addItem(loginItem.item)
         menu.addItem(NSMenuItem(title: "종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         return menu
     }

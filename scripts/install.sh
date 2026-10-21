@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs UsageGauge into ~/Applications and starts it at login.
+# Installs UsageGauge into ~/Applications; the app registers itself as a login item on first launch.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,19 +14,13 @@ target="$HOME/Applications/UsageGauge.app"
 agent="$HOME/Library/LaunchAgents/$label.plist"
 
 pkill -x UsageGauge 2>/dev/null || true
-mkdir -p "$HOME/Applications" "$HOME/Library/LaunchAgents"
+mkdir -p "$HOME/Applications"
 rm -rf "$target"
 cp -R dist/UsageGauge.app "$target"
 
-cat > "$agent" <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-  <key>Label</key><string>$label</string>
-  <key>ProgramArguments</key><array><string>/usr/bin/open</string><string>-a</string><string>$target</string></array>
-  <key>RunAtLoad</key><true/>
-</dict></plist>
-PLIST
+# Legacy LaunchAgent from older installs: drop it so the gauge does not start twice at login.
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+rm -f "$agent"
 
 open "$target"
-echo "installed $target (starts at login)"
+echo "installed $target (starts at login; toggle it in the app menu)"
