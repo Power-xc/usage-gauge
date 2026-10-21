@@ -370,3 +370,38 @@ struct LayoutsScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// The orbit and capsule layouts, each in mono, iris and dot, with four tools; orbit also with two
+/// and with six.
+struct ShapeLayoutsScene: View {
+    static let size = CGSize(width: 1160, height: 1620)
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            HStack(alignment: .top, spacing: 28) {
+                VStack(spacing: 28) { ForEach(PanelStyle.allCases, id: \.self) { panel($0, .orbit, tools: four) } }
+                VStack(spacing: 28) {
+                    ForEach(PanelStyle.allCases, id: \.self) { panel($0, .capsule, tools: four) }
+                    panel(.iris, .orbit, tools: Array(four.prefix(2)))
+                    panel(.dot, .orbit, tools: four + SampleData.extras(scale: 1).suffix(1) + [windsurf])
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var four: [ProviderUsage] { SampleData.still + SampleData.extras(scale: 1).prefix(2) }
+
+    private var windsurf: ProviderUsage {
+        ProviderUsage(id: "windsurf", plan: "Pro", session: SampleData.window(remaining: 60, minutes: 300, resetIn: 200 * 60),
+                      weekly: SampleData.window(remaining: 40, minutes: 10080, resetIn: 90 * 3600))
+    }
+
+    private func panel(_ style: PanelStyle, _ layout: PanelLayout, tools: [ProviderUsage]) -> some View {
+        GaugeView(providers: tools, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1),
+                  style: style, layout: layout, frozenAt: 3)
+            .modifier(RenderedSurface(style: style))
+    }
+}

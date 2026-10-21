@@ -84,6 +84,8 @@ public struct GaugeView: View {
         case .bars: BarsLayout(providers: providers, now: now, frozenAt: frozenAt)
         case .columns: ColumnsLayout(providers: providers, now: now, frozenAt: frozenAt)
         case .figures: FiguresLayout(providers: providers, now: now)
+        case .orbit: OrbitLayout(providers: providers, now: now)
+        case .capsule: CapsuleLayout(providers: providers, now: now, frozenAt: frozenAt)
         }
     }
 

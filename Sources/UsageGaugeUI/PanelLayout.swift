@@ -11,6 +11,10 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case columns
     /// The smallest form: the short-window figure and one line for the long window.
     case figures
+    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
+    case orbit
+    /// A capsule per tool filled to the short window's share, the long window under it.
+    case capsule
 
     public var title: String {
         switch self {
@@ -18,6 +22,8 @@ public enum PanelLayout: String, CaseIterable, Sendable {
         case .bars: "바"
         case .columns: "막대 그래프"
         case .figures: "숫자"
+        case .orbit: "궤도"
+        case .capsule: "캡슐"
         }
     }
 
