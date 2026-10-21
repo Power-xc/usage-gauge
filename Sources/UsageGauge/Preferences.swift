@@ -16,7 +16,7 @@ enum Preferences {
 
     /// Whether the menu bar item draws the small bars between each name and its figure.
     static var showsMenuBarBars: Bool {
-        get { defaults.object(forKey: menuBarBarsKey) as? Bool ?? false }
+        get { defaults.object(forKey: menuBarBarsKey) as? Bool ?? true }
         set { defaults.set(newValue, forKey: menuBarBarsKey) }
     }
     private static let panelLeftKey = "panelLeft"

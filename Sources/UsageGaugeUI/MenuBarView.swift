@@ -37,7 +37,8 @@ private struct MenuBarItem: View {
             }
             Text(usage.session.map { "\($0.displayPercent)%" } ?? "–")
                 .font(Theme.number(12, .semibold))
-                .foregroundStyle(usage.session.flatMap { Theme.alert($0.remainingPercent) } ?? Color.primary)
+                // With the bars shown they carry the warning; without them the figure does.
+                .foregroundStyle(showsBars ? Color.primary : usage.session.flatMap { Theme.alert($0.remainingPercent) } ?? Color.primary)
                 .lineLimit(1)
                 .fixedSize()
         }
