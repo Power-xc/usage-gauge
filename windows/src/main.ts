@@ -8,6 +8,7 @@ async function start(): Promise<void> {
   const panel = new Panel(root, await bridge.state());
   await bridge.onUsage((usage) => panel.render(usage));
   await bridge.onStyle((style) => panel.setStyle(style));
+  await bridge.onLayout((layout) => panel.setLayout(layout));
   await bridge.onVisibility((isShown) => panel.setShown(isShown));
 }
 

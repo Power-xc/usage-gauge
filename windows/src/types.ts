@@ -4,6 +4,9 @@ export type UsageLevel = "comfortable" | "low" | "critical";
 /** The panel's look; mirrors the Rust `PanelStyle`. */
 export type PanelStyle = "iris" | "dot" | "mono";
 
+/** How the panel arranges the tools; mirrors the Rust `PanelLayout`. */
+export type PanelLayout = "dial" | "bars" | "columns" | "figures";
+
 /** One rate-limit window, already resolved and formatted by the backend. */
 export interface WindowView {
   displayPercent: number;
@@ -40,4 +43,7 @@ export interface PanelState {
   /** Whether the system blur is active behind the window; without it the smoke is denser. */
   hasGlass: boolean;
   style: PanelStyle;
+  layout: PanelLayout;
+  /** Panel size factor, 0.7...1.6. */
+  scale: number;
 }

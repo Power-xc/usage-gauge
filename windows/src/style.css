@@ -41,8 +41,8 @@ body {
   width: max-content;
 }
 
-/* Smoked glass: the acrylic behind the window shows through the tint, with light pooled along
-   the top as when a slab catches an overhead light. */
+/* Clear smoked glass: the acrylic behind the window shows through a dark tint, with no grey
+   frost, and a little light pooled along the top as when a slab catches an overhead light. */
 .panel {
   position: relative;
   display: flex;
@@ -51,7 +51,7 @@ body {
   padding: var(--panel-padding);
   border-radius: var(--panel-radius);
   background:
-    linear-gradient(rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.02) 35%, transparent 60%),
+    linear-gradient(rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.012) 35%, transparent 60%),
     rgb(var(--smoke) / var(--smoke-alpha));
 }
 
@@ -152,23 +152,31 @@ body {
   background: rgb(255 255 255 / 0.12);
 }
 
-.opacity-control {
+/* The 투명도 and 크기 bars, in one capsule under the header. */
+.controls {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-radius: 999px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 10px;
+  border-radius: 16px;
   background: rgb(255 255 255 / 0.05);
   box-shadow: inset 0 0 0 0.8px rgb(255 255 255 / 0.16);
 }
 
-.opacity-label {
+.value-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.value-label {
+  width: 34px;
   font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
 }
 
-.opacity-readout {
+.value-readout {
   width: 36px;
   text-align: right;
   font-size: 10px;
@@ -176,7 +184,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.opacity-bar {
+.value-bar {
   position: relative;
   flex: 1;
   min-width: 120px;
@@ -186,8 +194,8 @@ body {
   --knob: 14px;
 }
 
-.opacity-track,
-.opacity-fill {
+.value-track,
+.value-fill {
   position: absolute;
   left: 0;
   top: 50%;
@@ -196,17 +204,17 @@ body {
   border-radius: 2px;
 }
 
-.opacity-track {
+.value-track {
   right: 0;
   background: var(--track);
 }
 
-.opacity-fill {
+.value-fill {
   width: calc(var(--knob) / 2 + (100% - var(--knob)) * var(--fraction));
   background: linear-gradient(90deg, rgb(201 182 255 / 0.25), var(--accent));
 }
 
-.opacity-knob {
+.value-knob {
   position: absolute;
   top: 50%;
   left: calc((100% - var(--knob)) * var(--fraction));
@@ -228,6 +236,10 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 24px;
+}
+
+.cell {
+  flex: none;
 }
 
 .card {
@@ -389,12 +401,10 @@ body {
   overflow: hidden;
 }
 
-/* Dot: a matte charcoal card lit warmly from the top-left, with a fine lit rim. */
+/* Dot: a flat charcoal card in one even tone, with a fine rim, so the lit dots are its only light. */
 .panel[data-style="dot"] {
   font-family: var(--font-mono);
-  background:
-    radial-gradient(circle 260px at 0 0, rgb(255 158 97 / 0.06), transparent),
-    linear-gradient(rgb(33 33 33), rgb(19 19 19));
+  background: rgb(26 26 26);
 }
 
 .panel[data-style="dot"]::before,
@@ -403,7 +413,7 @@ body {
 }
 
 .panel[data-style="dot"]::after {
-  background: linear-gradient(rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03));
+  background: rgb(255 255 255 / 0.09);
 }
 
 .panel[data-style="dot"] .lamp {
@@ -434,14 +444,15 @@ body {
 
 .panel[data-style="mono"] .row {
   gap: 0;
+  align-items: stretch;
   border-top: 1px solid var(--hairline);
 }
 
-.panel[data-style="mono"] .card {
-  padding: 12px;
+.panel[data-style="mono"] .cell {
+  padding: var(--panel-padding);
 }
 
-.panel[data-style="mono"] .card + .card {
+.panel[data-style="mono"] .cell + .cell {
   border-left: 1px solid var(--hairline);
 }
 
@@ -485,4 +496,196 @@ body {
 .swatch {
   width: 6px;
   height: 6px;
+}
+
+.brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Bars layout: the name on the left, a row per window to its right. */
+.bars-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+}
+
+.bars-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+  width: 120px;
+}
+
+.bars-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 14px;
+}
+
+.bar-row canvas {
+  display: block;
+  flex: none;
+}
+
+.bar-label {
+  flex: none;
+  width: 38px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.bar-share {
+  flex: none;
+  width: 36px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-countdown {
+  flex: none;
+  width: 56px;
+  text-align: right;
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.bars-block .offline {
+  margin: 0;
+}
+
+/* Columns layout: a pair of upright meters per tool, its name and reset time below. */
+.columns-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.columns-block.unavailable {
+  opacity: 0.5;
+}
+
+.columns {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.column canvas {
+  display: block;
+}
+
+.column-figure {
+  display: flex;
+  justify-content: center;
+  width: 22px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.column-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.columns-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.caption {
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* Figures layout: the short window's share in large type, one line for the long window. */
+.figures-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.big-figure {
+  display: flex;
+  align-items: baseline;
+  /* One wrapped line, so the figure is centred in its 36px band while keeping a shared baseline. */
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 1px;
+  height: 36px;
+}
+
+.big-figure.offline {
+  align-items: center;
+  margin: 0;
+}
+
+.big-digits {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.big-percent {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.figures-detail {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.figures-detail.faint {
+  color: var(--text-faint);
+}
+
+.panel[data-style="mono"] .big-digits {
+  font-size: 30px;
+  letter-spacing: 0;
+}
+
+.panel[data-style="mono"] .big-percent {
+  font-size: 13px;
+}
+
+.panel[data-style="dot"] .big-figure {
+  align-items: flex-end;
+  gap: 3.6px;
 }

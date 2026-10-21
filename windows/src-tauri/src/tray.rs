@@ -5,14 +5,15 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::app::{refresh, set_style, toggle_panel, AppState, TRAY_ID};
-use crate::prefs::PanelStyle;
+use crate::app::{refresh, set_layout, set_style, toggle_panel, AppState, TRAY_ID};
+use crate::prefs::{PanelLayout, PanelStyle};
 
 const TOGGLE_ID: &str = "toggle";
 const REFRESH_ID: &str = "refresh";
 const AUTOSTART_ID: &str = "autostart";
 const QUIT_ID: &str = "quit";
 const STYLE_ID_PREFIX: &str = "style:";
+const LAYOUT_ID_PREFIX: &str = "layout:";
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
     let autostart = CheckMenuItem::with_id(
@@ -23,14 +24,29 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         app.autolaunch().is_enabled().unwrap_or(false),
         None::<&str>,
     )?;
-    let current = app.state::<AppState>().prefs().style;
+    let state = app.state::<AppState>();
+    let (current_style, current_layout) = {
+        let prefs = state.prefs();
+        (prefs.style, prefs.layout)
+    };
+    let layouts = PanelLayout::ALL
+        .into_iter()
+        .map(|layout| {
+            let id = format!("{LAYOUT_ID_PREFIX}{}", layout.id());
+            CheckMenuItem::with_id(app, id, layout.title(), true, layout == current_layout, None::<&str>)
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
     let styles = PanelStyle::ALL
         .into_iter()
         .map(|style| {
             let id = format!("{STYLE_ID_PREFIX}{}", style.id());
-            CheckMenuItem::with_id(app, id, style.title(), true, style == current, None::<&str>)
+            CheckMenuItem::with_id(app, id, style.title(), true, style == current_style, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
+    let mut layout_menu = SubmenuBuilder::new(app, "그래프");
+    for item in &layouts {
+        layout_menu = layout_menu.item(item);
+    }
     let mut style_menu = SubmenuBuilder::new(app, "스타일");
     for item in &styles {
         style_menu = style_menu.item(item);
@@ -39,6 +55,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .item(&MenuItem::with_id(app, TOGGLE_ID, "게이지 켜기/끄기 (Ctrl+Alt+U)", true, None::<&str>)?)
         .item(&MenuItem::with_id(app, REFRESH_ID, "지금 새로고침", true, None::<&str>)?)
         .item(&PredefinedMenuItem::separator(app)?)
+        .item(&layout_menu.build()?)
         .item(&style_menu.build()?)
         .item(&autostart)
         .item(&PredefinedMenuItem::separator(app)?)
@@ -49,7 +66,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .tooltip("UsageGauge")
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .on_menu_event(move |app, event| handle_menu(app, &event, &autostart, &styles))
+        .on_menu_event(move |app, event| handle_menu(app, &event, &autostart, &layouts, &styles))
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                 toggle_panel(tray.app_handle());
@@ -66,9 +83,14 @@ fn handle_menu(
     app: &AppHandle,
     event: &MenuEvent,
     autostart: &CheckMenuItem<tauri::Wry>,
+    layouts: &[CheckMenuItem<tauri::Wry>],
     styles: &[CheckMenuItem<tauri::Wry>],
 ) {
     let id = event.id().as_ref();
+    if let Some(layout) = id.strip_prefix(LAYOUT_ID_PREFIX).and_then(PanelLayout::from_id) {
+        choose_layout(app, layout, layouts);
+        return;
+    }
     if let Some(style) = id.strip_prefix(STYLE_ID_PREFIX).and_then(PanelStyle::from_id) {
         choose_style(app, style, styles);
         return;
@@ -100,6 +122,16 @@ fn choose_style(app: &AppHandle, style: PanelStyle, items: &[CheckMenuItem<tauri
     set_style(app, style);
     for (item, candidate) in items.iter().zip(PanelStyle::ALL) {
         if let Err(error) = item.set_checked(candidate == style) {
+            eprintln!("usage-gauge: could not update the menu: {error}");
+        }
+    }
+}
+
+/// Same as `choose_style`, for the layout group.
+fn choose_layout(app: &AppHandle, layout: PanelLayout, items: &[CheckMenuItem<tauri::Wry>]) {
+    set_layout(app, layout);
+    for (item, candidate) in items.iter().zip(PanelLayout::ALL) {
+        if let Err(error) = item.set_checked(candidate == layout) {
             eprintln!("usage-gauge: could not update the menu: {error}");
         }
     }

@@ -10,7 +10,12 @@ export const BLACK: Rgb = [0, 0, 0];
 /** Layout tokens shared by the canvases and the stylesheet (see `style.css`). */
 export const DIAL_SIZE = 72;
 export const DETAIL_WIDTH = 140;
+/** Width of the content inside the panel padding; every layout fills it, so switching keeps the panel's width. */
+export const CONTENT_WIDTH = 472;
+export const CELL_SPACING = 24;
+export const PANEL_PADDING = 12;
 export const OPACITY_RANGE = { min: 0.3, max: 1 } as const;
+export const SCALE_RANGE = { min: 0.7, max: 1.6 } as const;
 
 const ACCENT: Rgb = [201, 182, 255];
 const WARNING: Rgb = [255, 206, 122];

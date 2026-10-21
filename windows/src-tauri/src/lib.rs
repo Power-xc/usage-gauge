@@ -31,6 +31,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             panel::get_state,
             panel::set_opacity,
+            panel::set_scale,
             panel::hide_panel,
             panel::resize_panel
         ])

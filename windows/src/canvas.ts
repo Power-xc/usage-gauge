@@ -13,9 +13,16 @@ export function noise(seed: number): number {
   return value - Math.floor(value);
 }
 
-/** Sizes a canvas for the device pixel ratio and returns a context drawing in CSS pixels. */
+let panelScale = 1;
+
+/** The panel is shown scaled by a CSS transform; canvases made afterwards get that many more pixels so they stay crisp. */
+export function setPanelScale(scale: number): void {
+  panelScale = scale;
+}
+
+/** Sizes a canvas for the device pixel ratio and panel scale and returns a context drawing in CSS pixels. */
 export function prepareCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D {
-  const scale = window.devicePixelRatio || 1;
+  const scale = (window.devicePixelRatio || 1) * panelScale;
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   canvas.style.width = `${width}px`;
