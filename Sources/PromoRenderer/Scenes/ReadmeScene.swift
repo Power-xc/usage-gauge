@@ -1,9 +1,10 @@
 import SwiftUI
 import UsageGaugeUI
 
-/// README hero loop: the panel fills up from empty, then is used. The pointer opens the graph picker and tries a few
-/// forms, opens a tool's page and returns, resizes the panel with the size bar, and picks another
-/// style from the menu bar, then everything settles back and drains to empty, where the loop starts again.
+/// README hero loop: the panel fills up from empty, then is used. The pointer opens the graph
+/// picker and tries a few forms, opens a tool's page and returns, resizes the panel with the size
+/// bar, and picks another style from the menu bar; then everything settles back and drains to
+/// empty, where the loop starts again.
 struct ReadmeScene: View {
     static let size = CGSize(width: 960, height: 540)
     /// The desktop is laid out at 1x and zoomed to fill the picture, so the panel reads at README width.

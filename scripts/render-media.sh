@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Renders the README media from the real SwiftUI views: stills into docs/ and the demo loop into
-# docs/demo.gif (needs ffmpeg). Frames are drawn at 2x.
+# Renders the README media from the real SwiftUI views: stills into docs/, the demo loop into
+# docs/demo.gif and the menu bar loop into docs/menu-bar.gif (needs ffmpeg). Frames are drawn at 2x.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -21,4 +21,12 @@ ffmpeg -loglevel error -y -framerate 12.5 -i "$frames/frame-%04d.png" -c:v ffv1 
 ffmpeg -loglevel error -y -i "$frames/loop.mkv" \
   -vf "scale=1280:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=full[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" \
   -loop 0 docs/demo.gif
-echo "rendered docs/*.jpg and docs/demo.gif"
+
+# The menu bar strip filling up, for the top of the README: 25 fps is 4 centiseconds a frame, and
+# the strip stays at 2x (1600 px) so it is sharp on retina screens at the README's 800 px.
+"$renderer" menubar "$frames/menubar"
+ffmpeg -loglevel error -y -framerate 25 -i "$frames/menubar/frame-%04d.png" -c:v ffv1 "$frames/menubar.mkv"
+ffmpeg -loglevel error -y -i "$frames/menubar.mkv" \
+  -vf "split[a][b];[a]palettegen=max_colors=64:stats_mode=full[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" \
+  -loop 0 docs/menu-bar.gif
+echo "rendered docs/*.jpg, docs/demo.gif and docs/menu-bar.gif"

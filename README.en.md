@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/menu-bar.gif" width="800" alt="The menu bar bars of every service filling up from empty to what is left">
+
 # usage-gauge
 
 **How much of every AI you have left, and when it runs out.**
@@ -172,7 +174,7 @@ All of these rules live in `UsageGaugeCore`, and `swift run CoreChecks` checks t
 
 ```sh
 swift build && swift run CoreChecks       # build and check the core rules
-scripts/render-media.sh                    # render the README images and demo GIF (needs ffmpeg)
+scripts/render-media.sh                    # render the README images and GIFs (needs ffmpeg)
 cd windows && npm ci && npm run build && (cd src-tauri && cargo test)
 ```
 

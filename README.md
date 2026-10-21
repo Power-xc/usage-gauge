@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/menu-bar.gif" width="800" alt="메뉴바의 서비스별 막대가 비어 있다가 남은 양까지 차오르는 모습">
+
 # usage-gauge
 
 **쓰는 모든 AI의 남은 한도를, 언제 바닥나는지까지.**
@@ -170,7 +172,7 @@ Windows 판은 Claude Code와 Codex CLI의 로그인 파일로 두 서비스의 
 
 ```sh
 swift build && swift run CoreChecks       # 빌드와 판단 로직 검사
-scripts/render-media.sh                    # README 이미지와 데모 GIF 렌더 (ffmpeg 필요)
+scripts/render-media.sh                    # README 이미지와 GIF 렌더 (ffmpeg 필요)
 cd windows && npm ci && npm run build && (cd src-tauri && cargo test)
 ```
 
