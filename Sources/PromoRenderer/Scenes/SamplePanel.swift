@@ -13,11 +13,13 @@ struct SamplePanel: View {
     var showsPicker = false
     var showsControls = false
     var scale = 1.0
+    /// What the opacity bar shows; the scene fades the panel itself to match.
+    var opacity = 1.0
     var frozenAt: TimeInterval = 3
 
     var body: some View {
         GaugeView(providers: tools, status: SampleData.status, now: SampleData.now, onClose: {},
-                  opacity: .constant(1), scale: .constant(scale), style: style, layout: layout,
+                  opacity: .constant(opacity), scale: .constant(scale), style: style, layout: layout,
                   history: SampleData.history, frozenAt: frozenAt, onLayout: { _ in })
             .panelPreset(tool: tool, hovered: hovered, picker: showsPicker, controls: showsControls)
             .modifier(RenderedSurface(style: style))

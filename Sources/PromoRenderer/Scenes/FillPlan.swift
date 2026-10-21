@@ -21,8 +21,13 @@ struct FillPlan {
 
     /// The tools with every remaining percentage scaled by how full each one is.
     func apply(to providers: [ProviderUsage], at time: Double) -> [ProviderUsage] {
+        Self.scale(providers) { amount(at: time, index: $0) }
+    }
+
+    /// The tools with each one's remaining percentages scaled by `amount` for its index.
+    static func scale(_ providers: [ProviderUsage], by amount: (Int) -> Double) -> [ProviderUsage] {
         providers.enumerated().map { index, provider in
-            let amount = amount(at: time, index: index)
+            let amount = amount(index)
             return ProviderUsage(id: provider.id, plan: provider.plan,
                                  session: provider.session.map { scaled($0, by: amount) },
                                  weekly: provider.weekly.map { scaled($0, by: amount) },
@@ -30,7 +35,7 @@ struct FillPlan {
         }
     }
 
-    private func scaled(_ window: UsageWindow, by amount: Double) -> UsageWindow {
+    private static func scaled(_ window: UsageWindow, by amount: Double) -> UsageWindow {
         UsageWindow(usedPercent: 100 - window.remainingPercent * amount, resetsAt: window.resetsAt,
                     windowMinutes: window.windowMinutes)
     }

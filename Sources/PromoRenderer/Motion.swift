@@ -8,6 +8,13 @@ enum Motion {
         return linear * linear * (3 - 2 * linear)
     }
 
+    /// Like `progress`, but fast at first and settling softly, for things arriving on screen.
+    static func rise(_ time: Double, from start: Double, to end: Double) -> Double {
+        guard end > start else { return time >= end ? 1 : 0 }
+        let linear = min(1, max(0, (time - start) / (end - start)))
+        return 1 - pow(1 - linear, 3)
+    }
+
     static func mix(_ from: Double, _ to: Double, _ amount: Double) -> Double {
         from + (to - from) * amount
     }

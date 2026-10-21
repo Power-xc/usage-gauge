@@ -26,11 +26,12 @@ struct Track {
 }
 
 /// Where the pointer goes: a point on the screen, a point on the panel (which moves with the
-/// panel's size), or the size bar's knob, which the pointer holds while the size changes.
+/// panel's size), or the knob of the size or opacity bar, which the pointer holds while it drags.
 enum PointerTarget {
     case screen(CGPoint)
     case panel(CGPoint)
     case knob
+    case opacityKnob
 }
 
 struct PointerStop {
@@ -61,6 +62,16 @@ struct DemoScript {
     var menu: MenuPlan?
     /// How the tools fill up at the start; nil starts with them full.
     var fill: FillPlan?
+    /// The panel's opacity as its bar sets it, and whether it is on screen at all (0...1).
+    var opacity = Track(keys: [(0, 1)])
+    var presence = Track(keys: [(0, 1)])
+    /// Whether the pointer is on screen (0...1), so it can stay away until it is used.
+    var pointerPresence = Track(keys: [(0, 1)])
+    /// How long the face that arrives at a time takes to replace the one before; quick cycling
+    /// wants a shorter crossfade than a change of style.
+    var fade: (Double) -> Double = { _ in DemoScript.faceFade }
+    /// The app menu opened from the menu bar item, with its top-left on the stage.
+    var appMenu: (plan: AppMenuPlan, origin: CGPoint)?
 
     /// The same script with everything after its first moment pushed back by `delay`, so the
     /// panel can fill up before the pointer starts.
@@ -80,7 +91,7 @@ struct DemoScript {
     func face(at time: Double) -> (current: PanelFace, previous: PanelFace?, mix: Double) {
         guard let index = faces.lastIndex(where: { $0.at <= time }) else { return (faces[0].face, nil, 1) }
         guard index > 0 else { return (faces[0].face, nil, 1) }
-        let mix = Motion.progress(time, from: faces[index].at, to: faces[index].at + Self.faceFade)
+        let mix = Motion.progress(time, from: faces[index].at, to: faces[index].at + fade(faces[index].at))
         return (faces[index].face, faces[index - 1].face, mix)
     }
 
@@ -108,6 +119,9 @@ struct DemoScript {
         if case .knob = from.target, case .knob = to.target {
             return position(of: from, scale: scale.value(at: time), canvas: canvas)
         }
+        if case .opacityKnob = from.target, case .opacityKnob = to.target {
+            return opacityKnob(at: time, canvas: canvas)
+        }
         let start = position(of: from, scale: scale.value(at: from.at), canvas: canvas)
         let end = position(of: to, scale: scale.value(at: to.at), canvas: canvas)
         let progress = Motion.progress(time, from: from.at, to: to.at)
@@ -123,7 +137,13 @@ struct DemoScript {
         case .screen(let point): point
         case .panel(let point): DemoLayout.screen(point, scale: scale, canvas: canvas)
         case .knob: DemoLayout.screen(DemoLayout.knob(scale: scale), scale: scale, canvas: canvas)
+        case .opacityKnob: opacityKnob(at: stop.at, canvas: canvas)
         }
+    }
+
+    private func opacityKnob(at time: Double, canvas: CGSize) -> CGPoint {
+        let scale = scale.value(at: time)
+        return DemoLayout.screen(DemoLayout.opacityKnob(opacity.value(at: time)), scale: scale, canvas: canvas)
     }
 }
 
@@ -154,6 +174,15 @@ enum DemoLayout {
     static func knob(scale: Double) -> CGPoint {
         let fraction = (scale - scaleRange.lowerBound) / (scaleRange.upperBound - scaleRange.lowerBound)
         return CGPoint(x: barLeft + barTravel * fraction, y: barY)
+    }
+
+    /// The opacity bar sits one row above the size bar, with the same travel.
+    static let opacityRange = 0.3...1.0
+    static let opacityBarY: CGFloat = barY - 22
+
+    static func opacityKnob(_ opacity: Double) -> CGPoint {
+        let fraction = (opacity - opacityRange.lowerBound) / (opacityRange.upperBound - opacityRange.lowerBound)
+        return CGPoint(x: barLeft + barTravel * fraction, y: opacityBarY)
     }
 
     /// Top-left of the panel, centred under the menu bar.

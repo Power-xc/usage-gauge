@@ -63,6 +63,16 @@ enum SampleData {
     /// The four sample tools of the stills, each stamped with the measuring time.
     static let tools = stamped(still + extras(scale: 1).prefix(2))
 
+    /// A wider line-up for the reel: the stills' tools, then more of the services the usage CLI reads.
+    static let lineup = stamped(still + extras(scale: 1) + [
+        ProviderUsage(id: "windsurf", session: window(remaining: 63, minutes: 1440, resetIn: 11 * 3600),
+                      weekly: window(remaining: 81, minutes: 43200, resetIn: 420 * 3600)),
+        ProviderUsage(id: "grok", session: window(remaining: 88, minutes: 120, resetIn: 70 * 60),
+                      weekly: window(remaining: 74, minutes: 10080, resetIn: 96 * 3600)),
+        ProviderUsage(id: "openrouter", session: window(remaining: 35, minutes: 1440, resetIn: 6 * 3600),
+                      weekly: window(remaining: 58, minutes: 43200, resetIn: 300 * 3600)),
+    ])
+
     /// Re-stamps tools with the sample measuring time (for the demo, whose values move).
     static func stamped(_ providers: [ProviderUsage]) -> [ProviderUsage] {
         providers.map { ProviderUsage(id: $0.id, plan: $0.plan, session: $0.session, weekly: $0.weekly, measuredAt: measuredAt) }

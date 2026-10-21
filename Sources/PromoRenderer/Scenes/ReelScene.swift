@@ -2,157 +2,133 @@ import SwiftUI
 import UsageGaugeCore
 import UsageGaugeUI
 
-/// Vertical 9:16 reel for Instagram. Captions sit in the upper safe area and the panel below
-/// them, clear of the app's own bars at the top and its caption and buttons at the bottom; the
-/// author's name sits top-left, where nothing of the app covers it.
+/// Vertical 9:16 reel for Instagram: the app filmed in the upper half and large subtitles under
+/// it, both inside the area Instagram leaves clear of its header, caption and buttons.
 struct ReelScene: View {
     static let size = CGSize(width: 1080, height: 1920)
-    static let duration = DemoScript.Reel.duration
-    /// The panel is laid out at 1x and zoomed so it fills the width of a phone.
-    private static let zoom: CGFloat = 1.9
-    private static let stageCanvas = CGSize(width: size.width / zoom, height: 640)
-    private static let stageTop: CGFloat = 620
-    private static let captionY: CGFloat = 400
-    /// Where the panel changes from four tools filling and draining to the two the demo uses.
-    private static let handover = 6.4
+    static let duration = ReelScript.duration
+    private static let videoTop: CGFloat = 200
+    private static let videoHeight: CGFloat = 680
+    private static let captionTop: CGFloat = 910
+    /// The menu bar shows the first three tools of the line-up, filling and draining with them.
+    private static let menuBarTools = Array(SampleData.lineup.prefix(3))
 
     let time: Double
 
     var body: some View {
         ZStack(alignment: .top) {
             Backdrop(watermarkSize: nil)
-            hook.opacity(1 - Motion.progress(time, from: 2.5, to: 2.9))
-            caption
-            panel
-            styleChip
-            outro.opacity(Motion.progress(time, from: 18.5, to: 19.2))
-            Watermark(size: 26).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.leading, 56).padding(.top, 150)
+            video
+                .frame(width: Self.size.width, height: Self.videoHeight)
+                .mask(EdgeFade())
+                .padding(.top, Self.videoTop)
+            captions.padding(.top, Self.captionTop)
+            ReelOutro(time: time).padding(.top, Self.captionTop)
+            // The author's name sits in the gap between the filmed area and the subtitles.
+            Watermark(size: 20)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 72)
+                .padding(.top, Self.videoTop + Self.videoHeight + 2)
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .clipped()
         .environment(\.colorScheme, .dark)
     }
 
-    // 0 – 2.9 s: the dial starts full (the cover), drains into the warning colours and refills.
-    private var hook: some View {
-        let drain = Motion.progress(time, from: 0.4, to: 1.3)
-        let refill = Motion.progress(time, from: 1.5, to: 2.5)
-        let window = SampleData.window(remaining: Motion.mix(Motion.mix(94, 18, drain), 94, refill), minutes: 300, resetIn: 230 * 60)
-        return VStack(spacing: 96) {
-            SessionGauge(window: window, tint: Theme.brand(for: "claude"), size: 560, now: SampleData.now, frozenAt: time)
-            VStack(spacing: 18) {
-                Text("AI 코딩 한도,").font(Theme.font(84, .bold))
-                Text("이제 한눈에").font(Theme.font(84, .bold)).foregroundStyle(Theme.mutedText)
-            }
-        }
-        .foregroundStyle(.white)
-        .frame(maxHeight: .infinity)
-    }
-
-    // 2.9 – 18.4 s: one caption at a time, a headline over a quieter line.
-    private var caption: some View {
-        let reel = DemoScript.Reel.self
-        let lines: [(start: Double, end: Double, title: String, detail: String)] = [
-            (2.9, 5.0, "쓰는 모든 AI의 남은 한도", "Claude · Codex · Gemini · Cursor …"),
-            (5.0, 6.4, "줄어들면 숫자가 먼저", "30% 이하 노랑 · 10% 이하 산호색"),
-            (6.6, 13.1, "그래프 12종, 원하는 대로", "다이얼 · 바 · 숫자 · 추이 · 궤도 …"),
-            (13.4, 15.1, "스타일 3종, 취향대로", "모노 터미널 · 홍채 · 도트 매트릭스"),
-            (15.2, reel.end - 0.3, "탭으로 상세, 끌어서 크기", "눌러서 열고, 놓은 자리에서 조절"),
-        ]
-        return ZStack {
-            ForEach(lines, id: \.title) { line in
-                VStack(spacing: 18) {
-                    Text(line.title).font(Theme.font(64, .bold)).foregroundStyle(.white)
-                    Text(line.detail).font(Theme.font(32, .medium)).foregroundStyle(Theme.mutedText)
-                }
-                .opacity(Motion.visibility(time, start: line.start, end: line.end, fade: 0.35))
-                .offset(y: 12 * (1 - Motion.progress(time, from: line.start, to: line.start + 0.35)))
-            }
-        }
-        .frame(maxHeight: .infinity, alignment: .top)
-        .padding(.top, Self.captionY)
-    }
-
-    // 2.6 – 18.6 s: four tools fill and drain, then two of them are used with the pointer.
-    private var panel: some View {
-        let reel = DemoScript.Reel.self
-        let enter = Motion.progress(time, from: 2.6, to: 3.4)
-        let exit = Motion.progress(time, from: reel.end - 0.5, to: reel.end)
-        let handing = Motion.progress(time, from: Self.handover - 0.3, to: Self.handover + 0.2)
+    /// The stage under the camera. The line-up leaves before the two-tool panel arrives, and comes
+    /// back after it leaves, so the two never show through each other.
+    private var video: some View {
+        let camera = ReelScript.camera(at: time)
+        let canvas = ReelScript.canvas
+        let handover = ReelScript.handover, outro = ReelScript.outro
+        let lineup = max(1 - Motion.progress(time, from: handover - 0.25, to: handover),
+                         Motion.progress(time, from: outro, to: outro + 0.35))
+        let demo = Motion.progress(time, from: handover, to: handover + 0.3)
+            * (1 - Motion.progress(time, from: outro - 0.25, to: outro))
+        let menuBar = FillPlan.scale(Self.menuBarTools) { ReelScript.menuBarAmount(at: time, index: $0) }
         return ZStack(alignment: .topLeading) {
-            stage(intro, tools: providers, showsPointer: false).opacity(1 - handing)
-            stage(DemoScript.reel, tools: Array(SampleData.tools.prefix(2)), showsPointer: true).opacity(handing)
+            MenuBarStrip(providers: menuBar, width: canvas.width)
+            DemoStage(script: ReelScript.lineup, time: time, canvas: canvas, tools: SampleData.lineup,
+                      showsBackdrop: false, showsMenuBar: false, showsPointer: false)
+                .opacity(lineup)
+            DemoStage(script: ReelScript.demo, time: time, canvas: canvas, showsBackdrop: false, showsMenuBar: false)
+                .opacity(demo)
         }
-        .padding(.top, Self.stageTop)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .scaleEffect(Motion.mix(0.94, 1, enter) * Motion.mix(1, 0.94, exit), anchor: .center)
-        .opacity(enter * (1 - exit))
-        .blur(radius: (1 - enter) * 16 + exit * 10)
+        .frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
+        .scaleEffect(camera.zoom, anchor: .topLeading)
+        .offset(x: Self.size.width / 2 - camera.center.x * camera.zoom,
+                y: Self.videoHeight / 2 - camera.center.y * camera.zoom)
+        .frame(width: Self.size.width, height: Self.videoHeight, alignment: .topLeading)
     }
 
-    /// A stand-still script for the four-tool opening: the dial form on the starting size.
-    private var intro: DemoScript {
-        DemoScript(duration: Self.duration, faces: [(0, PanelFace())], stops: [],
-                   scale: Track(keys: [(0, DemoScript.Reel.sizeRange.small)]))
-    }
-
-    private func stage(_ script: DemoScript, tools: [ProviderUsage], showsPointer: Bool) -> some View {
-        DemoStage(script: script, time: time, canvas: Self.stageCanvas, tools: tools, showsDesktop: false, showsPointer: showsPointer)
-            .scaleEffect(Self.zoom, anchor: .topLeading)
-            .frame(width: Self.size.width, height: Self.stageCanvas.height * Self.zoom, alignment: .topLeading)
-    }
-
-    private var providers: [ProviderUsage] {
-        let fill = Motion.progress(time, from: 3.0, to: 4.4)
-        let drain = Motion.progress(time, from: 5.0, to: 6.2)
-        let others = SampleData.extras(scale: fill)
-        return SampleData.stamped([
-            SampleData.claude(session: 94 * fill, weekly: 37 * fill),
-            SampleData.codex(session: Motion.mix(62, 8, drain) * fill, weekly: 26 * fill),
-            others[0],
-            SampleData.cursor(session: Motion.mix(46, 24, drain) * fill, weekly: 53 * fill),
-        ])
-    }
-
-    // 13.3 – 15.2 s: the name of the style on show, under the panel.
-    private var styleChip: some View {
-        let turns = [(PanelStyle.mono, DemoScript.Reel.pickerCloses)] + DemoScript.Reel.styles.map { ($0.style, $0.start) }
-        let show = Motion.visibility(time, start: DemoScript.Reel.pickerCloses, end: DemoScript.Reel.styles[2].start, fade: 0.3)
-        // The name changes as the panel's crossfade passes its middle.
-        let current = turns.last { $0.1 + DemoScript.faceFade / 2 <= time }?.0 ?? .mono
-        return GlassChip {
-            Text(current.title).font(Theme.font(30, .semibold)).foregroundStyle(Theme.mutedText)
-                .padding(.horizontal, 8).padding(.vertical, 4)
-        }
-        .opacity(show)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .padding(.top, 1090)
-    }
-
-    // 18.5 – 22 s: name, platforms and the call to action.
-    private var outro: some View {
-        VStack(spacing: 36) {
-            HStack(spacing: 28) {
-                ForEach(PanelStyle.allCases, id: \.self) { style in
-                    SessionGauge(window: SampleData.window(remaining: 94, minutes: 300, resetIn: 230 * 60),
-                                 tint: Theme.brand(for: "claude"), size: 190, now: SampleData.now, frozenAt: time)
-                        .environment(\.panelStyle, style)
+    private var captions: some View {
+        ZStack(alignment: .top) {
+            ForEach(Array(ReelScript.lines.enumerated()), id: \.offset) { _, line in
+                if time >= line.start && time < line.end {
+                    ReelCaption(line: live(line), time: time)
                 }
             }
-            .padding(.bottom, 24)
-            Text("usage-gauge").font(Theme.font(92, .bold))
-            Text("macOS · Windows · 무료 오픈소스").font(Theme.font(36, .medium)).foregroundStyle(Theme.mutedText)
-            GlassChip {
-                Text("팔로우 + 댓글 「링크」 → DM으로 보내드려요")
-                    .font(Theme.font(34, .semibold))
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 12)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// A line with its chapter mark following the panel: the graph or the style on show.
+    private func live(_ line: ReelLine) -> ReelLine {
+        guard let live = line.live else { return line }
+        var shown = line
+        switch live {
+        case .graph:
+            let layout = ReelScript.graphOnShow(at: time)
+            let index = (PanelLayout.allCases.firstIndex(of: layout) ?? 0) + 1
+            shown.mark = String(format: "%02d / 12  ·  %@", index, layout.title)
+        case .style:
+            shown.mark = ReelScript.demo.face(at: time).current.style.title
+        }
+        return shown
+    }
+}
+
+/// Fades the filmed area out at its top and bottom edges, so whatever the camera leaves at the
+/// border dissolves into the page instead of ending on a hard line.
+private struct EdgeFade: View {
+    var body: some View {
+        LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.04),
+                               .init(color: .black, location: 0.96), .init(color: .clear, location: 1)],
+                       startPoint: .top, endPoint: .bottom)
+    }
+}
+
+/// The closing card: free and open source, the platforms and the call to action, rising in like
+/// the subtitles.
+private struct ReelOutro: View {
+    let time: Double
+
+    var body: some View {
+        let start = ReelScript.outro + 0.15
+        let line = ReelLine(start: start, end: ReelScript.duration + 1, mark: "usage-gauge", title: "무료 · 오픈소스",
+                            accent: "무료", detail: "macOS · Windows")
+        let call = Motion.rise(time, from: start + 0.45, to: start + 0.8)
+        VStack(spacing: 0) {
+            if time >= start {
+                ReelCaption(line: line, time: time)
+                callToAction
+                    .opacity(call)
+                    .offset(y: 26 * (1 - call))
+                    .padding(.top, 40)
             }
-            .padding(.top, 34)
+        }
+        .frame(maxWidth: .infinity)
+        .opacity(1 - Motion.progress(time, from: ReelScript.duration - 0.45, to: ReelScript.duration - 0.05))
+    }
+
+    private var callToAction: some View {
+        var title = AttributedString("팔로우 + 댓글 「링크」")
+        if let range = title.range(of: "「링크」") { title[range].foregroundColor = Theme.accent }
+        return VStack(spacing: 12) {
+            Text(title).font(.custom("Pretendard-ExtraBold", size: 54)).tracking(-1)
+            Text("DM으로 바로 보내드려요").font(.custom("Pretendard-SemiBold", size: 34))
+                .foregroundStyle(.white.opacity(0.6))
         }
         .foregroundStyle(.white)
-        .offset(y: -40)
-        .frame(maxHeight: .infinity)
     }
 }

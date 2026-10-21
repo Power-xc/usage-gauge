@@ -6,6 +6,7 @@ import SwiftUI
 //   PromoRenderer readme <frames-dir>   README hero loop frames (PNG sequence, encode with ffmpeg)
 //   PromoRenderer menubar <frames-dir>  menu bar strip filling up (PNG sequence, encode with ffmpeg)
 //   PromoRenderer reel   <frames-dir> [fps]  9:16 reel frames (30 fps unless a lower rate is given for a quick look)
+//   PromoRenderer cover  <file>          the reel's 9:16 cover (.jpg or .png)
 
 /// JPEG keeps the README images light; the dark, soft renders show no visible artefacts at this level.
 let jpegQuality = 0.9
@@ -39,7 +40,7 @@ func writeFrames<V: View>(duration: Double, fps: Double, size: CGSize, scale: CG
 
 let arguments = CommandLine.arguments
 guard (3...4).contains(arguments.count) else {
-    print("usage: PromoRenderer stills|readme|menubar|reel <output> [reel fps]")
+    print("usage: PromoRenderer stills|readme|menubar|reel|cover <output> [reel fps]")
     exit(2)
 }
 let output = URL(fileURLWithPath: arguments[2])
@@ -62,6 +63,8 @@ do {
         case "reel":
             // Drawn at 2x and scaled down when encoding, so fine lines stay clean at 1080 × 1920.
             try writeFrames(duration: ReelScene.duration, fps: arguments.count == 4 ? Double(arguments[3]) ?? 30 : 30, size: ReelScene.size, scale: 2, to: output) { ReelScene(time: $0) }
+        case "cover":
+            try writeImage(CoverScene(), size: CoverScene.size, scale: 1, to: output)
         default:
             print("unknown mode \(arguments[1])")
             exit(2)

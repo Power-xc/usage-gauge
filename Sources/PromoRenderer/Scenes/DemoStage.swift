@@ -9,9 +9,13 @@ struct DemoStage: View {
     let time: Double
     let canvas: CGSize
     var tools = Array(SampleData.tools.prefix(2))
-    /// False leaves out the backdrop and the menu bar, for a scene that supplies its own.
-    var showsDesktop = true
+    /// False leaves out the backdrop or the menu bar, for a scene that supplies its own.
+    var showsBackdrop = true
+    var showsMenuBar = true
     var showsPointer = true
+
+    /// Where the menu bar item sits across the stage, as a fraction of its width.
+    private static let menuBarItem: CGFloat = 0.48
 
     /// The tools as they stand now: filling up from empty at the start of a loop.
     private var shownTools: [ProviderUsage] { script.fill?.apply(to: tools, at: time) ?? tools }
@@ -19,32 +23,38 @@ struct DemoStage: View {
     var body: some View {
         let scale = script.scale.value(at: time)
         ZStack(alignment: .topLeading) {
-            if showsDesktop {
-                Backdrop()
-                MenuBarStrip(providers: shownTools, width: canvas.width)
-            }
+            if showsBackdrop { Backdrop() }
+            if showsMenuBar { MenuBarStrip(providers: shownTools, width: canvas.width) }
             panel(scale: scale)
             if let menu = script.menu { StyleMenu(plan: menu, time: time) }
+            if let appMenu = script.appMenu { AppMenu(plan: appMenu.plan, time: time, origin: appMenu.origin) }
             if showsPointer { pointer }
         }
         .frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
         .environment(\.colorScheme, .dark)
     }
 
-    /// The current face over the one it replaces, crossfading while it does.
+    /// The current face over the one it replaces, crossfading while it does; it fades with its
+    /// opacity bar, and when hidden it shrinks up into the menu bar item it was opened from.
     private func panel(scale: Double) -> some View {
         let face = script.face(at: time)
+        let opacity = script.opacity.value(at: time)
+        let presence = script.presence.value(at: time)
         return ZStack(alignment: .top) {
-            if let previous = face.previous, face.mix < 1 { layer(previous, scale: scale) }
-            layer(face.current, scale: scale).opacity(face.mix)
+            if let previous = face.previous, face.mix < 1 { layer(previous, scale: scale, opacity: opacity) }
+            layer(face.current, scale: scale, opacity: opacity).opacity(face.mix)
         }
         .frame(width: canvas.width, alignment: .top)
+        .scaleEffect(Motion.mix(0.15, 1, presence), anchor: UnitPoint(x: Self.menuBarItem, y: 0))
+        .offset(y: -DemoLayout.panelTop * (1 - presence))
+        .opacity(opacity * Motion.progress(presence, from: 0, to: 0.6))
         .padding(.top, DemoLayout.panelTop)
     }
 
-    private func layer(_ face: PanelFace, scale: Double) -> some View {
+    private func layer(_ face: PanelFace, scale: Double, opacity: Double) -> some View {
         SamplePanel(tools: shownTools, style: face.style, layout: face.layout, tool: face.tool, hovered: face.hovered,
-                    showsPicker: face.showsPicker, showsControls: face.showsControls, scale: scale, frozenAt: time)
+                    showsPicker: face.showsPicker, showsControls: face.showsControls, scale: scale,
+                    opacity: opacity, frozenAt: time)
     }
 
     private var pointer: some View {
@@ -55,6 +65,7 @@ struct DemoStage: View {
             }
             ArrowPointer(press: script.press(at: time)).offset(x: point.x, y: point.y)
         }
+        .opacity(script.pointerPresence.value(at: time))
     }
 }
 
