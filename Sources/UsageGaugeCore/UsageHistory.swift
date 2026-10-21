@@ -7,11 +7,17 @@ public struct UsageSample: Codable, Equatable, Sendable {
     public let session: Double?
     /// Remaining % of the provider's long window at `at`.
     public let long: Double?
+    /// Lengths of the two windows when recorded, so a query can tell which series belongs to the
+    /// window it asks about. Absent in samples written before they were kept.
+    public let sessionMinutes: Int?
+    public let longMinutes: Int?
 
-    public init(at: Date, session: Double?, long: Double?) {
+    public init(at: Date, session: Double?, long: Double?, sessionMinutes: Int? = nil, longMinutes: Int? = nil) {
         self.at = at
         self.session = session
         self.long = long
+        self.sessionMinutes = sessionMinutes
+        self.longMinutes = longMinutes
     }
 
     /// Finite, in range, and carrying at least one reading.
@@ -41,7 +47,7 @@ public struct UsageHistory: Codable, Equatable, Sendable {
     static let minimumSpacing: TimeInterval = 50
     static let burnLookback: TimeInterval = 3600
     static let minimumBurnSpan: TimeInterval = 600
-    /// Windows longer than this are a provider's long window; shorter ones its short window.
+    /// For samples without window lengths: windows longer than this are taken for the long one.
     static let longWindowMinutes = 1440
 
     public private(set) var samples: [String: [UsageSample]]
@@ -64,12 +70,18 @@ public struct UsageHistory: Codable, Equatable, Sendable {
     }
 
     /// Appends one sample per available provider (skipping one whose last sample is under 50 s
-    /// old) and keeps 26 hours, at most 1 000 per provider.
+    /// old) and keeps 26 hours, at most 1 000 per provider. A sample is dated when CodexBar
+    /// measured it, since it may serve cached numbers, and read as of then, so a window whose reset
+    /// had already passed counts as full instead of carrying its old share into the new period.
     public mutating func record(_ providers: [ProviderUsage], at now: Date) {
         for usage in providers where usage.isAvailable {
+            let measured = min(usage.measuredAt ?? now, now)
             var series = samples[usage.id] ?? []
-            if let last = series.last, now.timeIntervalSince(last.at) < Self.minimumSpacing { continue }
-            series.append(UsageSample(at: now, session: usage.session?.remainingPercent, long: usage.weekly?.remainingPercent))
+            if let last = series.last, measured.timeIntervalSince(last.at) < Self.minimumSpacing { continue }
+            let reading = usage.resolved(at: measured)
+            series.append(UsageSample(at: measured, session: reading.session?.remainingPercent,
+                                      long: reading.weekly?.remainingPercent,
+                                      sessionMinutes: reading.session?.windowMinutes, longMinutes: reading.weekly?.windowMinutes))
             samples[usage.id] = series
         }
         let oldest = now.addingTimeInterval(-Self.retention)
@@ -83,14 +95,10 @@ public struct UsageHistory: Codable, Equatable, Sendable {
         return (samples[id] ?? []).filter { $0.at >= period.start && $0.at <= now }
     }
 
-    /// The readings of `window` within its current period, oldest first. The window's own series is
-    /// told apart by its length; a provider that reports only one window has it in either slot.
+    /// The readings of `window` within its current period, oldest first.
     public func points(for id: String, window: UsageWindow, now: Date) -> [UsagePoint] {
         let inPeriod = samples(for: id, in: window, now: now)
-        let isLong = (window.windowMinutes ?? 0) > Self.longWindowMinutes
-        let preferred: KeyPath<UsageSample, Double?> = isLong ? \.long : \.session
-        let other: KeyPath<UsageSample, Double?> = isLong ? \.session : \.long
-        for path in [preferred, other] {
+        for path in Self.series(of: window, in: inPeriod) {
             let points = inPeriod.compactMap { sample in sample[keyPath: path].map { UsagePoint(at: sample.at, remaining: $0) } }
             if !points.isEmpty { return points }
         }
@@ -157,6 +165,17 @@ public struct UsageHistory: Codable, Equatable, Sendable {
         var byTime: [Date: UsageSample] = [:]
         for sample in series where sample.isValid { byTime[sample.at] = sample }
         return byTime.values.sorted { $0.at < $1.at }.suffix(capacity)
+    }
+
+    /// Which series holds `window`: the one recorded with the same length. Older samples carry no
+    /// lengths; then a window longer than a day is taken for the long one. The other series is the
+    /// fallback, for a provider that reports a single window in either slot.
+    private static func series(of window: UsageWindow, in samples: [UsageSample]) -> [KeyPath<UsageSample, Double?>] {
+        if let minutes = window.windowMinutes {
+            if samples.contains(where: { $0.sessionMinutes == minutes }) { return [\.session] }
+            if samples.contains(where: { $0.longMinutes == minutes }) { return [\.long] }
+        }
+        return (window.windowMinutes ?? 0) > longWindowMinutes ? [\.long, \.session] : [\.session, \.long]
     }
 
     private static func period(of window: UsageWindow) -> (start: Date, end: Date)? {

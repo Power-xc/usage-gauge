@@ -204,6 +204,25 @@ let lateStart = drained([80, 70], step: 600).remainingPerSlice(for: "claude", wi
 expect(lateStart[0] == nil && lateStart[1] == 70, "remaining per slice is nil before the first sample")
 expect(drained([50], step: 60).usedPerSlice(for: "claude", window: slicedWindow, now: now, slices: 0).isEmpty, "zero slices is empty")
 
+// A provider whose short window runs longer than a day still reads its own series, matched by length.
+let weeklyShort = ProviderUsage(id: "copilot",
+                                session: UsageWindow(usedPercent: 30, resetsAt: now.addingTimeInterval(3 * 86400), windowMinutes: 10080),
+                                weekly: UsageWindow(usedPercent: 80, resetsAt: now.addingTimeInterval(20 * 86400), windowMinutes: 43200))
+var lengthHistory = UsageHistory()
+lengthHistory.record([weeklyShort], at: now)
+expect(lengthHistory.points(for: "copilot", window: weeklyShort.session!, now: now).map(\.remaining) == [70],
+       "a window is matched to the series recorded with its length")
+expect(lengthHistory.points(for: "copilot", window: weeklyShort.weekly!, now: now).map(\.remaining) == [20],
+       "the long window reads the long series")
+
+// Samples are dated when measured and read as of then.
+var measuredHistory = UsageHistory()
+let cached = ProviderUsage(id: "claude", session: UsageWindow(usedPercent: 60, resetsAt: now.addingTimeInterval(-60), windowMinutes: 300),
+                           weekly: nil, measuredAt: now.addingTimeInterval(-30))
+measuredHistory.record([cached], at: now)
+expect(measuredHistory.samples["claude"]?.first?.at == now.addingTimeInterval(-30), "a sample is dated when CodexBar measured it")
+expect(measuredHistory.samples["claude"]?.first?.session == 100, "a window whose reset had passed is recorded as full")
+
 // Codable and bad input
 let stored = UsageHistory(samples: ["claude": [
     UsageSample(at: Date().addingTimeInterval(-600), session: 80, long: 60),
