@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="836" height="230" viewBox="0 0 836 230" role="img" aria-label="usage-gauge 아키텍처">
+<defs><marker id="head" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#656c76" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="78.0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11" font-weight="600" fill="#9198a1" text-anchor="middle">외부</text>
+<text x="248.0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11" font-weight="600" fill="#9198a1" text-anchor="middle">입력</text>
+<text x="418.0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11" font-weight="600" fill="#9198a1" text-anchor="middle">판단 · Core</text>
+<text x="588.0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11" font-weight="600" fill="#9198a1" text-anchor="middle">상태 · App</text>
+<text x="758.0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11" font-weight="600" fill="#9198a1" text-anchor="middle">화면 · UI</text>
+<rect x="4.5" y="34.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="78.0" y="59.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">사용량 API</text>
+<text x="78.0" y="78.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">Claude · Codex</text>
+<text x="78.0" y="94.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">Gemini · Cursor …</text>
+<line x1="155" y1="71.0" x2="171" y2="71.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="174.5" y="34.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="248.0" y="59.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">codexbar CLI</text>
+<text x="248.0" y="78.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">usage --format json</text>
+<text x="248.0" y="94.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">2분 · 깨어남 · 열 때</text>
+<line x1="325" y1="71.0" x2="341" y2="71.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="344.5" y="34.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="418.0" y="59.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">UsageModel</text>
+<text x="418.0" y="78.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">남은 비율 · 반올림</text>
+<text x="418.0" y="94.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">초기화 시각 해석</text>
+<line x1="495" y1="71.0" x2="511" y2="71.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="514.5" y="34.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="588.0" y="59.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">UsageStore</text>
+<text x="588.0" y="78.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">마지막 정상값 유지</text>
+<text x="588.0" y="94.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">15초 카운트다운</text>
+<line x1="665" y1="71.0" x2="681" y2="71.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="684.5" y="34.5" width="147" height="73" rx="8" fill="none" stroke="#4493f8" stroke-width="1"/>
+<text x="758.0" y="59.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#4493f8" text-anchor="middle">GaugeView</text>
+<text x="758.0" y="78.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">홍채 다이얼 · 주간 바</text>
+<text x="758.0" y="94.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">메뉴바 막대</text>
+<rect x="4.5" y="150.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="78.0" y="175.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">바탕화면 이미지</text>
+<text x="78.0" y="194.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">파일만 읽음</text>
+<text x="78.0" y="210.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">권한 필요 없음</text>
+<line x1="155" y1="187.0" x2="171" y2="187.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="174.5" y="150.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="248.0" y="175.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">BackdropSampler</text>
+<text x="248.0" y="194.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">패널 뒤 영역만 판독</text>
+<text x="248.0" y="210.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">10초 · 이동 · Space</text>
+<line x1="325" y1="187.0" x2="341" y2="187.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="344.5" y="150.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="418.0" y="175.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">BackdropTone</text>
+<text x="418.0" y="194.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">평균 밝기</text>
+<text x="418.0" y="210.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">→ 유리 진하기</text>
+<line x1="495" y1="187.0" x2="511" y2="187.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="514.5" y="150.5" width="147" height="73" rx="8" fill="none" stroke="#3d444d" stroke-width="1"/>
+<text x="588.0" y="183.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#f0f6fc" text-anchor="middle">PanelState</text>
+<text x="588.0" y="202.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">진하기 · 투명도</text>
+<line x1="665" y1="187.0" x2="681" y2="187.0" stroke="#656c76" stroke-width="1.2" marker-end="url(#head)"/>
+<rect x="684.5" y="150.5" width="147" height="73" rx="8" fill="none" stroke="#4493f8" stroke-width="1"/>
+<text x="758.0" y="175.0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#4493f8" text-anchor="middle">GlassBackground</text>
+<text x="758.0" y="194.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">Liquid Glass</text>
+<text x="758.0" y="210.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" font-weight="400" fill="#9198a1" text-anchor="middle">+ 스모크 틴트</text>
+<line x1="758.0" y1="111" x2="758.0" y2="147" stroke="#4493f8" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="748.0" y="133.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif" font-size="11.5" fill="#9198a1" text-anchor="end">한 패널로 겹쳐 그림</text>
+</svg>
