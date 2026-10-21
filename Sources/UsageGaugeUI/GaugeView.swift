@@ -74,7 +74,7 @@ public struct GaugeView: View {
             Text("남은 사용량")
                 .font(Theme.font(10, .semibold))
                 .tracking(0.6)
-                .foregroundStyle(Theme.mutedText)
+                .foregroundStyle(Theme.faintText)
             Spacer(minLength: 16)
             Text(status).font(Theme.number(10, .regular)).foregroundStyle(Theme.faintText)
             if opacity != nil {
@@ -101,22 +101,26 @@ private struct WindowDragArea: ViewModifier {
     }
 }
 
+/// Bare glyph that brightens under the pointer; a faint disc marks it while its control is open.
 private struct HeaderButton: View {
     let symbol: String
     let help: String
     var isOn = false
     let action: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(isOn ? Theme.primaryText : Theme.mutedText)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(isOn || isHovered ? Theme.primaryText : Theme.faintText)
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(.white.opacity(isOn ? 0.16 : 0.06)))
-                .overlay(Circle().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
+                .background(Circle().fill(.white.opacity(isOn ? 0.12 : isHovered ? 0.07 : 0)))
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
         .help(help)
     }
 }
@@ -160,7 +164,7 @@ private struct ProviderCard: View {
                     Text(sessionLine)
                         .font(Theme.number(10, .regular))
                         .foregroundStyle(Theme.mutedText)
-                        .padding(.top, 3)
+                        .padding(.top, 4)
                     Spacer(minLength: 6)
                     LongWindowBar(window: usage.weekly, tint: tint, now: now, frozenAt: frozenAt)
                 } else {
@@ -182,18 +186,13 @@ private struct ProviderCard: View {
     }
 
     private var titleRow: some View {
-        HStack(spacing: 6) {
-            Text(usage.title).font(Theme.font(13, .bold))
-            Spacer(minLength: 4)
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(usage.title).font(Theme.font(13, .semibold))
             if let plan = usage.plan {
                 Text(plan.uppercased())
-                    .font(Theme.font(8, .semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(Theme.mutedText)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(.white.opacity(0.06)))
-                    .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
+                    .font(Theme.font(8.5, .semibold))
+                    .tracking(0.9)
+                    .foregroundStyle(Theme.faintText)
             }
         }
     }
@@ -232,15 +231,16 @@ public struct SessionGauge: View {
 
     public var body: some View {
         let remaining = window?.remainingPercent ?? 0
-        let color = Theme.status(remaining, brand: tint)
+        let color = window.flatMap { Theme.alert($0.remainingPercent) } ?? tint
         ZStack {
             IrisDial(remainingPercent: remaining, elapsedFraction: window?.elapsedFraction(now: now),
-                      color: color, frozenAt: frozenAt)
+                      color: tint, frozenAt: frozenAt)
             VStack(spacing: size * 0.01) {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
                     figure(window.map { "\($0.displayPercent)" } ?? ResetCountdown.unknown, color: color)
                     if window != nil {
-                        Text("%").font(Theme.font(size * 0.1, .medium)).foregroundStyle(Theme.mutedText)
+                        Text("%").font(Theme.font(size * (showsLabel ? 0.1 : 0.085), .medium))
+                            .foregroundStyle(Theme.mutedText)
                     }
                 }
                 if showsLabel {
@@ -257,7 +257,7 @@ public struct SessionGauge: View {
     }
 
     private func figure(_ text: String, color: Color) -> some View {
-        let type = Text(text).font(Theme.display(size * (showsLabel ? 0.27 : 0.3))).tracking(-size * 0.006)
+        let type = Text(text).font(Theme.display(size * (showsLabel ? 0.27 : 0.22))).tracking(-size * 0.004)
         return type
             .foregroundStyle(LinearGradient(stops: [
                 .init(color: .white, location: 0.4),
@@ -267,7 +267,8 @@ public struct SessionGauge: View {
     }
 }
 
-/// The long window (weekly, monthly) as a light-streak bar with its share and reset time.
+/// The long window (weekly, monthly): label, share and reset time over a light-streak bar in the
+/// tool's colour.
 private struct LongWindowBar: View {
     let window: UsageWindow?
     let tint: Color
@@ -276,18 +277,18 @@ private struct LongWindowBar: View {
 
     var body: some View {
         let remaining = window?.remainingPercent ?? 0
-        let color = Theme.status(remaining, brand: tint)
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text(window?.label ?? "장기").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
-                Spacer()
                 Text(window.map { "\($0.displayPercent)%" } ?? ResetCountdown.unknown)
-                    .font(Theme.number(11, .bold))
+                    .font(Theme.number(11, .semibold))
+                    .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
+                Spacer(minLength: 6)
+                Text("\(ResetCountdown.text(until: window?.resetsAt, now: now)) 후")
+                    .font(Theme.number(9.5, .regular))
+                    .foregroundStyle(Theme.faintText)
             }
-            CometBar(remainingPercent: window == nil ? 0 : remaining, thickness: 4, color: color, frozenAt: frozenAt)
-            Text("\(ResetCountdown.text(until: window?.resetsAt, now: now)) 후 초기화")
-                .font(Theme.number(9, .regular))
-                .foregroundStyle(Theme.faintText)
+            CometBar(remainingPercent: window == nil ? 0 : remaining, thickness: 3, color: tint, frozenAt: frozenAt)
         }
     }
 }

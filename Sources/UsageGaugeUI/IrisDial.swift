@@ -109,8 +109,8 @@ public struct IrisDial: View {
             guard share < litShare else { dim.addPath(path); continue }
             switch index % 4 {
             case 0: bright.addPath(path)
-            case 3: tinted.addPath(path)
-            default: soft.addPath(path)
+            case 2: soft.addPath(path)
+            default: tinted.addPath(path)
             }
         }
         canvas.stroke(dim, with: .color(.white.opacity(0.14)), lineWidth: 0.8)
@@ -119,9 +119,10 @@ public struct IrisDial: View {
         canvas.stroke(bright, with: .color(.white.opacity(0.95)), lineWidth: 1.0)
     }
 
-    /// Soft rays in prism tints across the lit share, each swelling and fading on its own.
+    /// Soft rays across the lit share, every other one in the tool's colour and the rest in faint
+    /// prism tints, each swelling and fading on its own.
     private func drawRays(in canvas: GraphicsContext, center: CGPoint, outer: Double, litShare: Double, time: Double) {
-        var paths = Array(repeating: Path(), count: Self.prism.count + 1)
+        var paths = Array(repeating: Path(), count: Self.prism.count * 2)
         for (index, ray) in Self.rays.enumerated() where ray.share < litShare {
             let swell = 0.5 + 0.5 * sin(time * ray.rate + ray.phase)
             let angle = ray.share * 2 * .pi - .pi / 2
@@ -129,8 +130,8 @@ public struct IrisDial: View {
             paths[index % paths.count].addLine(to: point(center, outer * (0.82 + 0.06 * swell), angle))
         }
         for (index, path) in paths.enumerated() {
-            let tint = index < Self.prism.count ? Self.prism[index] : color
-            canvas.stroke(path, with: .color(tint.opacity(0.3)), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+            let tint = index.isMultiple(of: 2) ? color.opacity(0.36) : Self.prism[index / 2].opacity(0.2)
+            canvas.stroke(path, with: .color(tint), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
         }
     }
 
@@ -154,19 +155,21 @@ public struct IrisDial: View {
         canvas.fill(lit, with: .color(.white.opacity(0.85)))
     }
 
-    /// Two rings of dots at the rim, warm white where lit.
+    /// Two rings of dots at the rim, lit warm white inside and in the tool's colour outside.
     private func drawEdgeRings(in canvas: GraphicsContext, center: CGPoint, outer: Double, litShare: Double) {
-        var lit = Path(), dark = Path()
-        for ring in Self.edgeRings {
+        var dark = Path()
+        for (index, ring) in Self.edgeRings.enumerated() {
+            var lit = Path()
             for dot in 0..<ring.dots {
                 let share = Double(dot) / Double(ring.dots)
                 let spot = point(center, outer * ring.radius, share * 2 * .pi - .pi / 2)
                 let rect = CGRect(x: spot.x - 0.75, y: spot.y - 0.75, width: 1.5, height: 1.5)
                 if share < litShare { lit.addEllipse(in: rect) } else { dark.addEllipse(in: rect) }
             }
+            let shade = index == Self.edgeRings.count - 1 ? color : Self.warmWhite
+            canvas.fill(lit, with: .color(shade.opacity(0.92)))
         }
         canvas.fill(dark, with: .color(.white.opacity(0.2)))
-        canvas.fill(lit, with: .color(Self.warmWhite.opacity(0.92)))
     }
 
     /// Stippled grain, densest mid-ring, shimmering as each speck fades in and out.

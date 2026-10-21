@@ -18,8 +18,8 @@ public enum Theme {
 
     public static let panelCornerRadius: CGFloat = 18
     public static let panelPadding: CGFloat = 12
-    public static let dialSize: CGFloat = 76
-    public static let detailWidth: CGFloat = 136
+    public static let dialSize: CGFloat = 72
+    public static let detailWidth: CGFloat = 140
 
     public static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)
@@ -47,10 +47,11 @@ public enum Theme {
         }
     }
 
-    /// Brand colour while comfortable; warning colours take over as the window runs low.
-    public static func status(_ remainingPercent: Double, brand: Color) -> Color {
+    /// Warning colour once a window runs low, nil while comfortable. It tints the figures only, so
+    /// each tool keeps its own colour on the dial and bar.
+    public static func alert(_ remainingPercent: Double) -> Color? {
         let level = UsageLevel(remainingPercent: remainingPercent)
-        return level == .comfortable ? brand : color(for: level)
+        return level == .comfortable ? nil : color(for: level)
     }
 
     public static func color(for level: UsageLevel) -> Color {
