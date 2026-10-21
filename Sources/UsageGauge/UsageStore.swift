@@ -12,12 +12,16 @@ final class UsageStore: ObservableObject {
     @Published private(set) var lastFetched: Date?
     @Published private(set) var lastError: UsageFetchError?
     @Published private(set) var now = Date()
+    @Published private(set) var history: UsageHistory
 
     private let cli: CodexBarCLI?
+    private let historyFile: HistoryFile
     private var isFetching = false
 
-    init(cli: CodexBarCLI? = .locate()) {
+    init(cli: CodexBarCLI? = .locate(), historyFile: HistoryFile = .standard) {
         self.cli = cli
+        self.historyFile = historyFile
+        history = historyFile.load()
     }
 
     /// Usage as it stands now: windows whose reset has passed already read as full.
@@ -71,6 +75,8 @@ final class UsageStore: ObservableObject {
             fetched = ProviderCatalog.merge(latest: usage, previous: fetched)
             lastFetched = now
             lastError = nil
+            history.record(usage, at: now)
+            historyFile.save(history)
         case .failure(let error):
             lastError = error as? UsageFetchError ?? .invalidOutput
         }

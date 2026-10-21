@@ -15,6 +15,8 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case orbit
     /// A capsule per tool filled to the short window's share, the long window under it.
     case capsule
+    /// A line chart of each tool's short window over its period, from the recorded history.
+    case trend
 
     public var title: String {
         switch self {
@@ -24,6 +26,7 @@ public enum PanelLayout: String, CaseIterable, Sendable {
         case .figures: "숫자"
         case .orbit: "궤도"
         case .capsule: "캡슐"
+        case .trend: "추이"
         }
     }
 

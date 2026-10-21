@@ -5,6 +5,7 @@ import UsageGaugeCore
 /// figures). The style picks the drawing; the mono style also sets every block in a hairline grid.
 public struct GaugeView: View {
     let providers: [ProviderUsage]
+    let history: UsageHistory
     let status: String
     let now: Date
     let onClose: (() -> Void)?
@@ -28,6 +29,7 @@ public struct GaugeView: View {
                 opacityRange: ClosedRange<Double> = 0.3...1.0,
                 scale: Binding<Double>? = nil, scaleRange: ClosedRange<Double> = 0.7...1.6,
                 style: PanelStyle = .mono, layout: PanelLayout = .dial,
+                history: UsageHistory = UsageHistory(),
                 frozenAt: TimeInterval? = nil) {
         self.providers = providers
         self.status = status
@@ -39,6 +41,7 @@ public struct GaugeView: View {
         self.scaleRange = scaleRange
         self.style = style
         self.layout = layout
+        self.history = history
         self.frozenAt = frozenAt
     }
 
@@ -86,6 +89,7 @@ public struct GaugeView: View {
         case .figures: FiguresLayout(providers: providers, now: now)
         case .orbit: OrbitLayout(providers: providers, now: now)
         case .capsule: CapsuleLayout(providers: providers, now: now, frozenAt: frozenAt)
+        case .trend: TrendLayout(providers: providers, history: history, now: now)
         }
     }
 

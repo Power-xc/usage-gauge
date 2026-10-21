@@ -405,3 +405,30 @@ struct ShapeLayoutsScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// The trend layout in mono, iris and dot over the sample histories.
+struct TrendScene: View {
+    static let size = CGSize(width: 1160, height: 1000)
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(spacing: 28) {
+                HStack(alignment: .top, spacing: 28) {
+                    panel(.mono)
+                    panel(.iris)
+                }
+                panel(.dot)
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle) -> some View {
+        GaugeView(providers: SampleData.still + SampleData.extras(scale: 1).prefix(2), status: "오후 12:04 기준",
+                  now: SampleData.now, onClose: {}, opacity: .constant(1), style: style, layout: .trend,
+                  history: SampleData.history, frozenAt: 3)
+            .modifier(RenderedSurface(style: style))
+    }
+}

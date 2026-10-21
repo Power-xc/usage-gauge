@@ -285,7 +285,7 @@ private struct PanelRoot: View {
                   opacity: Binding(get: { state.opacity }, set: onOpacity),
                   opacityRange: Preferences.opacityRange,
                   scale: Binding(get: { state.scale }, set: onScale), scaleRange: Preferences.scaleRange,
-                  style: state.style, layout: state.layout,
+                  style: state.style, layout: state.layout, history: store.history,
                   frozenAt: state.isShown ? nil : 0)
             .modifier(PanelSurface(style: state.style, tintOpacity: state.tintOpacity))
             .panelScale(state.scale)
