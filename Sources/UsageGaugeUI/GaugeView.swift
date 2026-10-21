@@ -17,20 +17,32 @@ public struct GaugeView: View {
     let history: UsageHistory
     let frozenAt: TimeInterval?
 
+    let onLayout: ((PanelLayout) -> Void)?
+
     @State private var isAdjusting = false
+    @State private var isPicking = false
+    /// The tab the user picked; `hasPicked` tells "전체" from "not touched yet", so a still render
+    /// can start on a preset tool (see `panelPreset`).
+    @State private var pickedTool: String?
+    @State private var hasPicked = false
+
+    @Environment(\.panelPreset) private var preset
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// - Parameters:
     ///   - opacity: whole-panel opacity; when given, the header gets a control to adjust it.
     ///   - scale: whole-panel size factor; when given, the same control also offers a size bar. The
     ///     panel is scaled by the host (see `panelScale`), not by this view.
     ///   - frozenAt: fixed animation time for still renders; nil animates.
+    ///   - onLayout: when given, the header gets a picker that switches the graph form; the host
+    ///     applies the choice and passes the new `layout` back.
     public init(providers: [ProviderUsage], status: String, now: Date,
                 onClose: (() -> Void)? = nil, opacity: Binding<Double>? = nil,
                 opacityRange: ClosedRange<Double> = 0.3...1.0,
                 scale: Binding<Double>? = nil, scaleRange: ClosedRange<Double> = 0.7...1.6,
                 style: PanelStyle = .mono, layout: PanelLayout = .dial,
                 history: UsageHistory = UsageHistory(),
-                frozenAt: TimeInterval? = nil) {
+                frozenAt: TimeInterval? = nil, onLayout: ((PanelLayout) -> Void)? = nil) {
         self.providers = providers
         self.status = status
         self.now = now
@@ -43,6 +55,7 @@ public struct GaugeView: View {
         self.layout = layout
         self.history = history
         self.frozenAt = frozenAt
+        self.onLayout = onLayout
     }
 
     public var body: some View {
@@ -53,15 +66,21 @@ public struct GaugeView: View {
         .lineLimit(1)
         .minimumScaleFactor(0.8)
         .fixedSize()
+        .contentTransition(.numericText())
+        .animation(valueMotion, value: providers)
+        .animation(valueMotion, value: now)
         .environment(\.panelStyle, style)
+        .environment(\.toolInteraction, ToolInteraction(open: showsTabs ? { open(tool: $0) } : nil))
     }
 
     private var flowLayout: some View {
         VStack(spacing: PanelLayout.blockSpacing) {
             header.modifier(WindowDragArea())
+            layoutPicker
             opacityControl
+            tabs
             emptyNote
-            content.modifier(WindowDragArea())
+            page
         }
         .padding(Theme.panelPadding)
     }
@@ -71,14 +90,72 @@ public struct GaugeView: View {
         VStack(spacing: 0) {
             VStack(spacing: PanelLayout.blockSpacing) {
                 header.modifier(WindowDragArea())
+                layoutPicker
                 opacityControl
             }
             .padding(.horizontal, Theme.panelPadding)
             .padding(.vertical, 10)
+            if showsTabs {
+                GridRule(isVertical: false)
+                tabs.padding(.horizontal, Theme.panelPadding).padding(.vertical, 4)
+            }
             emptyNote
-            content.modifier(WindowDragArea())
+            page
         }
     }
+
+    // MARK: Tabs and pages
+
+    private var showsTabs: Bool { providers.count > 1 }
+
+    /// The tool whose detail page is open; nil shows the layout. A tool that disappears falls back
+    /// to the overview.
+    private var selectedUsage: ProviderUsage? {
+        guard showsTabs, let id = hasPicked ? pickedTool : preset.tool else { return nil }
+        return providers.first { $0.id == id }
+    }
+
+    private func open(tool id: String?) {
+        withAnimation(pageMotion) {
+            pickedTool = id
+            hasPicked = true
+        }
+    }
+
+    @ViewBuilder
+    private var tabs: some View {
+        if showsTabs {
+            PanelTabs(providers: providers, selection: selectedUsage?.id) { open(tool: $0) }
+        }
+    }
+
+    /// The layout, or the selected tool's detail; changing either crossfades with a slight scale.
+    private var page: some View {
+        ZStack(alignment: .top) {
+            Group {
+                if let usage = selectedUsage { detail(usage) } else { content }
+            }
+            .modifier(WindowDragArea())
+            .id("\(layout.rawValue)|\(style.rawValue)|\(selectedUsage?.id ?? "")")
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
+        }
+        .animation(pageMotion, value: layout)
+        .animation(pageMotion, value: style)
+    }
+
+    private func detail(_ usage: ProviderUsage) -> some View {
+        VStack(spacing: 0) {
+            if style == .mono { GridRule(isVertical: false) }
+            ToolDetail(usage: usage, index: providers.firstIndex { $0.id == usage.id } ?? 0, now: now,
+                       frozenAt: frozenAt) {
+                // Further sections of the detail page (a history chart) go here.
+            }
+            .padding(style == .mono ? Theme.panelPadding : 0)
+        }
+    }
+
+    private var pageMotion: Animation { .easeInOut(duration: reduceMotion ? 0.15 : 0.3) }
+    private var valueMotion: Animation { .easeInOut(duration: reduceMotion ? 0.15 : 0.5) }
 
     @ViewBuilder
     private var content: some View {
@@ -92,6 +169,14 @@ public struct GaugeView: View {
         case .trend: TrendLayout(providers: providers, history: history, now: now)
         case .histogram: HistogramLayout(providers: providers, now: now, history: history)
         case .spark: SparkLayout(providers: providers, now: now, history: history, frozenAt: frozenAt)
+        }
+    }
+
+    /// Graph forms to choose from, shown under the header while the picker is open.
+    @ViewBuilder
+    private var layoutPicker: some View {
+        if isPicking, let onLayout {
+            LayoutPicker(selection: layout, choose: onLayout)
         }
     }
 
@@ -125,9 +210,20 @@ public struct GaugeView: View {
                 .foregroundStyle(Theme.faintText)
             Spacer(minLength: 16)
             Text(status).font(Theme.figure(10, .regular, style: style)).foregroundStyle(Theme.faintText)
+            if onLayout != nil {
+                HeaderButton(symbol: "square.grid.2x2", help: "그래프 모양", isOn: isPicking) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isPicking.toggle()
+                        isAdjusting = false
+                    }
+                }
+            }
             if opacity != nil || scale != nil {
                 HeaderButton(symbol: "slider.horizontal.3", help: "투명도 · 크기", isOn: isAdjusting) {
-                    withAnimation(.easeOut(duration: 0.2)) { isAdjusting.toggle() }
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isAdjusting.toggle()
+                        isPicking = false
+                    }
                 }
             }
             if let onClose {
@@ -172,6 +268,7 @@ private struct HeaderButton: View {
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
+        .pointingHand()
         .help(help)
     }
 }

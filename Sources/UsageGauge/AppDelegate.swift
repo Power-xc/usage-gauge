@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                onOpacity: { [weak self] in self?.setOpacity($0) },
                                                                onScale: { [weak self] in self?.setScale($0) },
                                                                onResize: { [weak self] in self?.panel.fitContent() },
+                                                               onLayout: { [weak self] in self?.applyLayout($0) },
                                                                onClose: { [weak self] in self?.togglePanel() }))
         hostingView.menu = menu
         panel = GaugePanel(contentView: hostingView)
@@ -133,8 +134,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func chooseLayout(_ sender: NSMenuItem) {
         guard let layout = sender.representedObject as? String, let chosen = PanelLayout(rawValue: layout) else { return }
-        Preferences.panelLayout = chosen
-        panelState.layout = chosen
+        applyLayout(chosen)
+    }
+
+    /// Single place the graph form changes, for the menu and the panel's own picker.
+    private func applyLayout(_ layout: PanelLayout) {
+        Preferences.panelLayout = layout
+        panelState.layout = layout
         syncLayoutItems()
     }
 
@@ -278,6 +284,7 @@ private struct PanelRoot: View {
     let onOpacity: (Double) -> Void
     let onScale: (Double) -> Void
     let onResize: () -> Void
+    let onLayout: (PanelLayout) -> Void
     let onClose: () -> Void
 
     var body: some View {
@@ -286,7 +293,7 @@ private struct PanelRoot: View {
                   opacityRange: Preferences.opacityRange,
                   scale: Binding(get: { state.scale }, set: onScale), scaleRange: Preferences.scaleRange,
                   style: state.style, layout: state.layout, history: store.history,
-                  frozenAt: state.isShown ? nil : 0)
+                  frozenAt: state.isShown ? nil : 0, onLayout: onLayout)
             .modifier(PanelSurface(style: state.style, tintOpacity: state.tintOpacity))
             .panelScale(state.scale)
             .animation(.easeInOut(duration: 0.8), value: state.tintOpacity)

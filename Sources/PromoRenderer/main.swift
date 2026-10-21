@@ -57,6 +57,7 @@ do {
             try writeImage(LayoutsScene(), size: LayoutsScene.size, scale: 2, to: output.appendingPathComponent("layouts.jpg"))
             try writeImage(ShapeLayoutsScene(), size: ShapeLayoutsScene.size, scale: 2, to: output.appendingPathComponent("shape-layouts.jpg"))
             try writeImage(TrendScene(), size: TrendScene.size, scale: 2, to: output.appendingPathComponent("trend.jpg"))
+            try writeImage(InteractionScene(), size: InteractionScene.size, scale: 2, to: output.appendingPathComponent("interaction.jpg"))
             try writeImage(SizesScene(), size: SizesScene.size, scale: 2, to: output.appendingPathComponent("sizes.jpg"))
             try writeImage(HistoryBarsScene(), size: HistoryBarsScene.size, scale: 2, to: output.appendingPathComponent("history-bars.jpg"))
         case "readme":

@@ -8,10 +8,13 @@ struct ProviderGrid<Cell: View>: View {
     let columns: Int
     let cell: (_ index: Int, _ usage: ProviderUsage, _ width: CGFloat) -> Cell
 
+    /// Wider than the layouts' block spacing: a hovered cell reveals a line in the gap below it.
+    private static var rowSpacing: CGFloat { PanelLayout.blockSpacing + 8 }
+
     @Environment(\.panelStyle) private var style
 
     var body: some View {
-        VStack(spacing: style == .mono ? 0 : PanelLayout.blockSpacing) {
+        VStack(spacing: style == .mono ? 0 : Self.rowSpacing) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 if style == .mono { GridRule(isVertical: false) }
                 HStack(alignment: .top, spacing: style == .mono ? 0 : PanelLayout.cellSpacing) {
@@ -21,6 +24,7 @@ struct ProviderGrid<Cell: View>: View {
                             .frame(width: cellWidth)
                             .padding(.horizontal, style == .mono ? Theme.panelPadding : 0)
                             .padding(.vertical, style == .mono ? Theme.panelPadding : 0)
+                            .modifier(ToolCell(usage: entry.usage))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

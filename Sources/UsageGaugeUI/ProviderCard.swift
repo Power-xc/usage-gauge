@@ -99,10 +99,12 @@ public struct SessionGauge: View {
         let elapsed = window?.elapsedFraction(now: now)
         let alert = window.flatMap { Theme.alert($0.remainingPercent) }
         ZStack {
-            switch style {
-            case .iris: IrisDial(remainingPercent: remaining, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
-            case .dot: DotDial(remainingPercent: remaining, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
-            case .mono: TickDial(remainingPercent: remaining, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
+            Eased(value: remaining) { eased in
+                switch style {
+                case .iris: IrisDial(remainingPercent: eased, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
+                case .dot: DotDial(remainingPercent: eased, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
+                case .mono: TickDial(remainingPercent: eased, elapsedFraction: elapsed, color: tint, frozenAt: frozenAt)
+                }
             }
             VStack(spacing: size * (style == .dot ? 0.05 : 0.01)) {
                 readout(alert: alert)
@@ -268,10 +270,12 @@ struct WindowBar: View {
     @Environment(\.panelStyle) private var style
 
     var body: some View {
-        switch style {
-        case .iris: CometBar(remainingPercent: remainingPercent, thickness: 3, color: tint, frozenAt: frozenAt)
-        case .dot: DotBar(remainingPercent: remainingPercent, color: tint)
-        case .mono: TickBar(remainingPercent: remainingPercent, color: tint)
+        Eased(value: remainingPercent) { eased in
+            switch style {
+            case .iris: CometBar(remainingPercent: eased, thickness: 3, color: tint, frozenAt: frozenAt)
+            case .dot: DotBar(remainingPercent: eased, color: tint)
+            case .mono: TickBar(remainingPercent: eased, color: tint)
+            }
         }
     }
 }

@@ -49,9 +49,10 @@ final class GaugePanel: NSPanel {
     /// back inside the screen if it grew past an edge.
     func fitContent() {
         if let size = contentView?.fittingSize, size != frame.size {
-            let topLeft = NSPoint(x: frame.minX, y: frame.maxY)
-            setContentSize(size)
-            setFrameTopLeftPoint(topLeft)
+            let target = frameRect(forContentRect: NSRect(origin: .zero, size: size)).size
+            let resized = NSRect(x: frame.minX, y: frame.maxY - target.height, width: target.width, height: target.height)
+            // Follows the content's crossfade; plain and instant under "Reduce motion".
+            setFrame(resized, display: true, animate: isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
         }
         keepOnScreen()
     }

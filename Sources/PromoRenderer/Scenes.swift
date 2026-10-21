@@ -460,3 +460,37 @@ struct HistoryBarsScene: View {
         }
     }
 }
+
+/// The interaction layer in each style: a tool's detail page under the tab row, and the overview
+/// with a hovered cell revealing its reset and measuring times.
+struct InteractionScene: View {
+    static let size = CGSize(width: 1160, height: 1100)
+
+    private static let providers = (SampleData.still + SampleData.extras(scale: 1).prefix(2)).map { usage in
+        ProviderUsage(id: usage.id, plan: usage.plan, session: usage.session, weekly: usage.weekly,
+                      measuredAt: SampleData.now.addingTimeInterval(-600))
+    }
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(spacing: 28) {
+                ForEach(PanelStyle.allCases, id: \.self) { style in
+                    HStack(alignment: .top, spacing: 28) {
+                        panel(style, tool: "claude", hovered: nil)
+                        panel(style, tool: nil, hovered: "codex")
+                    }
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle, tool: String?, hovered: String?) -> some View {
+        GaugeView(providers: Self.providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                  opacity: .constant(1), style: style, frozenAt: 3, onLayout: { _ in })
+            .panelPreset(tool: tool, hovered: hovered)
+            .modifier(RenderedSurface(style: style))
+    }
+}
