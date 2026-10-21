@@ -26,6 +26,14 @@ export function buildGrid(providers: ProviderView[], style: PanelStyle, columns:
   return { element: grid, drawables };
 }
 
+/** One chart for every tool, `CONTENT_WIDTH` wide; mono sets it between hairlines like a grid row. */
+export function singleCell(content: HTMLElement, style: PanelStyle): LayoutContent {
+  const isMono = style === "mono";
+  const cell = el("div", "cell", content);
+  cell.style.width = `${isMono ? CONTENT_WIDTH + 2 * PANEL_PADDING : CONTENT_WIDTH}px`;
+  return { element: el("div", "grid", el("div", "row", cell)), drawables: [] };
+}
+
 /** Columns for a row of tools that wraps after `perRow`. */
 export const toolColumns = (count: number, perRow: number): number => Math.min(perRow, Math.max(count, 1));
 

@@ -10,6 +10,7 @@
   --panel-padding: 12px;
   --dial-size: 72px;
   --detail-width: 140px;
+  --content-width: 472px;
   --font: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
   --signal: rgb(255 90 54);
@@ -688,4 +689,324 @@ body {
 .panel[data-style="dot"] .big-figure {
   align-items: flex-end;
   gap: 3.6px;
+}
+
+/* Large figures shared by every layout (see `figure.ts`): digits and "%" on one baseline. */
+.style-figure {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.style-figure-line {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.style-figure-line.dots {
+  align-items: flex-end;
+}
+
+.figure-digits {
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.figure-digits.mono {
+  letter-spacing: 0;
+}
+
+.figure-percent {
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+/* Capsule layout: name and share over a capsule, the long window under it. */
+.capsule-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capsule-block canvas {
+  display: block;
+}
+
+.capsule-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.capsule-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.capsule-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 0;
+}
+
+.capsule-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Ruler layout: a canvas ruler with its share beside the knob, name and countdown below. */
+.ruler-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.ruler-block.unavailable {
+  opacity: 0.5;
+}
+
+.ruler {
+  position: relative;
+}
+
+.ruler canvas {
+  display: block;
+}
+
+.ruler-readout {
+  position: absolute;
+}
+
+.ruler-offline {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ruler-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ruler-name .caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Orbit layout: one ring chart with the figure in its middle and a legend beside it. */
+.orbit {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: var(--content-width);
+}
+
+.orbit-chart {
+  position: relative;
+  flex: none;
+}
+
+.orbit-chart canvas {
+  display: block;
+}
+
+.orbit-centre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -50%);
+}
+
+.orbit-centre-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.orbit-legend {
+  flex: 1;
+  min-width: 0;
+}
+
+.orbit-row {
+  display: flex;
+  align-items: center;
+  height: 21px;
+}
+
+.orbit-heading {
+  height: 14px;
+}
+
+.orbit-spacer {
+  flex: 1;
+  min-width: 4px;
+}
+
+.orbit-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.orbit-bullet {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+}
+
+.orbit-bullet.square {
+  width: 6px;
+  height: 6px;
+  border-radius: 0;
+}
+
+.orbit-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.panel[data-style="dot"] .orbit-name,
+.panel[data-style="mono"] .orbit-name {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.orbit-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.orbit-cell.short {
+  width: 44px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.orbit-cell.long {
+  width: 40px;
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.orbit-cell.countdown {
+  width: 64px;
+  font-size: 9.5px;
+  color: var(--text-faint);
+}
+
+.orbit-heading .orbit-cell.short,
+.orbit-heading .orbit-cell.long,
+.orbit-heading .orbit-cell.countdown {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.orbit-offline {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+/* Constellation layout: one field, a canvas for the scaffolding and lines with a tag per tool above it. */
+.constellation {
+  position: relative;
+}
+
+.constellation canvas {
+  display: block;
+}
+
+.tag-slot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+}
+
+.tag-slot.left {
+  justify-content: flex-end;
+}
+
+.constellation-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 17px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tag-title {
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.tag-short {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tag-long {
+  color: var(--text-muted);
+}
+
+.tag-sep {
+  color: var(--text-faint);
+}
+
+.tag-figure canvas {
+  display: block;
+}
+
+.panel[data-style="mono"] .constellation-tag {
+  background: #000;
+  border: 1px solid;
+}
+
+.panel[data-style="mono"] .tag-title {
+  letter-spacing: 0.4px;
+}
+
+.panel[data-style="dot"] .constellation-tag {
+  padding: 0 4px;
+  background: rgb(26 26 26);
+}
+
+.panel[data-style="dot"] .tag-title {
+  letter-spacing: 0.5px;
+}
+
+.panel[data-style="iris"] .constellation-tag {
+  padding: 0 8px;
+  font-size: 10px;
+  border-radius: 6px;
+  background: rgb(36 36 36 / 0.94);
+}
+
+.panel[data-style="iris"] .tag-title {
+  color: rgb(255 255 255 / 0.88);
 }

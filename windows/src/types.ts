@@ -5,7 +5,7 @@ export type UsageLevel = "comfortable" | "low" | "critical";
 export type PanelStyle = "iris" | "dot" | "mono";
 
 /** How the panel arranges the tools; mirrors the Rust `PanelLayout`. */
-export type PanelLayout = "dial" | "bars" | "columns" | "figures";
+export type PanelLayout = "dial" | "bars" | "columns" | "figures" | "orbit" | "capsule" | "constellation" | "ruler";
 
 /** One rate-limit window, already resolved and formatted by the backend. */
 export interface WindowView {
@@ -28,6 +28,17 @@ export interface ProviderView {
   weekly: WindowView | null;
   /** Why the provider is not connected; null while it has readings. */
   message: string | null;
+  /**
+   * Remaining percent of each window about an hour ago, from the recorded usage history. The
+   * constellation draws a trail from there when it is present; absent until history is recorded.
+   */
+  hourAgo?: HourAgo | null;
+}
+
+/** Where a tool stood an hour ago; null for a window without a sample that far back. */
+export interface HourAgo {
+  session: number | null;
+  weekly: number | null;
 }
 
 export interface UsageView {

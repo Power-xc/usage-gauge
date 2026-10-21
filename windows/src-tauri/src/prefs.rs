@@ -71,10 +71,27 @@ pub enum PanelLayout {
     Columns,
     /// The short-window figure and one line for the long window.
     Figures,
+    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
+    Orbit,
+    /// A capsule per tool filled to the short window's share, the long window under it.
+    Capsule,
+    /// One field for every tool: short window across, long window up, tools linked into a constellation.
+    Constellation,
+    /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
+    Ruler,
 }
 
 impl PanelLayout {
-    pub const ALL: [Self; 4] = [Self::Dial, Self::Bars, Self::Columns, Self::Figures];
+    pub const ALL: [Self; 8] = [
+        Self::Dial,
+        Self::Bars,
+        Self::Columns,
+        Self::Figures,
+        Self::Orbit,
+        Self::Capsule,
+        Self::Constellation,
+        Self::Ruler,
+    ];
 
     pub fn title(self) -> &'static str {
         match self {
@@ -82,6 +99,10 @@ impl PanelLayout {
             Self::Bars => "바",
             Self::Columns => "막대 그래프",
             Self::Figures => "숫자",
+            Self::Orbit => "궤도",
+            Self::Capsule => "캡슐",
+            Self::Constellation => "별자리",
+            Self::Ruler => "눈금자",
         }
     }
 
@@ -91,6 +112,10 @@ impl PanelLayout {
             Self::Bars => "bars",
             Self::Columns => "columns",
             Self::Figures => "figures",
+            Self::Orbit => "orbit",
+            Self::Capsule => "capsule",
+            Self::Constellation => "constellation",
+            Self::Ruler => "ruler",
         }
     }
 
@@ -202,8 +227,10 @@ mod tests {
 
     #[test]
     fn unknown_layout_falls_back_to_dial() {
-        let prefs: Prefs = serde_json::from_str(r#"{"layout":"orbit"}"#).unwrap();
+        let prefs: Prefs = serde_json::from_str(r#"{"layout":"hologram"}"#).unwrap();
         assert_eq!(prefs.layout, PanelLayout::Dial);
+        let prefs: Prefs = serde_json::from_str(r#"{"layout":"orbit"}"#).unwrap();
+        assert_eq!(prefs.layout, PanelLayout::Orbit);
         let prefs: Prefs = serde_json::from_str(r#"{"layout":"figures"}"#).unwrap();
         assert_eq!(prefs.layout, PanelLayout::Figures);
         assert_eq!(Prefs::default().layout, PanelLayout::Dial);

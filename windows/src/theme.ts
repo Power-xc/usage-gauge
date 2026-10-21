@@ -14,6 +14,9 @@ export const DETAIL_WIDTH = 140;
 export const CONTENT_WIDTH = 472;
 export const CELL_SPACING = 24;
 export const PANEL_PADDING = 12;
+/** The panel's font stacks for canvas text; keep in step with `--font` and `--font-mono` in `style.css`. */
+export const FONT_SANS = '"Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif';
+export const FONT_MONO = '"Cascadia Mono", Consolas, ui-monospace, monospace';
 export const OPACITY_RANGE = { min: 0.3, max: 1 } as const;
 export const SCALE_RANGE = { min: 0.7, max: 1.6 } as const;
 

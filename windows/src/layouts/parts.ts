@@ -93,12 +93,12 @@ export function sessionGauge(window: WindowView | null, style: PanelStyle, tint:
 }
 
 /** The long window (weekly, monthly): label, share and reset time over the style's bar. */
-export function longWindow(provider: ProviderView, style: PanelStyle, tint: Rgb, drawables: Drawable[]): HTMLElement {
+export function longWindow(provider: ProviderView, style: PanelStyle, tint: Rgb, drawables: Drawable[], width = DETAIL_WIDTH): HTMLElement {
   const window = provider.weekly;
   const warning = window ? alert(window.level) : null;
   const share = el("span", "long-share", percentText(window));
   if (warning) share.style.color = rgba(warning, 1);
   const time = isMonospaced(style) ? countdown(window, style) : `${countdown(window, style)} 후`;
   const row = el("div", "long-row", el("span", "long-label", window?.label ?? "장기"), share, el("span", "long-countdown", time));
-  return el("div", "long-window", row, windowBar(style, DETAIL_WIDTH, window?.remainingPercent ?? 0, tint, drawables));
+  return el("div", "long-window", row, windowBar(style, width, window?.remainingPercent ?? 0, tint, drawables));
 }

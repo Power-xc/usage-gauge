@@ -21,7 +21,7 @@ npm ci
 npm run tauri build     # src-tauri/target/release/bundle/nsis/ 에 설치 파일 생성
 ```
 
-개발 중에는 `npm run tauri dev`, 테스트는 `cd src-tauri && cargo test`, 화면 미리보기는 `npm run build && npm run preview`(`preview.png`, `preview-styles.png`, `preview-layouts.png` 생성)입니다.
+개발 중에는 `npm run tauri dev`, 테스트는 `cd src-tauri && cargo test`, 화면 미리보기는 `npm run build && npm run preview`(`preview.png`, `preview-styles.png`, `preview-layouts.png`, `preview-shapes.png` 생성)입니다.
 
 ## 사용법
 
@@ -40,7 +40,7 @@ npm run tauri build     # src-tauri/target/release/bundle/nsis/ 에 설치 파�
 
 ## 그래프
 
-트레이 아이콘 우클릭 → **그래프**에서 도구를 늘어놓는 방식을 고릅니다. **다이얼**(기본), **바**, **막대 그래프**, **숫자** 네 가지이며 어떤 스타일에서도 같은 숫자를 보여줍니다. 모아 보면 [preview-layouts.png](preview-layouts.png)입니다.
+트레이 아이콘 우클릭 → **그래프**에서 도구를 늘어놓는 방식을 고릅니다. **다이얼**(기본), **바**, **막대 그래프**, **숫자**, **궤도**, **캡슐**, **별자리**, **눈금자** 여덟 가지이며 어떤 스타일에서도 같은 숫자를 보여줍니다. 모아 보면 [preview-layouts.png](preview-layouts.png), 궤도·캡슐·별자리·눈금자를 세 스타일로 보면 [preview-shapes.png](preview-shapes.png)입니다. 별자리의 1시간 전 궤적은 사용 기록이 쌓이면 나타납니다.
 
 ## 크기
 

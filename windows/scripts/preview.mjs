@@ -1,6 +1,7 @@
 // Renders the frontend with mock data in headless Chrome and writes preview.png (mono dial),
 // preview-styles.png (mono, iris and dot stacked) and preview-layouts.png (the four layouts in
-// mono, then bars and columns in iris and dot), all at 2x.
+// mono, then bars and columns in iris and dot) and preview-shapes.png (orbit, capsule,
+// constellation and ruler, each in mono, iris and dot), all at 2x.
 // The real frontend code runs unchanged; only the Tauri bridge is replaced by a mock.
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
@@ -15,6 +16,7 @@ const dist = join(root, "dist");
 const output = join(root, "preview.png");
 const stylesOutput = join(root, "preview-styles.png");
 const layoutsOutput = join(root, "preview-layouts.png");
+const shapesOutput = join(root, "preview-shapes.png");
 const chrome =
   process.env.CHROME_PATH ??
   join(homedir(), ".cache/puppeteer/chrome-headless-shell/mac_arm-155.0.8059.84/chrome-headless-shell-mac-arm64/chrome-headless-shell");
@@ -29,6 +31,9 @@ const LAYOUT_PANELS = [
   ["mono", "bars"], ["mono", "figures"], ["iris", "columns"], ["dot", "columns"],
 ];
 const LAYOUT_ROWS = 4;
+/** The shape forms, each in the three styles, a form per half column. */
+const SHAPE_LAYOUTS = ["orbit", "capsule", "constellation", "ruler"];
+const SHAPE_ROWS = 6;
 const STACK_BACKGROUND = "#0b101a";
 const STACK_PADDING = { x: 72, y: 77, gap: 29 };
 const LAYOUTS_PADDING = { x: 72, y: 77, gap: 29 };
@@ -58,6 +63,8 @@ const providers = [
     id: "claude", title: "Claude", plan: "Max", message: null,
     session: window_(94, 94, 0.234, "5시간", "3시간 50분", "3h 50m"),
     weekly: window_(37, 37, 0.57, "주간", "3일 0시간", "3d 0h"),
+    // Where the usage history would put the tool an hour ago; the constellation draws a trail from it.
+    hourAgo: { session: 100, weekly: 38 },
   },
   {
     id: "codex", title: "Codex", plan: "Plus", message: null,
@@ -165,6 +172,12 @@ try {
   }
   await stackPanels(browser, layoutPanels, layoutsOutput, LAYOUTS_PADDING, LAYOUT_ROWS);
   console.log(`wrote ${layoutsOutput}`);
+  const shapePanels = [];
+  for (const layout of SHAPE_LAYOUTS) {
+    for (const style of STYLES) shapePanels.push(await renderPanel(browser, port, style, STACK_BACKGROUND, 0, layout, providers.length));
+  }
+  await stackPanels(browser, shapePanels, shapesOutput, LAYOUTS_PADDING, SHAPE_ROWS);
+  console.log(`wrote ${shapesOutput}`);
 } finally {
   await browser.close();
   server.close();
