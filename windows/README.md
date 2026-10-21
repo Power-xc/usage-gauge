@@ -21,7 +21,7 @@ npm ci
 npm run tauri build     # src-tauri/target/release/bundle/nsis/ 에 설치 파일 생성
 ```
 
-개발 중에는 `npm run tauri dev`, 테스트는 `cd src-tauri && cargo test`, 화면 미리보기는 `npm run build && npm run preview`(`preview.png` 생성)입니다.
+개발 중에는 `npm run tauri dev`, 테스트는 `cd src-tauri && cargo test`, 화면 미리보기는 `npm run build && npm run preview`(`preview.png`, `preview-styles.png` 생성)입니다.
 
 ## 사용법
 
@@ -33,6 +33,10 @@ npm run tauri build     # src-tauri/target/release/bundle/nsis/ 에 설치 파�
 | 로그인 시 시작 | 트레이 아이콘 우클릭 → 로그인 시 시작 |
 | 위치 옮기기 | 패널 머리글이나 다이얼 영역을 드래그 (위치는 기억됩니다) |
 | 종료 | 트레이 아이콘 우클릭 → 종료 |
+
+## 스타일
+
+트레이 아이콘 우클릭 → **스타일**에서 패널의 모양을 고릅니다. **홍채 · 글래스**(기본), **도트 매트릭스**, **모노 터미널** 세 가지이며 숫자는 같고 표면·다이얼·막대·글꼴만 바뀝니다. 고르면 바로 적용되고 다음 실행에도 기억됩니다. 세 스타일을 나란히 본 모습은 [preview-styles.png](preview-styles.png)입니다.
 
 숫자는 2분마다, 절전에서 깨어날 때, 그리고 패널을 다시 열 때(마지막 갱신이 60초 넘었다면) 새로 읽습니다. 초기화 시각이 지나면 다음 갱신을 기다리지 않고 바로 100%로 바뀝니다. 트레이 툴팁에는 "Claude 94% · Codex 8%"처럼 짧은 창의 남은 양이 표시됩니다.
 

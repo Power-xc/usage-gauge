@@ -1,16 +1,18 @@
 //! Tray icon: tooltip with the remaining shares, click to toggle, and the menu.
 
-use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuItem, PredefinedMenuItem};
+use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuItem, PredefinedMenuItem, SubmenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::app::{refresh, toggle_panel, TRAY_ID};
+use crate::app::{refresh, set_style, toggle_panel, AppState, TRAY_ID};
+use crate::prefs::PanelStyle;
 
 const TOGGLE_ID: &str = "toggle";
 const REFRESH_ID: &str = "refresh";
 const AUTOSTART_ID: &str = "autostart";
 const QUIT_ID: &str = "quit";
+const STYLE_ID_PREFIX: &str = "style:";
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
     let autostart = CheckMenuItem::with_id(
@@ -21,10 +23,23 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         app.autolaunch().is_enabled().unwrap_or(false),
         None::<&str>,
     )?;
+    let current = app.state::<AppState>().prefs().style;
+    let styles = PanelStyle::ALL
+        .into_iter()
+        .map(|style| {
+            let id = format!("{STYLE_ID_PREFIX}{}", style.id());
+            CheckMenuItem::with_id(app, id, style.title(), true, style == current, None::<&str>)
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
+    let mut style_menu = SubmenuBuilder::new(app, "스타일");
+    for item in &styles {
+        style_menu = style_menu.item(item);
+    }
     let menu = MenuBuilder::new(app)
         .item(&MenuItem::with_id(app, TOGGLE_ID, "게이지 켜기/끄기 (Ctrl+Alt+U)", true, None::<&str>)?)
         .item(&MenuItem::with_id(app, REFRESH_ID, "지금 새로고침", true, None::<&str>)?)
         .item(&PredefinedMenuItem::separator(app)?)
+        .item(&style_menu.build()?)
         .item(&autostart)
         .item(&PredefinedMenuItem::separator(app)?)
         .item(&MenuItem::with_id(app, QUIT_ID, "종료", true, None::<&str>)?)
@@ -34,7 +49,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .tooltip("UsageGauge")
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .on_menu_event(move |app, event| handle_menu(app, &event, &autostart))
+        .on_menu_event(move |app, event| handle_menu(app, &event, &autostart, &styles))
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                 toggle_panel(tray.app_handle());
@@ -47,8 +62,18 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-fn handle_menu(app: &AppHandle, event: &MenuEvent, autostart: &CheckMenuItem<tauri::Wry>) {
-    match event.id().as_ref() {
+fn handle_menu(
+    app: &AppHandle,
+    event: &MenuEvent,
+    autostart: &CheckMenuItem<tauri::Wry>,
+    styles: &[CheckMenuItem<tauri::Wry>],
+) {
+    let id = event.id().as_ref();
+    if let Some(style) = id.strip_prefix(STYLE_ID_PREFIX).and_then(PanelStyle::from_id) {
+        choose_style(app, style, styles);
+        return;
+    }
+    match id {
         TOGGLE_ID => toggle_panel(app),
         REFRESH_ID => refresh(app),
         AUTOSTART_ID => toggle_autostart(app, autostart),
@@ -66,5 +91,16 @@ fn toggle_autostart(app: &AppHandle, item: &CheckMenuItem<tauri::Wry>) {
     }
     if let Err(error) = item.set_checked(launcher.is_enabled().unwrap_or(false)) {
         eprintln!("usage-gauge: could not update the menu: {error}");
+    }
+}
+
+/// Applies the chosen style and leaves exactly its item checked; the menu toggles an item on
+/// click by itself, which would otherwise let the one in use be unchecked.
+fn choose_style(app: &AppHandle, style: PanelStyle, items: &[CheckMenuItem<tauri::Wry>]) {
+    set_style(app, style);
+    for (item, candidate) in items.iter().zip(PanelStyle::ALL) {
+        if let Err(error) = item.set_checked(candidate == style) {
+            eprintln!("usage-gauge: could not update the menu: {error}");
+        }
     }
 }

@@ -4,7 +4,7 @@ use serde::Serialize;
 use tauri::{AppHandle, LogicalSize, Manager, PhysicalPosition, State, WebviewWindow, WindowEvent};
 
 use crate::app::{main_window, publish, set_panel_shown, AppState};
-use crate::prefs::clamp_opacity;
+use crate::prefs::{clamp_opacity, PanelStyle};
 use crate::view::{usage_view, UsageView};
 
 /// Smoke tint the acrylic sits under is drawn by the page; the acrylic itself stays untinted.
@@ -18,6 +18,7 @@ pub struct PanelState {
     opacity: f64,
     is_shown: bool,
     has_glass: bool,
+    style: PanelStyle,
 }
 
 /// Applies Windows acrylic; elsewhere, or when it fails, the page falls back to a denser smoke.
@@ -70,6 +71,7 @@ pub fn get_state(app: AppHandle, state: State<AppState>) -> PanelState {
         opacity: state.prefs().opacity,
         is_shown: main_window(&app).and_then(|window| window.is_visible().ok()).unwrap_or(false),
         has_glass: state.has_glass(),
+        style: state.prefs().style,
     }
 }
 
