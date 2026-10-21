@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var opacitySlider: NSSlider?
     private var adaptiveTintItem: NSMenuItem?
     private var styleItems: [NSMenuItem] = []
+    private var menuBarBarsItem: NSMenuItem?
     private var backdropSampler: BackdropSampler?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -81,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func syncChrome() {
-        statusItem.update(providers: store.providers)
+        statusItem.update(providers: store.providers, showsBars: Preferences.showsMenuBarBars)
         panel.fitContent()
     }
 
@@ -138,6 +139,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         styleItems.forEach { $0.state = $0.representedObject as? String == Preferences.panelStyle.rawValue ? .on : .off }
     }
 
+    @objc private func toggleMenuBarBars() {
+        Preferences.showsMenuBarBars.toggle()
+        menuBarBarsItem?.state = Preferences.showsMenuBarBars ? .on : .off
+        syncChrome()
+    }
+
     @objc private func refreshNow() {
         store.refresh()
     }
@@ -174,6 +181,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let adaptive = item(Self.adaptiveTintTitle, #selector(toggleAdaptiveTint))
         adaptiveTintItem = adaptive
         menu.addItem(adaptive)
+        menu.addItem(.separator())
+        let bars = item("메뉴바에 막대 표시", #selector(toggleMenuBarBars))
+        bars.state = Preferences.showsMenuBarBars ? .on : .off
+        menuBarBarsItem = bars
+        menu.addItem(bars)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         return menu

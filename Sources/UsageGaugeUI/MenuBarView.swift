@@ -1,19 +1,21 @@
 import SwiftUI
 import UsageGaugeCore
 
-/// Menu bar companion: per provider, name + two stacked bars (5-hour over weekly) + 5-hour %.
-/// Bars use the menu bar's own text colour until a window runs low, so they stay legible
-/// on both light and dark wallpapers.
+/// Menu bar companion: per provider, name + 5-hour %, optionally with two stacked bars (5-hour
+/// over weekly) between them. Bars and figures use the menu bar's own text colour until a window
+/// runs low, so they stay legible on both light and dark wallpapers.
 public struct MenuBarView: View {
     let providers: [ProviderUsage]
+    let showsBars: Bool
 
-    public init(providers: [ProviderUsage]) {
+    public init(providers: [ProviderUsage], showsBars: Bool = true) {
         self.providers = providers
+        self.showsBars = showsBars
     }
 
     public var body: some View {
         HStack(spacing: 14) {
-            ForEach(providers) { MenuBarItem(usage: $0) }
+            ForEach(providers) { MenuBarItem(usage: $0, showsBars: showsBars) }
         }
         .padding(.horizontal, 8)
     }
@@ -21,17 +23,21 @@ public struct MenuBarView: View {
 
 private struct MenuBarItem: View {
     let usage: ProviderUsage
+    let showsBars: Bool
 
     var body: some View {
         HStack(spacing: 6) {
             Text(usage.title).font(Theme.font(12, .semibold)).lineLimit(1).fixedSize()
-            VStack(spacing: 3) {
-                MiniBar(window: usage.session)
-                MiniBar(window: usage.weekly)
+            if showsBars {
+                VStack(spacing: 3) {
+                    MiniBar(window: usage.session)
+                    MiniBar(window: usage.weekly)
+                }
+                .frame(width: 26)
             }
-            .frame(width: 26)
             Text(usage.session.map { "\($0.displayPercent)%" } ?? "–")
                 .font(Theme.number(12, .semibold))
+                .foregroundStyle(usage.session.flatMap { Theme.alert($0.remainingPercent) } ?? Color.primary)
                 .lineLimit(1)
                 .fixedSize()
         }

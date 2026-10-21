@@ -9,6 +9,13 @@ enum Preferences {
     private static let panelOpacityKey = "panelOpacity"
     private static let adaptiveTintKey = "adaptiveTint"
     private static let panelStyleKey = "panelStyle"
+    private static let menuBarBarsKey = "menuBarBars"
+
+    /// Whether the menu bar item draws the small bars between each name and its figure.
+    static var showsMenuBarBars: Bool {
+        get { defaults.object(forKey: menuBarBarsKey) as? Bool ?? false }
+        set { defaults.set(newValue, forKey: menuBarBarsKey) }
+    }
     private static let panelLeftKey = "panelLeft"
     private static let panelTopKey = "panelTop"
 
@@ -26,7 +33,7 @@ enum Preferences {
     }
 
     static var panelStyle: PanelStyle {
-        get { defaults.string(forKey: panelStyleKey).flatMap(PanelStyle.init(rawValue:)) ?? .iris }
+        get { defaults.string(forKey: panelStyleKey).flatMap(PanelStyle.init(rawValue:)) ?? .mono }
         set { defaults.set(newValue.rawValue, forKey: panelStyleKey) }
     }
 

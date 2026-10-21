@@ -24,8 +24,8 @@ final class StatusItemController: NSObject {
         button.toolTip = "남은 사용량 · 클릭해서 게이지 켜기/끄기 (⌥⌘U)"
     }
 
-    func update(providers: [ProviderUsage]) {
-        hostingView.rootView = MenuBarView(providers: providers)
+    func update(providers: [ProviderUsage], showsBars: Bool) {
+        hostingView.rootView = MenuBarView(providers: providers, showsBars: showsBars)
         let width = hostingView.fittingSize.width
         item.length = width
         hostingView.frame = NSRect(x: 0, y: 0, width: width, height: item.button?.bounds.height ?? NSStatusBar.system.thickness)
