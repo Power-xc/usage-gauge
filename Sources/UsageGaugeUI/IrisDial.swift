@@ -16,6 +16,8 @@ public struct IrisDial: View {
     private static let fibresPerPoint = 1.8
     private static let grainPerPoint = 2.2
     private static let meshDotsPerPoint = 1.3
+    /// Blur of the glow under the lit strands, as a share of the dial's radius.
+    private static let haloBlur = 0.035
     private static let pupilRatio = 0.6
     private static let meshRings = 2
     private static let edgeRings: [(radius: Double, dots: Int)] = [(0.93, 84), (0.985, 116)]
@@ -90,7 +92,9 @@ public struct IrisDial: View {
         drawRimClock(in: canvas, center: center, radius: pupil * 0.96)
     }
 
-    /// Strands are grouped into a few paths by shade, so a frame is a handful of strokes.
+    /// Strands are grouped into a few paths by shade, so a frame is a handful of strokes. Each
+    /// fades in from the pupil and out towards the rim over a blurred halo of itself, so the lit
+    /// share reads as glowing fibre rather than drawn lines.
     private func drawStrands(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double,
                              litShare: Double, time: Double) {
         var dim = Path(), bright = Path(), tinted = Path(), soft = Path()
@@ -113,10 +117,24 @@ public struct IrisDial: View {
             default: tinted.addPath(path)
             }
         }
-        canvas.stroke(dim, with: .color(.white.opacity(0.14)), lineWidth: 0.8)
-        canvas.stroke(soft, with: .color(.white.opacity(0.5)), lineWidth: 0.9)
-        canvas.stroke(tinted, with: .color(color.opacity(0.95)), lineWidth: 1.1)
-        canvas.stroke(bright, with: .color(.white.opacity(0.95)), lineWidth: 1.0)
+        let fade = { (shade: Color, opacity: Double) in
+            GraphicsContext.Shading.radialGradient(Gradient(stops: [
+                .init(color: shade.opacity(0), location: 0),
+                .init(color: shade.opacity(opacity), location: 0.3),
+                .init(color: shade.opacity(opacity * 0.55), location: 0.75),
+                .init(color: shade.opacity(0), location: 1),
+            ]), center: center, startRadius: pupil, endRadius: outer * 0.95)
+        }
+        canvas.drawLayer { halo in
+            halo.addFilter(.blur(radius: outer * Self.haloBlur))
+            halo.stroke(tinted, with: fade(color, 1), lineWidth: 2.4)
+            halo.stroke(bright, with: fade(.white, 0.55), lineWidth: 2)
+        }
+        let line = { (width: Double) in StrokeStyle(lineWidth: width, lineCap: .round) }
+        canvas.stroke(dim, with: fade(.white, 0.12), style: line(0.7))
+        canvas.stroke(soft, with: fade(.white, 0.4), style: line(0.7))
+        canvas.stroke(tinted, with: fade(color, 0.75), style: line(0.8))
+        canvas.stroke(bright, with: fade(.white, 0.65), style: line(0.7))
     }
 
     /// Soft rays across the lit share, every other one in the tool's colour and the rest in faint
@@ -189,12 +207,12 @@ public struct IrisDial: View {
 
     /// The pupil's rim as a clock: faint all round, bright from 12 o'clock to now, dot at now.
     private func drawRimClock(in canvas: GraphicsContext, center: CGPoint, radius: Double) {
-        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.1)), lineWidth: 0.8)
+        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.07)), lineWidth: 0.8)
         guard let elapsedFraction else { return }
         var passed = Path()
         passed.addArc(center: center, radius: radius, startAngle: .degrees(-90),
                       endAngle: .degrees(-90 + 360 * elapsedFraction), clockwise: false)
-        canvas.stroke(passed, with: .color(.white.opacity(0.4)), style: StrokeStyle(lineWidth: 1, lineCap: .round))
+        canvas.stroke(passed, with: .color(.white.opacity(0.3)), style: StrokeStyle(lineWidth: 1, lineCap: .round))
         let dot = point(center, radius, elapsedFraction * 2 * .pi - .pi / 2)
         canvas.fill(circle(dot, 4.5), with: .radialGradient(Gradient(colors: [color.opacity(0.7), color.opacity(0)]),
                                                             center: dot, startRadius: 0, endRadius: 4.5))
