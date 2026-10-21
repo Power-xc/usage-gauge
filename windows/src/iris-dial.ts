@@ -2,7 +2,7 @@ import { noise, pointAt, prepareCanvas, type Point } from "./canvas";
 import { BLACK, WHITE, rgba, type Rgb } from "./theme";
 
 /** Densities per point of radius, so a small dial stays clear instead of crowded. */
-const FIBRES_PER_POINT = 1.8;
+const FIBRES_PER_POINT = 2.8;
 const GRAIN_PER_POINT = 2.2;
 const MESH_DOTS_PER_POINT = 1.3;
 const PUPIL_RATIO = 0.6;
@@ -43,7 +43,7 @@ interface Ray {
 }
 
 /** Per-strand randomness, computed once: frames only advance time, never re-roll shapes. */
-const STRANDS: Strand[] = Array.from({ length: 300 }, (_, index) => {
+const STRANDS: Strand[] = Array.from({ length: 420 }, (_, index) => {
   const seed = noise(index);
   return {
     jitter: (seed - 0.5) * 0.02,
@@ -118,7 +118,11 @@ export class IrisDial {
     this.context.fill();
   }
 
-  /** Strands are grouped into a few paths by shade, so a frame is a handful of strokes. */
+  /**
+   * Strands are grouped into a few paths by shade, so a frame is a handful of strokes. They are
+   * fine and many, each fading in from the pupil and out towards the rim over a faint pool of the
+   * tool's colour, so the lit share reads as silk rather than drawn lines.
+   */
   private drawStrands(center: Point, pupil: number, outer: number, time: number): void {
     const dim = new Path2D();
     const bright = new Path2D();
@@ -139,10 +143,25 @@ export class IrisDial {
       target.moveTo(from.x, from.y);
       target.lineTo(to.x, to.y);
     }
-    this.stroke(dim, rgba(WHITE, 0.14), 0.8);
-    this.stroke(soft, rgba(WHITE, 0.5), 0.9);
-    this.stroke(tinted, rgba(this.color, 0.95), 1.1);
-    this.stroke(bright, rgba(WHITE, 0.95), 1.0);
+    const fade = (shade: Rgb, opacity: number): CanvasGradient => {
+      const gradient = this.context.createRadialGradient(center.x, center.y, pupil, center.x, center.y, outer * 0.95);
+      gradient.addColorStop(0, rgba(shade, 0));
+      gradient.addColorStop(0.3, rgba(shade, opacity));
+      gradient.addColorStop(0.75, rgba(shade, opacity * 0.55));
+      gradient.addColorStop(1, rgba(shade, 0));
+      return gradient;
+    };
+    if (this.remainingShare > 0) {
+      const pool = new Path2D();
+      pool.arc(center.x, center.y, (pupil + outer * 0.9) / 2, TWELVE_OCLOCK, TWELVE_OCLOCK + FULL_TURN * this.remainingShare);
+      this.stroke(pool, fade(this.color, 0.16), outer * 0.9 - pupil);
+    }
+    this.context.lineCap = "round";
+    this.stroke(dim, fade(WHITE, 0.1), 0.5);
+    this.stroke(soft, fade(WHITE, 0.42), 0.55);
+    this.stroke(tinted, fade(this.color, 0.9), 0.65);
+    this.stroke(bright, fade(WHITE, 0.75), 0.55);
+    this.context.lineCap = "butt";
   }
 
   /** Soft rays across the lit share, alternating the tool's colour with faint prism tints. */
@@ -180,8 +199,8 @@ export class IrisDial {
         this.addDot(share < this.remainingShare ? lit : dark, pointAt(center, base + ripple, angle), 0.65);
       }
     }
-    this.fill(dark, rgba(WHITE, 0.18));
-    this.fill(lit, rgba(WHITE, 0.85));
+    this.fill(dark, rgba(WHITE, 0.14));
+    this.fill(lit, rgba(WHITE, 0.6));
   }
 
   /** Two rings of dots at the rim, lit warm white inside and in the tool's colour outside. */
@@ -194,10 +213,10 @@ export class IrisDial {
         const spot = pointAt(center, outer * ring.radius, share * FULL_TURN + TWELVE_OCLOCK);
         this.addDot(share < this.remainingShare ? lit : dark, spot, 0.75);
       }
-      const shade = index === EDGE_RINGS.length - 1 ? this.color : WARM_WHITE;
-      this.fill(lit, rgba(shade, 0.92));
+      const isOuter = index === EDGE_RINGS.length - 1;
+      this.fill(lit, isOuter ? rgba(this.color, 0.8) : rgba(WARM_WHITE, 0.55));
     });
-    this.fill(dark, rgba(WHITE, 0.2));
+    this.fill(dark, rgba(WHITE, 0.14));
   }
 
   /** Stippled grain, densest mid-ring, shimmering as each speck fades in and out. */
@@ -218,14 +237,14 @@ export class IrisDial {
   /** The pupil's rim as a clock: faint all round, bright from 12 o'clock to now, dot at now. */
   private drawRimClock(center: Point, radius: number): void {
     const context = this.context;
-    context.strokeStyle = rgba(WHITE, 0.1);
+    context.strokeStyle = rgba(WHITE, 0.07);
     context.lineWidth = 0.8;
     context.beginPath();
     context.arc(center.x, center.y, radius, 0, FULL_TURN);
     context.stroke();
     if (this.elapsed === null) return;
 
-    context.strokeStyle = rgba(WHITE, 0.4);
+    context.strokeStyle = rgba(WHITE, 0.3);
     context.lineWidth = 1;
     context.lineCap = "round";
     context.beginPath();
@@ -252,7 +271,7 @@ export class IrisDial {
     path.arc(spot.x, spot.y, radius, 0, FULL_TURN);
   }
 
-  private stroke(path: Path2D, style: string, width: number): void {
+  private stroke(path: Path2D, style: string | CanvasGradient, width: number): void {
     this.context.strokeStyle = style;
     this.context.lineWidth = width;
     this.context.stroke(path);

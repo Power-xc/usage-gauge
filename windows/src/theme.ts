@@ -16,21 +16,21 @@ const ACCENT: Rgb = [201, 182, 255];
 const WARNING: Rgb = [255, 206, 122];
 const CRITICAL: Rgb = [255, 128, 128];
 
-/** Signature colour of each tool; unknown providers fall back to the accent. */
+/** Deep signature colour of each tool; unknown providers fall back to the accent. */
 export function brand(providerId: string): Rgb {
   switch (providerId) {
     case "claude":
-      return [217, 119, 87];
+      return [193, 95, 60];
     case "codex":
     case "openai":
-      return [16, 163, 127];
+      return [13, 138, 104];
     case "gemini":
     case "antigravity":
-      return [78, 134, 248];
+      return [52, 98, 214];
     case "copilot":
-      return [140, 108, 245];
+      return [112, 78, 226];
     case "cursor":
-      return [214, 218, 228];
+      return [168, 176, 192];
     default:
       return ACCENT;
   }

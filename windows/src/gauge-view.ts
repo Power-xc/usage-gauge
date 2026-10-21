@@ -14,17 +14,13 @@ export interface ProviderGrid {
   drawables: Drawable[];
 }
 
-/** Wide, low grid of provider cards, two per row, with hairlines between them. */
+/** Wide, low grid of provider cards, two per row, set apart by space alone. */
 export function buildGrid(providers: ProviderView[]): ProviderGrid {
   const drawables: Drawable[] = [];
   const grid = el("div", "grid");
   for (let start = 0; start < providers.length; start += CARDS_PER_ROW) {
-    if (start > 0) grid.append(el("div", "hairline-horizontal"));
     const row = el("div", "row");
-    providers.slice(start, start + CARDS_PER_ROW).forEach((provider, index) => {
-      if (index > 0) row.append(el("div", "hairline-vertical"));
-      row.append(buildCard(provider, drawables));
-    });
+    providers.slice(start, start + CARDS_PER_ROW).forEach((provider) => row.append(buildCard(provider, drawables)));
     grid.append(row);
   }
   return { element: grid, drawables };
@@ -57,7 +53,10 @@ function sessionLine(window: WindowView | null): string {
   return `${window?.label ?? "단기"} · ${window?.countdown ?? NO_READING} 후 초기화`;
 }
 
-/** Iris dial with the remaining percent in the pupil, lit from below by the tool's colour. */
+/**
+ * Iris dial with the remaining percent in the pupil, lit from below by the tool's colour, which
+ * also glows through the glass behind the dial.
+ */
 function sessionGauge(window: WindowView | null, tint: Rgb, drawables: Drawable[]): HTMLElement {
   const dial = new IrisDial(DIAL_SIZE);
   dial.update(window?.remainingPercent ?? 0, window?.elapsedFraction ?? null, tint);
@@ -70,7 +69,9 @@ function sessionGauge(window: WindowView | null, tint: Rgb, drawables: Drawable[
   figure.style.setProperty("--figure-color", rgba(figureColor, 1));
   const readout = el("div", "pupil-value", figure);
   if (window) readout.append(el("span", "percent", "%"));
-  return el("div", "dial", dial.canvas, el("div", "pupil-text", readout));
+  const element = el("div", "dial", dial.canvas, el("div", "pupil-text", readout));
+  element.style.setProperty("--tint", tint.join(" "));
+  return element;
 }
 
 /** The long window (weekly, monthly): label, share and reset time over a light-streak bar. */

@@ -5,9 +5,8 @@
   --text: #fff;
   --text-muted: rgb(255 255 255 / 0.62);
   --text-faint: rgb(255 255 255 / 0.42);
-  --hairline: rgb(255 255 255 / 0.1);
   --track: rgb(255 255 255 / 0.1);
-  --panel-radius: 18px;
+  --panel-radius: 22px;
   --panel-padding: 12px;
   --dial-size: 72px;
   --detail-width: 140px;
@@ -39,15 +38,18 @@ body {
   width: max-content;
 }
 
-/* Smoked glass: the acrylic behind the window shows through the tint. */
+/* Smoked glass: the acrylic behind the window shows through the tint, with light pooled along
+   the top as when a slab catches an overhead light. */
 .panel {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: var(--panel-padding);
   border-radius: var(--panel-radius);
-  background: rgb(var(--smoke) / var(--smoke-alpha));
+  background:
+    linear-gradient(rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.02) 35%, transparent 60%),
+    rgb(var(--smoke) / var(--smoke-alpha));
 }
 
 .panel.solid {
@@ -198,28 +200,22 @@ body {
   box-shadow: 0 0 5px rgb(201 182 255 / 0.7);
 }
 
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .row {
   display: flex;
   align-items: flex-start;
+  gap: 24px;
 }
 
 .card {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-}
-
-.hairline-vertical {
-  align-self: stretch;
-  width: 1px;
-  margin: 0 12px;
-  background: linear-gradient(transparent, var(--hairline), transparent);
-}
-
-.hairline-horizontal {
-  height: 1px;
-  margin: 8px 0;
-  background: linear-gradient(90deg, transparent, var(--hairline), transparent);
 }
 
 .dial {
@@ -229,7 +225,18 @@ body {
   flex: none;
 }
 
+/* The tool's colour glowing through the glass from behind the dial; it fades out within the
+   panel's padding. */
+.dial::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--dial-size) * -0.2);
+  background: radial-gradient(closest-side, rgb(var(--tint) / 0.28) 43%, rgb(var(--tint) / 0));
+  pointer-events: none;
+}
+
 .dial canvas {
+  position: relative;
   display: block;
 }
 
