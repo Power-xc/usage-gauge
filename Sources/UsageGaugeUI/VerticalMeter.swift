@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The remaining share as an upright column in the style's voice: a luminous gradient with a soft
-/// head glow (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
+/// The remaining share as an upright column in the style's voice: a solid fill with a white head
+/// dot (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
 /// marks the top of what is left.
 struct VerticalMeter: View {
     let remainingPercent: Double
@@ -15,6 +15,7 @@ struct VerticalMeter: View {
     private static let segmentPitch: CGFloat = 5
     private static let segmentHeight: CGFloat = 3
     private static let dimOpacity = 0.14
+    private static let headShare: CGFloat = 0.4
 
     init(remainingPercent: Double, tint: Color, size: CGSize) {
         self.remainingPercent = min(100, max(0, remainingPercent))
@@ -25,7 +26,7 @@ struct VerticalMeter: View {
     var body: some View {
         Group {
             switch style {
-            case .iris: luminous
+            case .iris: solid
             case .dot: Canvas { canvas, size in drawDots(in: canvas, size: size) }
             case .mono: Canvas { canvas, size in drawSegments(in: canvas, size: size) }
             }
@@ -33,27 +34,15 @@ struct VerticalMeter: View {
         .frame(width: size.width, height: size.height)
     }
 
-    private var luminous: some View {
-        let fill = size.height * remainingPercent / 100
-        let radius = size.width / 2
+    private var solid: some View {
+        let fill = max(size.height * remainingPercent / 100, size.width)
         return ZStack(alignment: .bottom) {
             Capsule().fill(Theme.track)
-            if fill > 0 {
-                Capsule()
-                    .fill(LinearGradient(stops: [
-                        .init(color: tint.opacity(0.1), location: 0),
-                        .init(color: tint.opacity(0.6), location: 0.6),
-                        .init(color: tint, location: 0.92),
-                        .init(color: .white, location: 1),
-                    ], startPoint: .bottom, endPoint: .top))
-                    .frame(height: max(fill, size.width))
+            if remainingPercent > 0 {
+                Capsule().fill(tint)
+                    .frame(height: fill)
                     .overlay(alignment: .top) {
-                        Ellipse()
-                            .fill(RadialGradient(colors: [.white.opacity(0.7), tint.opacity(0.35), tint.opacity(0)],
-                                                 center: .center, startRadius: 0, endRadius: radius * 1.9))
-                            .frame(width: radius * 4, height: radius * 3)
-                            .offset(y: -radius * 0.5)
-                            .allowsHitTesting(false)
+                        Circle().fill(.white).frame(width: size.width * Self.headShare).padding(.top, size.width * (1 - Self.headShare) / 2)
                     }
             }
         }

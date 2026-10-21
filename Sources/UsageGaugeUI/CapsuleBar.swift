@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// A horizontal capsule filled from the left to the remaining share in the tool's colour, the
-/// used part faint: dots (dot), upright segments with a brand-coloured last one (mono) or glass
-/// holding a luminous liquid with a glowing edge at the fill line (iris).
+/// used part faint: dots (dot), upright segments with a brand-coloured last one (mono) or a flat
+/// pane holding a solid fill that ends in a white dot (iris).
 struct CapsuleBar: View {
     static let height: CGFloat = 22
 
@@ -13,6 +13,7 @@ struct CapsuleBar: View {
     private static let segmentWidth: CGFloat = 2
     private static let brandSegments = 2
     private static let inset: CGFloat = 3
+    private static let headShare: CGFloat = 0.4
     private static let dim = Color.white.opacity(0.13)
 
     let remainingPercent: Double
@@ -25,7 +26,7 @@ struct CapsuleBar: View {
             switch style {
             case .dot: drawDots(canvas, size)
             case .mono: drawSegments(canvas, size)
-            case .iris: drawGlass(canvas, size)
+            case .iris: drawFlat(canvas, size)
             }
         }
         .frame(height: Self.height)
@@ -78,33 +79,18 @@ struct CapsuleBar: View {
         canvas.fill(head, with: .color(tint))
     }
 
-    private func drawGlass(_ canvas: GraphicsContext, _ size: CGSize) {
+    private func drawFlat(_ canvas: GraphicsContext, _ size: CGSize) {
         let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
-        let glass = stadium(bounds)
-        canvas.fill(glass, with: .color(.white.opacity(0.06)))
-        let liquidBounds = bounds.insetBy(dx: Self.inset, dy: Self.inset)
-        let edge = liquidBounds.minX + liquidBounds.width * share
+        let pane = stadium(bounds)
+        canvas.fill(pane, with: .color(.white.opacity(0.06)))
+        let inner = bounds.insetBy(dx: Self.inset, dy: Self.inset)
         if share > 0 {
-            var liquid = canvas
-            liquid.clip(to: stadium(liquidBounds))
-            liquid.clip(to: Path(CGRect(x: 0, y: 0, width: edge, height: size.height)))
-            liquid.fill(Path(liquidBounds), with: .linearGradient(
-                Gradient(stops: [.init(color: tint.opacity(0.35), location: 0), .init(color: tint.opacity(0.75), location: 0.7),
-                                 .init(color: tint, location: 1)]),
-                startPoint: CGPoint(x: liquidBounds.minX, y: 0), endPoint: CGPoint(x: max(edge, liquidBounds.minX + 1), y: 0)))
-            liquid.fill(Path(CGRect(x: liquidBounds.minX, y: liquidBounds.minY, width: liquidBounds.width, height: liquidBounds.height * 0.4)),
-                        with: .linearGradient(Gradient(colors: [.white.opacity(0.32), .white.opacity(0)]),
-                                              startPoint: CGPoint(x: 0, y: liquidBounds.minY), endPoint: CGPoint(x: 0, y: liquidBounds.midY)))
-            var glow = canvas
-            glow.clip(to: stadium(liquidBounds))
-            glow.drawLayer { layer in
-                layer.addFilter(.blur(radius: 3))
-                layer.fill(Path(CGRect(x: edge - 2, y: liquidBounds.minY, width: 3, height: liquidBounds.height)),
-                           with: .color(.white.opacity(0.9)))
-            }
+            let width = max(inner.height, inner.width * share)
+            canvas.fill(stadium(CGRect(x: inner.minX, y: inner.minY, width: width, height: inner.height)), with: .color(tint))
+            let radius = inner.height * Self.headShare / 2
+            canvas.fill(Path(ellipseIn: CGRect(x: inner.minX + width - inner.height / 2 - radius, y: inner.midY - radius,
+                                               width: radius * 2, height: radius * 2)), with: .color(.white))
         }
-        canvas.stroke(glass, with: .linearGradient(Gradient(colors: [.white.opacity(0.4), .white.opacity(0.08), .white.opacity(0.2)]),
-                                                   startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)),
-                      lineWidth: 0.8)
+        canvas.stroke(pane, with: .color(.white.opacity(0.18)), lineWidth: 0.8)
     }
 }

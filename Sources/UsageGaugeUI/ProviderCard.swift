@@ -42,9 +42,6 @@ struct ProviderCard: View {
             }
             .frame(width: Theme.detailWidth, height: Theme.dialSize, alignment: .topLeading)
         }
-        .background(alignment: .leading) {
-            if style == .iris { DialGlow(tint: tint) }
-        }
     }
 
     private func titleRow(tint: Color) -> some View {
@@ -130,7 +127,7 @@ public struct SessionGauge: View {
         switch style {
         case .iris:
             HStack(alignment: .firstTextBaseline, spacing: 1) {
-                irisFigure(color: alert ?? tint)
+                irisFigure(color: alert ?? Theme.primaryText)
                 percentSign(Theme.font(size * (showsLabel ? 0.1 : 0.085), .medium))
             }
         case .dot:
@@ -153,15 +150,9 @@ public struct SessionGauge: View {
         if window != nil { Text("%").font(font).foregroundStyle(Theme.mutedText) }
     }
 
-    /// Lit from below by the tool's colour (or the warning colour when low).
+    /// Crisp type: white, or the warning colour when low.
     private func irisFigure(color: Color) -> some View {
-        let type = Text(figureText).font(Theme.display(size * (showsLabel ? 0.27 : 0.22))).tracking(-size * 0.004)
-        return type
-            .foregroundStyle(LinearGradient(stops: [
-                .init(color: .white, location: 0.4),
-                .init(color: color, location: 1.15),
-            ], startPoint: .top, endPoint: .bottom))
-            .background(type.foregroundStyle(color).blur(radius: size * 0.05).opacity(0.55).offset(y: size * 0.02))
+        Text(figureText).font(Theme.display(size * (showsLabel ? 0.27 : 0.22))).tracking(-size * 0.004).foregroundStyle(color)
     }
 }
 
@@ -191,24 +182,6 @@ struct LongWindowBar: View {
             }
             WindowBar(remainingPercent: remaining, tint: tint, frozenAt: frozenAt)
         }
-    }
-}
-
-/// The tool's colour glowing through the glass from behind the dial. It fades out within the
-/// panel's padding, so it never spills past the glass.
-private struct DialGlow: View {
-    let tint: Color
-
-    private static let opacity = 0.28
-    private static let reach = 0.7
-
-    var body: some View {
-        let dial = Theme.dialSize
-        RadialGradient(colors: [tint.opacity(Self.opacity), tint.opacity(0)], center: .center,
-                       startRadius: dial * 0.3, endRadius: dial * Self.reach)
-            .frame(width: dial * Self.reach * 2, height: dial * Self.reach * 2)
-            .offset(x: dial / 2 - dial * Self.reach)
-            .allowsHitTesting(false)
     }
 }
 

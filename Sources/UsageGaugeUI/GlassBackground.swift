@@ -34,8 +34,7 @@ public struct GlassBackground: ViewModifier {
     }
 }
 
-/// Edge of a thick glass slab: a crisp highlight catching the top-left corner and a faint inner
-/// line that gives the pane its depth.
+/// Edge of a glass slab: one flat 1 pt line.
 public struct GlassSlabEdge<S: InsettableShape>: View {
     let shape: S
 
@@ -44,18 +43,12 @@ public struct GlassSlabEdge<S: InsettableShape>: View {
     }
 
     public var body: some View {
-        shape.strokeBorder(LinearGradient(stops: [
-            .init(color: .white.opacity(0.42), location: 0),
-            .init(color: .white.opacity(0.08), location: 0.35),
-            .init(color: .white.opacity(0.04), location: 0.7),
-            .init(color: .white.opacity(0.16), location: 1),
-        ], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-        .overlay(shape.inset(by: 1.5).strokeBorder(.white.opacity(0.04), lineWidth: 1))
+        shape.strokeBorder(.white.opacity(0.16), lineWidth: 1)
     }
 }
 
-/// Soft light pooled along the top of a glass pane, as when a slab catches an overhead light.
-public struct GlassSheen<S: Shape>: View {
+/// A faint flat hairline just inside the slab's edge that gives the pane its depth.
+public struct GlassSheen<S: InsettableShape>: View {
     let shape: S
 
     public init(shape: S) {
@@ -63,12 +56,8 @@ public struct GlassSheen<S: Shape>: View {
     }
 
     public var body: some View {
-        shape.fill(LinearGradient(stops: [
-            .init(color: .white.opacity(0.05), location: 0),
-            .init(color: .white.opacity(0.012), location: 0.35),
-            .init(color: .clear, location: 0.6),
-        ], startPoint: .top, endPoint: .bottom))
-        .allowsHitTesting(false)
+        shape.inset(by: 1.5).strokeBorder(.white.opacity(0.04), lineWidth: 1)
+            .allowsHitTesting(false)
     }
 }
 

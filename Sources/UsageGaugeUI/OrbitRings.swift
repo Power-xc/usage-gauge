@@ -8,7 +8,7 @@ struct OrbitRing {
 }
 
 /// Concentric rings, the first outermost, each lit clockwise from 12 o'clock: rings of dots (dot),
-/// of thin radial ticks (mono) or luminous arcs over faint tracks (iris). A white head marks the
+/// of thin radial ticks (mono) or solid arcs over faint tracks (iris). A white head marks the
 /// end of every lit arc.
 struct OrbitRings: View {
     /// Room kept free in the middle for the figure.
@@ -94,22 +94,10 @@ struct OrbitRings: View {
         let end = -90 + 360 * share
         var arc = Path()
         arc.addArc(center: center, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(end), clockwise: false)
-        let body = GraphicsContext.Shading.conicGradient(
-            Gradient(stops: [.init(color: ring.tint.opacity(0.3), location: 0), .init(color: ring.tint, location: max(share, 0.01))]),
-            center: center, angle: .degrees(-90))
-        canvas.drawLayer { glow in
-            glow.addFilter(.blur(radius: width * 1.1))
-            glow.stroke(arc, with: .color(ring.tint.opacity(0.8)), style: StrokeStyle(lineWidth: width * 1.6, lineCap: .round))
-        }
-        canvas.stroke(arc, with: body, style: StrokeStyle(lineWidth: width, lineCap: .round))
+        canvas.stroke(arc, with: .color(ring.tint), style: StrokeStyle(lineWidth: width, lineCap: .round))
         let tip = point(center, radius, end * .pi / 180)
-        canvas.drawLayer { halo in
-            halo.addFilter(.blur(radius: width))
-            halo.fill(Path(ellipseIn: CGRect(x: tip.x - width, y: tip.y - width, width: width * 2, height: width * 2)),
-                      with: .color(.white.opacity(0.9)))
-        }
-        canvas.fill(Path(ellipseIn: CGRect(x: tip.x - width * 0.55, y: tip.y - width * 0.55, width: width * 1.1, height: width * 1.1)),
-                    with: .color(.white))
+        let head = width * 0.55
+        canvas.fill(Path(ellipseIn: CGRect(x: tip.x - head, y: tip.y - head, width: head * 2, height: head * 2)), with: .color(.white))
     }
 
     private func angle(_ step: Int, of count: Int) -> Double {

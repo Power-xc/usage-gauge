@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Dial drawn like an iris: a woven band of dots round a dark pupil, radial strands with soft
-/// prism-coloured rays, grain, and rings of dots at the edge. The remaining share is lit —
-/// white, the tool's colour and the prism tints — the rest stays dim. Strands breathe at their
-/// own pace and the band ripples. The pupil's rim doubles as a clock: it brightens from 12
-/// o'clock as the window runs, with a dot at the current moment, and is full at the reset.
+/// Dial drawn like an iris: fine radial strands round a dark pupil, one thin ring at the edge.
+/// The remaining share is lit — the tool's colour, with a white strand leading at the head — and
+/// the rest stays a quiet faint white. Only the head moves: its strand breathes and the strands
+/// just behind it shimmer. The pupil's rim doubles as a clock: it brightens from 12 o'clock as
+/// the window runs, with a dot at the current moment, and is full at the reset.
 public struct IrisDial: View {
     let remainingPercent: Double
     let elapsedFraction: Double?
@@ -12,42 +12,29 @@ public struct IrisDial: View {
     let frozenAt: TimeInterval?
 
     private static let frameInterval: TimeInterval = 1.0 / 12
-    /// Densities per point of radius, so a small dial stays clear instead of crowded.
-    private static let fibresPerPoint = 1.8
-    private static let grainPerPoint = 2.2
-    private static let meshDotsPerPoint = 1.3
+    /// Strands per point of radius, so a small dial stays clear instead of crowded.
+    private static let strandsPerPoint = 1.6
     private static let pupilRatio = 0.6
-    private static let meshRings = 2
-    private static let edgeRings: [(radius: Double, dots: Int)] = [(0.93, 84), (0.985, 116)]
-    private static let warmWhite = Color(red: 1.0, green: 0.94, blue: 0.84)
-    private static let prism: [Color] = [
-        Color(red: 0.55, green: 0.76, blue: 1.0),
-        Color(red: 1.0, green: 0.62, blue: 0.78),
-        Color(red: 1.0, green: 0.86, blue: 0.56),
-    ]
+    private static let pupilOpacity = 0.5
+    private static let strandStart = 1.09
+    private static let strandReach = 0.3...0.84
+    private static let headReach = 0.96
+    /// Every strand leans a little the same way, like the blades of an aperture.
+    private static let strandLean = 0.025
+    private static let ringRadius = 0.965
+    private static let strandWidth = 0.8
+    private static let hairline = 0.8
+    private static let ringWidth = 0.6
+    private static let headStrands = 5
+    private static let breathCycle = 3.2
 
-    /// Per-strand randomness, computed once: frames only advance time, never re-roll shapes.
-    private struct Strand {
-        let jitter: Double, reach: Double, inset: Double, bend: Double, rate: Double, phase: Double
-    }
-
-    private struct Speck {
-        let share: Double, depth: Double, flicker: Double
-    }
-
-    private static let strands: [Strand] = (0..<300).map { index in
-        let seed = noise(Double(index))
-        return Strand(jitter: (seed - 0.5) * 0.02, reach: 0.4 + 0.45 * seed, inset: 0.04 * noise(seed * 91),
-                      bend: (noise(seed * 17) - 0.5) * 0.12, rate: 0.6 + seed * 0.9, phase: seed * 40)
-    }
-    private static let specks: [Speck] = (0..<900).map { index in
-        let seed = noise(Double(index) * 3.7)
-        let depth = noise(seed * 29)
-        return Speck(share: noise(Double(index) * 1.3), depth: 0.15 + 0.7 * depth * depth, flicker: seed * 13)
-    }
-    private static let rays: [(share: Double, rate: Double, phase: Double)] = (0..<48).map { index in
-        let seed = noise(Double(index) * 7.3)
-        return ((Double(index) + noise(Double(index) * 5.1)) / 48, 0.5 + seed, seed * 30)
+    /// Per-strand length as a share of the strand span, computed once: frames only advance time,
+    /// never re-roll shapes. Two slow waves with a little noise on top, so neighbours stay related.
+    private static let reaches: [Double] = (0..<300).map { index in
+        let share = Double(index) / 300 * 2 * .pi
+        let wave = 0.5 + 0.25 * sin(share * 5 + 1) + 0.25 * sin(share * 11 + 4)
+        let length = 0.6 * wave + 0.4 * noise(Double(index))
+        return strandReach.lowerBound + (strandReach.upperBound - strandReach.lowerBound) * length
     }
 
     /// - Parameters:
@@ -74,131 +61,66 @@ public struct IrisDial: View {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let outer = min(size.width, size.height) / 2
         let pupil = outer * Self.pupilRatio
-        let litShare = remainingPercent / 100
 
-        canvas.fill(circle(center, outer), with: .radialGradient(
-            Gradient(stops: [
-                .init(color: .black.opacity(0.6), location: 0),
-                .init(color: .black.opacity(0.5), location: Self.pupilRatio * 0.95),
-                .init(color: .black.opacity(0), location: 1),
-            ]), center: center, startRadius: 0, endRadius: outer))
-        drawGrain(in: canvas, center: center, pupil: pupil, outer: outer, litShare: litShare, time: time)
-        drawRays(in: canvas, center: center, outer: outer, litShare: litShare, time: time)
-        drawStrands(in: canvas, center: center, pupil: pupil, outer: outer, litShare: litShare, time: time)
-        drawMesh(in: canvas, center: center, pupil: pupil, outer: outer, litShare: litShare, time: time)
-        drawEdgeRings(in: canvas, center: center, outer: outer, litShare: litShare)
+        canvas.fill(circle(center, pupil), with: .color(.black.opacity(Self.pupilOpacity)))
+        drawStrands(in: canvas, center: center, pupil: pupil, outer: outer, time: time)
+        drawRing(in: canvas, center: center, radius: outer * Self.ringRadius)
         drawRimClock(in: canvas, center: center, radius: pupil * 0.96)
     }
 
-    /// Strands are grouped into a few paths by shade, so a frame is a handful of strokes.
-    private func drawStrands(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double,
-                             litShare: Double, time: Double) {
-        var dim = Path(), bright = Path(), tinted = Path(), soft = Path()
-        let count = min(Self.strands.count, Int(outer * Self.fibresPerPoint))
+    /// Strands are grouped into two paths, so a frame is a few strokes. The strands leading the lit
+    /// run are drawn one by one: white at the head, easing back into the tool's colour.
+    private func drawStrands(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double, time: Double) {
+        let count = min(Self.reaches.count, Int(outer * Self.strandsPerPoint))
         let span = outer * 0.9 - pupil
-        for index in 0..<count {
-            let strand = Self.strands[index]
-            let share = Double(index) / Double(count)
-            let angle = share * 2 * .pi - .pi / 2 + strand.jitter
-            let breath = 0.5 + 0.5 * sin(time * strand.rate + strand.phase)
-            let start = pupil * (1.06 + strand.inset)
+        let litCount = Int((remainingPercent / 100 * Double(count)).rounded())
+        let breath = 0.5 + 0.5 * sin(time * 2 * .pi / Self.breathCycle)
+
+        func strand(_ index: Int, reach: Double) -> Path {
+            let angle = Double(index) / Double(count) * 2 * .pi - .pi / 2
             var path = Path()
-            path.move(to: point(center, start, angle))
-            // A slight sideways drift makes strands read as fibres, not spokes.
-            path.addLine(to: point(center, start + span * (strand.reach + 0.15 * breath), angle + strand.bend))
-            guard share < litShare else { dim.addPath(path); continue }
-            switch index % 4 {
-            case 0: bright.addPath(path)
-            case 2: soft.addPath(path)
-            default: tinted.addPath(path)
-            }
+            path.move(to: point(center, pupil * Self.strandStart, angle))
+            path.addLine(to: point(center, pupil * Self.strandStart + span * reach, angle + Self.strandLean))
+            return path
         }
-        canvas.stroke(dim, with: .color(.white.opacity(0.14)), lineWidth: 0.8)
-        canvas.stroke(soft, with: .color(.white.opacity(0.5)), lineWidth: 0.9)
-        canvas.stroke(tinted, with: .color(color.opacity(0.95)), lineWidth: 1.1)
-        canvas.stroke(bright, with: .color(.white.opacity(0.95)), lineWidth: 1.0)
-    }
 
-    /// Soft rays across the lit share, every other one in the tool's colour and the rest in faint
-    /// prism tints, each swelling and fading on its own.
-    private func drawRays(in canvas: GraphicsContext, center: CGPoint, outer: Double, litShare: Double, time: Double) {
-        var paths = Array(repeating: Path(), count: Self.prism.count * 2)
-        for (index, ray) in Self.rays.enumerated() where ray.share < litShare {
-            let swell = 0.5 + 0.5 * sin(time * ray.rate + ray.phase)
-            let angle = ray.share * 2 * .pi - .pi / 2
-            paths[index % paths.count].move(to: point(center, outer * (0.7 - 0.04 * swell), angle))
-            paths[index % paths.count].addLine(to: point(center, outer * (0.82 + 0.06 * swell), angle))
+        var dim = Path(), lit = Path()
+        for index in 0..<count {
+            if index >= litCount { dim.addPath(strand(index, reach: Self.reaches[index])) }
+            else if index < litCount - Self.headStrands { lit.addPath(strand(index, reach: Self.reaches[index])) }
         }
-        for (index, path) in paths.enumerated() {
-            let tint = index.isMultiple(of: 2) ? color.opacity(0.36) : Self.prism[index / 2].opacity(0.2)
-            canvas.stroke(path, with: .color(tint), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+        canvas.stroke(dim, with: .color(.white.opacity(0.13)), lineWidth: Self.strandWidth)
+        canvas.stroke(lit, with: .color(color), lineWidth: Self.strandWidth)
+
+        for step in 0..<min(Self.headStrands, litCount) {
+            let index = litCount - 1 - step
+            let path = strand(index, reach: step == 0 ? Self.headReach - 0.06 * (1 - breath) : Self.reaches[index])
+            canvas.stroke(path, with: .color(color), lineWidth: Self.strandWidth)
+            let shimmer = 0.5 + 0.5 * sin(time * 2 * .pi / Self.breathCycle - Double(step) * 0.9)
+            let whiteness = step == 0 ? 1 : (1 - Double(step) / Double(Self.headStrands)) * (0.3 + 0.4 * shimmer)
+            canvas.stroke(path, with: .color(.white.opacity(whiteness)), lineWidth: Self.strandWidth)
         }
     }
 
-    /// Rings of dots hugging the pupil, rippling slightly so they read as a woven band.
-    private func drawMesh(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double,
-                          litShare: Double, time: Double) {
-        var lit = Path(), dark = Path()
-        let dots = Int(outer * Self.meshDotsPerPoint)
-        for ring in 0..<Self.meshRings {
-            let base = pupil * 1.03 + Double(ring) * outer * 0.05
-            for dot in 0..<dots {
-                let share = (Double(dot) + Double(ring) * 0.5) / Double(dots)
-                let angle = share * 2 * .pi - .pi / 2
-                let ripple = outer * 0.012 * sin(angle * 5 + time * 0.8 + Double(ring) * 1.3)
-                let spot = point(center, base + ripple, angle)
-                let rect = CGRect(x: spot.x - 0.65, y: spot.y - 0.65, width: 1.3, height: 1.3)
-                if share < litShare { lit.addEllipse(in: rect) } else { dark.addEllipse(in: rect) }
-            }
-        }
-        canvas.fill(dark, with: .color(.white.opacity(0.18)))
-        canvas.fill(lit, with: .color(.white.opacity(0.85)))
-    }
-
-    /// Two rings of dots at the rim, lit warm white inside and in the tool's colour outside.
-    private func drawEdgeRings(in canvas: GraphicsContext, center: CGPoint, outer: Double, litShare: Double) {
-        var dark = Path()
-        for (index, ring) in Self.edgeRings.enumerated() {
-            var lit = Path()
-            for dot in 0..<ring.dots {
-                let share = Double(dot) / Double(ring.dots)
-                let spot = point(center, outer * ring.radius, share * 2 * .pi - .pi / 2)
-                let rect = CGRect(x: spot.x - 0.75, y: spot.y - 0.75, width: 1.5, height: 1.5)
-                if share < litShare { lit.addEllipse(in: rect) } else { dark.addEllipse(in: rect) }
-            }
-            let shade = index == Self.edgeRings.count - 1 ? color : Self.warmWhite
-            canvas.fill(lit, with: .color(shade.opacity(0.92)))
-        }
-        canvas.fill(dark, with: .color(.white.opacity(0.2)))
-    }
-
-    /// Stippled grain, densest mid-ring, shimmering as each speck fades in and out.
-    private func drawGrain(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double,
-                           litShare: Double, time: Double) {
-        var lit = Path(), dark = Path()
-        let flicker = Double(Int(time * 6) % 7)
-        let count = min(Self.specks.count, Int(outer * Self.grainPerPoint))
-        for speck in Self.specks.prefix(count) where Self.noise(speck.flicker + flicker) > 0.35 {
-            let spot = point(center, pupil + (outer - pupil) * speck.depth, speck.share * 2 * .pi - .pi / 2)
-            let rect = CGRect(x: spot.x - 0.55, y: spot.y - 0.55, width: 1.1, height: 1.1)
-            if speck.share < litShare { lit.addRect(rect) } else { dark.addRect(rect) }
-        }
-        canvas.fill(dark, with: .color(.white.opacity(0.18)))
-        canvas.fill(lit, with: .color(.white.opacity(0.7)))
+    /// One thin ring at the edge: the remaining share in the tool's colour, the rest faint.
+    private func drawRing(in canvas: GraphicsContext, center: CGPoint, radius: Double) {
+        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.08)), lineWidth: Self.ringWidth)
+        guard remainingPercent > 0 else { return }
+        var lit = Path()
+        lit.addArc(center: center, radius: radius, startAngle: .degrees(-90),
+                   endAngle: .degrees(-90 + 360 * remainingPercent / 100), clockwise: false)
+        canvas.stroke(lit, with: .color(color.opacity(0.75)), lineWidth: Self.ringWidth)
     }
 
     /// The pupil's rim as a clock: faint all round, bright from 12 o'clock to now, dot at now.
     private func drawRimClock(in canvas: GraphicsContext, center: CGPoint, radius: Double) {
-        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.1)), lineWidth: 0.8)
+        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.1)), lineWidth: Self.hairline)
         guard let elapsedFraction else { return }
         var passed = Path()
         passed.addArc(center: center, radius: radius, startAngle: .degrees(-90),
                       endAngle: .degrees(-90 + 360 * elapsedFraction), clockwise: false)
-        canvas.stroke(passed, with: .color(.white.opacity(0.4)), style: StrokeStyle(lineWidth: 1, lineCap: .round))
-        let dot = point(center, radius, elapsedFraction * 2 * .pi - .pi / 2)
-        canvas.fill(circle(dot, 4.5), with: .radialGradient(Gradient(colors: [color.opacity(0.7), color.opacity(0)]),
-                                                            center: dot, startRadius: 0, endRadius: 4.5))
-        canvas.fill(circle(dot, 1.6), with: .color(.white))
+        canvas.stroke(passed, with: .color(.white.opacity(0.45)), lineWidth: Self.hairline)
+        canvas.fill(circle(point(center, radius, elapsedFraction * 2 * .pi - .pi / 2), 1.7), with: .color(.white))
     }
 
     /// Deterministic 0..<1 value for a seed, so shapes stay put from frame to frame.
