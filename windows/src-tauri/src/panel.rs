@@ -3,13 +3,20 @@
 use serde::Serialize;
 use tauri::{AppHandle, LogicalSize, Manager, PhysicalPosition, State, WebviewWindow, WindowEvent};
 
-use crate::app::{main_window, publish, set_panel_shown, AppState};
+use crate::app::{main_window, publish, set_layout, set_panel_shown, AppState};
 use crate::prefs::{clamp_opacity, clamp_scale, PanelLayout, PanelStyle};
 use crate::view::{usage_view, UsageView};
 
 /// Smoke tint the acrylic sits under is drawn by the page; the acrylic itself stays untinted.
 #[cfg(windows)]
 const ACRYLIC_TINT: (u8, u8, u8, u8) = (9, 10, 15, 0);
+
+/// One graph form the header picker offers.
+#[derive(Serialize)]
+struct LayoutChoice {
+    id: &'static str,
+    title: &'static str,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,6 +27,7 @@ pub struct PanelState {
     has_glass: bool,
     style: PanelStyle,
     layout: PanelLayout,
+    layouts: Vec<LayoutChoice>,
     scale: f64,
 }
 
@@ -75,6 +83,7 @@ pub fn get_state(app: AppHandle, state: State<AppState>) -> PanelState {
         has_glass: state.has_glass(),
         style: state.prefs().style,
         layout: state.prefs().layout,
+        layouts: PanelLayout::ALL.into_iter().map(|layout| LayoutChoice { id: layout.id(), title: layout.title() }).collect(),
         scale: state.prefs().scale,
     }
 }
@@ -90,6 +99,14 @@ pub fn set_opacity(app: AppHandle, state: State<AppState>, value: f64) {
 pub fn set_scale(app: AppHandle, state: State<AppState>, value: f64) {
     state.prefs().scale = clamp_scale(value);
     AppState::save_prefs_soon(&app);
+}
+
+/// The header picker's choice; takes the same path as the tray's 그래프 items. Unknown ids are ignored.
+#[tauri::command]
+pub fn choose_layout(app: AppHandle, id: String) {
+    if let Some(layout) = PanelLayout::from_id(&id) {
+        set_layout(&app, layout);
+    }
 }
 
 #[tauri::command]

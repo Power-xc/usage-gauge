@@ -15,6 +15,7 @@
   --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
   --signal: rgb(255 90 54);
   --hairline: rgb(255 255 255 / 0.1);
+  --content-width: 472px;
 }
 
 * {
@@ -93,9 +94,23 @@ body {
 }
 
 .head {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* While the panel grows or shrinks to a new page, what does not fit yet stays hidden. */
+.panel.fitting {
+  overflow: hidden;
+}
+
+.grid-slot {
+  position: relative;
+}
+
+.grid-slot > * {
+  transform-origin: 50% 0;
 }
 
 .header {
@@ -230,7 +245,8 @@ body {
 .grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* Wider than the panel's 10px so a hovered cell can reveal its line in the gap below it. */
+  gap: 18px;
 }
 
 .row {
@@ -276,6 +292,8 @@ body {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
+  gap: calc(var(--dial-size) * 0.01);
   align-items: center;
   justify-content: center;
 }
@@ -1009,4 +1027,349 @@ body {
 
 .panel[data-style="iris"] .tag-title {
   color: rgb(255 255 255 / 0.88);
+}
+
+/* Tab row: "전체" and one tab per tool; a short underline in the open tool's colour slides between them. */
+.tabs {
+  position: relative;
+  display: flex;
+  width: var(--content-width);
+}
+
+.tab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 11px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tab:hover,
+.tab.selected {
+  color: var(--text);
+}
+
+.tab.selected {
+  font-weight: 600;
+}
+
+.tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.tab-mark {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tab-index {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.tab-underline {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--underline);
+  pointer-events: none;
+  transition:
+    transform 0.3s ease-in-out,
+    background-color 0.3s ease-in-out;
+}
+
+/* Iris lets the underline glow; dot and mono keep it a clean line. */
+.panel[data-style="iris"] .tab-underline {
+  box-shadow: 0 0 6px var(--underline);
+}
+
+.panel[data-style="dot"] .tab-name,
+.panel[data-style="mono"] .tab-name {
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.panel[data-style="mono"] .tabs {
+  box-sizing: content-box;
+  width: var(--content-width);
+  padding: 4px var(--panel-padding);
+  border-top: 1px solid var(--hairline);
+}
+
+.panel[data-style="mono"] .tab-mark {
+  border-radius: 0;
+}
+
+.panel[data-style="mono"] .tab-underline {
+  left: var(--panel-padding);
+  bottom: 8px;
+  height: 1.5px;
+}
+
+/* Graph picker: a glyph over a short title for every form, the current one underlined in white. */
+.picker {
+  display: flex;
+  width: var(--content-width);
+}
+
+.choice {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.choice:hover,
+.choice.selected {
+  color: var(--text);
+}
+
+.choice-glyph {
+  display: grid;
+  place-items: center;
+  height: 14px;
+}
+
+.choice-title {
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.choice-underline {
+  width: 16px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.choice.selected .choice-underline {
+  opacity: 1;
+}
+
+/* A tool's page: the dial named under its figure beside the plan and both windows. */
+.detail-page {
+  width: var(--content-width);
+}
+
+.panel[data-style="mono"] .detail-page {
+  width: auto;
+  padding: var(--panel-padding);
+  border-top: 1px solid var(--hairline);
+}
+
+.tool-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: var(--content-width);
+}
+
+.tool-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.tool-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tool-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tool-measured {
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.tool-window {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tool-window canvas {
+  display: block;
+}
+
+.tool-window-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tool-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.tool-share {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-reset {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.tool-offline {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tool-offline-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.tool-offline-reason {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--text-faint);
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The window's name under the figure on the tool page. */
+.pupil-label {
+  font-size: calc(var(--dial-size) * 0.105);
+  font-weight: 500;
+  letter-spacing: calc(var(--dial-size) * 0.004);
+  color: var(--text-faint);
+}
+
+.dial.labelled .figure {
+  font-size: calc(var(--dial-size) * 0.27);
+}
+
+.dial.labelled .percent {
+  font-size: calc(var(--dial-size) * 0.1);
+}
+
+.panel[data-style="dot"] .pupil-text {
+  gap: calc(var(--dial-size) * 0.05);
+}
+
+.panel[data-style="mono"] .dial.labelled .figure {
+  font-size: calc(var(--dial-size) * 0.22);
+}
+
+.panel[data-style="mono"] .dial.labelled .percent {
+  font-size: calc(var(--dial-size) * 0.09);
+}
+
+/* Hover is light only: the tool brightens, a soft glow of its colour rises behind its cell and a line
+   with its reset and measuring times appears in place. Nothing moves and nothing is framed. */
+.tool-cell.clickable {
+  cursor: pointer;
+}
+
+.tool-cell:not(.cell) {
+  transition: filter 0.16s ease-out;
+}
+
+.tool-cell:not(.cell).hovered {
+  filter: brightness(1.1);
+}
+
+.cell.tool-cell {
+  position: relative;
+  isolation: isolate;
+}
+
+.cell.tool-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0 24px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(var(--tool-tint) / 0.16);
+  filter: blur(22px);
+  opacity: 0;
+  transition: opacity 0.16s ease-out;
+  pointer-events: none;
+}
+
+.cell.tool-cell > :not(.reveal) {
+  transition: filter 0.16s ease-out;
+}
+
+.cell.tool-cell.hovered::before {
+  opacity: 1;
+}
+
+.cell.tool-cell.hovered > :not(.reveal) {
+  filter: brightness(1.1);
+}
+
+.reveal {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 12px);
+  font-size: 9px;
+  line-height: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.16s ease-out;
+  pointer-events: none;
+}
+
+.tool-cell.hovered > .reveal {
+  opacity: 1;
+}
+
+.panel[data-style="mono"] .reveal {
+  transform: translate(-50%, -3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-underline {
+    transition-duration: 0.15s;
+  }
 }

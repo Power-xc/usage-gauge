@@ -1,4 +1,5 @@
 import { noise, pointAt, prepareCanvas, type Point } from "./canvas";
+import { Glide } from "./glide";
 import { BLACK, WHITE, rgba, type Rgb } from "./theme";
 
 /** Densities per point of radius, so a small dial stays clear instead of crowded. */
@@ -76,7 +77,8 @@ export class IrisDial {
   readonly canvas = document.createElement("canvas");
   private readonly context: CanvasRenderingContext2D;
   private readonly size: number;
-  private remainingShare = 0;
+  private readonly share = new Glide();
+  readonly glides = [this.share];
   private elapsed: number | null = null;
   private color: Rgb = WHITE;
 
@@ -87,9 +89,13 @@ export class IrisDial {
 
   /** `elapsedFraction` is 0...1, how much of the window has passed; null hides the rim clock. */
   update(remainingPercent: number, elapsedFraction: number | null, color: Rgb): void {
-    this.remainingShare = Math.min(100, Math.max(0, remainingPercent)) / 100;
+    this.share.to(Math.min(100, Math.max(0, remainingPercent)) / 100);
     this.elapsed = elapsedFraction === null ? null : Math.min(1, Math.max(0, elapsedFraction));
     this.color = color;
+  }
+
+  private get remainingShare(): number {
+    return this.share.value;
   }
 
   draw(seconds: number): void {

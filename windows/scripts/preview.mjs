@@ -1,7 +1,9 @@
 // Renders the frontend with mock data in headless Chrome and writes preview.png (mono dial),
-// preview-styles.png (mono, iris and dot stacked) and preview-layouts.png (the four layouts in
-// mono, then bars and columns in iris and dot) and preview-shapes.png (orbit, capsule,
-// constellation and ruler, each in mono, iris and dot), all at 2x.
+// preview-styles.png (mono, iris and dot stacked), preview-layouts.png (the four layouts in
+// mono, then bars and columns in iris and dot), preview-shapes.png (orbit, capsule,
+// constellation and ruler, each in mono, iris and dot), preview-history.png (the four history
+// forms in each style) and preview-interaction.png (per style a tool's page opened from its
+// tab, and the overview with one cell hovered), all at 2x.
 // The real frontend code runs unchanged; only the Tauri bridge is replaced by a mock.
 import { execFileSync } from "node:child_process";
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
@@ -20,6 +22,7 @@ const layoutsOutput = join(root, "preview-layouts.png");
 const shapesOutput = join(root, "preview-shapes.png");
 const historyOutput = join(root, "preview-history.png");
 const historyFixture = join(tmpdir(), "usage-gauge-preview-history.json");
+const interactionOutput = join(root, "preview-interaction.png");
 const chrome =
   process.env.CHROME_PATH ??
   join(homedir(), ".cache/puppeteer/chrome-headless-shell/mac_arm-155.0.8059.84/chrome-headless-shell-mac-arm64/chrome-headless-shell");
@@ -38,9 +41,14 @@ const LAYOUT_ROWS = 4;
 const SHAPE_LAYOUTS = ["orbit", "capsule", "constellation", "ruler"];
 const SHAPE_ROWS = 6;
 const HISTORY_LAYOUTS = ["trend", "histogram", "spark", "burst"];
+/** The interaction image: per style a tool's page, and the overview with one cell hovered. */
+const INTERACTION_TOOL = "claude";
+const INTERACTION_HOVERED = "codex";
+const SETTLE_MS = 700;
 const STACK_BACKGROUND = "#0b101a";
 const STACK_PADDING = { x: 72, y: 77, gap: 29 };
 const LAYOUTS_PADDING = { x: 72, y: 77, gap: 29 };
+const INTERACTION_PADDING = { x: 72, y: 77, gap: 29 };
 
 // The sample history comes from the Rust history code itself, so the preview shows what the app would send.
 function attachSampleHistory() {
@@ -68,32 +76,34 @@ function serve() {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
 }
 
-const window_ = (displayPercent, remainingPercent, elapsedFraction, label, countdown, countdownCompact, level = "comfortable") => ({
-  displayPercent, remainingPercent, elapsedFraction, label, countdown, countdownCompact, level,
+const NOW = new Date(2026, 9, 21, 17, 0).getTime();
+const MEASURED_AGO_MS = 10 * 60_000;
+const window_ = (displayPercent, remainingPercent, elapsedFraction, label, countdown, countdownCompact, minutesLeft, level = "comfortable") => ({
+  displayPercent, remainingPercent, elapsedFraction, label, countdown, countdownCompact, resetsAt: NOW + minutesLeft * 60_000, level,
 });
 
 const providers = [
   {
-    id: "claude", title: "Claude", plan: "Max", message: null,
-    session: window_(94, 94, 0.234, "5시간", "3시간 50분", "3h 50m"),
-    weekly: window_(37, 37, 0.57, "주간", "3일 0시간", "3d 0h"),
+    id: "claude", title: "Claude", plan: "Max", message: null, measuredAt: NOW - MEASURED_AGO_MS,
+    session: window_(94, 94, 0.234, "5시간", "3시간 50분", "3h 50m", 230),
+    weekly: window_(37, 37, 0.57, "주간", "3일 0시간", "3d 0h", 4320),
     // Where the usage history would put the tool an hour ago; the constellation draws a trail from it.
     hourAgo: { session: 100, weekly: 38 },
   },
   {
-    id: "codex", title: "Codex", plan: "Plus", message: null,
-    session: window_(8, 8, 0.843, "5시간", "47분", "47m", "critical"),
-    weekly: window_(26, 26, 0.4, "주간", "6일 16시간", "6d 16h", "low"),
+    id: "codex", title: "Codex", plan: "Plus", message: null, measuredAt: NOW - MEASURED_AGO_MS,
+    session: window_(8, 8, 0.843, "5시간", "47분", "47m", 47, "critical"),
+    weekly: window_(26, 26, 0.4, "주간", "6일 16시간", "6d 16h", 9600, "low"),
   },
   {
-    id: "gemini", title: "Gemini", plan: "Pro", message: null,
-    session: window_(71, 71, 0.6, "일간", "9시간 0분", "9h 0m"),
-    weekly: window_(88, 88, 0.28, "주간", "5일 0시간", "5d 0h"),
+    id: "gemini", title: "Gemini", plan: "Pro", message: null, measuredAt: NOW - MEASURED_AGO_MS,
+    session: window_(71, 71, 0.6, "일간", "9시간 0분", "9h 0m", 540),
+    weekly: window_(88, 88, 0.28, "주간", "5일 0시간", "5d 0h", 7200),
   },
   {
-    id: "cursor", title: "Cursor", plan: "Pro", message: null,
-    session: window_(46, 46, 0.46, "5시간", "2시간 10분", "2h 10m"),
-    weekly: window_(53, 53, 0.4, "월간", "16일 16시간", "16d 16h"),
+    id: "cursor", title: "Cursor", plan: "Pro", message: null, measuredAt: NOW - MEASURED_AGO_MS,
+    session: window_(46, 46, 0.46, "5시간", "2시간 10분", "2h 10m", 130),
+    weekly: window_(53, 53, 0.4, "월간", "16일 16시간", "16d 16h", 24000),
   },
 ];
 
@@ -103,6 +113,11 @@ const mockState = {
   isShown: true,
   hasGlass: true,
   layout: "dial",
+  /** What the backend lists for the header picker: all twelve forms, as on macOS. */
+  layouts: [
+    ["dial", "다이얼"], ["bars", "바"], ["columns", "막대 그래프"], ["figures", "숫자"], ["orbit", "궤도"], ["capsule", "캡슐"],
+    ["trend", "추이"], ["histogram", "히스토그램"], ["spark", "스파크 바"], ["burst", "버스트"], ["constellation", "별자리"], ["ruler", "눈금자"],
+  ].map(([id, title]) => ({ id, title })),
   scale: 1,
 };
 
@@ -119,7 +134,7 @@ function installTauriMock(state, frozenSeconds) {
 }
 
 // Draws one style's panel over `background` and returns it as a 2x PNG, `margin` points around.
-async function renderPanel(browser, port, style, background, margin, layout = "dial", toolCount = STILL_TOOLS) {
+async function renderPanel(browser, port, style, background, margin, layout = "dial", toolCount = STILL_TOOLS, interact = null) {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 800, height: 400, deviceScaleFactor: SCALE });
@@ -134,6 +149,10 @@ async function renderPanel(browser, port, style, background, margin, layout = "d
     );
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.waitForSelector(".panel");
+    if (interact) {
+      await interact(page);
+      await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+    }
     const box = await (await page.$(".panel")).boundingBox();
     return await page.screenshot({
       clip: { x: box.x - margin, y: box.y - margin, width: box.width + margin * 2, height: box.height + margin * 2 },
@@ -199,6 +218,16 @@ try {
   }
   await stackPanels(browser, historyPanels, historyOutput, LAYOUTS_PADDING, HISTORY_LAYOUTS.length);
   console.log(`wrote ${historyOutput}`);
+  const openTool = (page) => page.click(`.tab[data-tab="${INTERACTION_TOOL}"]`);
+  const hoverCell = (page) => page.hover(`.cell[data-tool="${INTERACTION_HOVERED}"]`);
+  const interactionPanels = [];
+  for (const interact of [openTool, hoverCell]) {
+    for (const style of STYLES) {
+      interactionPanels.push(await renderPanel(browser, port, style, STACK_BACKGROUND, 0, "dial", providers.length, interact));
+    }
+  }
+  await stackPanels(browser, interactionPanels, interactionOutput, INTERACTION_PADDING, STYLES.length);
+  console.log(`wrote ${interactionOutput}`);
 } finally {
   await browser.close();
   server.close();

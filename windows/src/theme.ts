@@ -10,6 +10,8 @@ export const BLACK: Rgb = [0, 0, 0];
 /** Layout tokens shared by the canvases and the stylesheet (see `style.css`). */
 export const DIAL_SIZE = 72;
 export const DETAIL_WIDTH = 140;
+/** The tool page's large dial. */
+export const PAGE_DIAL_SIZE = 120;
 /** Width of the content inside the panel padding; every layout fills it, so switching keeps the panel's width. */
 export const CONTENT_WIDTH = 472;
 export const CELL_SPACING = 24;

@@ -65,9 +65,19 @@ export function windowBar(style: PanelStyle, width: number, remainingPercent: nu
   return bar.canvas;
 }
 
-/** Dial for the style with the remaining percent in the middle; iris also glows through the glass (see `style.css`). */
-export function sessionGauge(window: WindowView | null, style: PanelStyle, tint: Rgb, drawables: Drawable[]): HTMLElement {
-  const dial: Dial = style === "dot" ? new DotDial(DIAL_SIZE) : style === "mono" ? new TickDial(DIAL_SIZE) : new IrisDial(DIAL_SIZE);
+/**
+ * Dial for the style with the remaining percent in the middle; iris also glows through the glass
+ * (see `style.css`). `showsLabel` names the window under the figure, as on the tool page.
+ */
+export function sessionGauge(
+  window: WindowView | null,
+  style: PanelStyle,
+  tint: Rgb,
+  drawables: Drawable[],
+  size = DIAL_SIZE,
+  showsLabel = false,
+): HTMLElement {
+  const dial: Dial = style === "dot" ? new DotDial(size) : style === "mono" ? new TickDial(size) : new IrisDial(size);
   dial.update(window?.remainingPercent ?? 0, window?.elapsedFraction ?? null, tint);
   drawables.push(dial);
 
@@ -75,7 +85,7 @@ export function sessionGauge(window: WindowView | null, style: PanelStyle, tint:
   const value = window ? String(window.displayPercent) : NO_READING;
   const readout = el("div", "pupil-value");
   if (style === "dot") {
-    const pitch = DIAL_SIZE * (value.length > 2 ? DOT_PITCH_THREE_DIGITS : DOT_PITCH);
+    const pitch = size * (value.length > 2 ? DOT_PITCH_THREE_DIGITS : DOT_PITCH);
     readout.style.gap = `${pitch}px`;
     readout.append(dotMatrixText(value, pitch, rgba(warning ?? WHITE, 1)));
     if (window) readout.append(dotMatrixText("%", pitch * DOT_PERCENT_SCALE, rgba(WHITE, MUTED_ALPHA)));
@@ -87,8 +97,11 @@ export function sessionGauge(window: WindowView | null, style: PanelStyle, tint:
     readout.append(figure);
     if (window) readout.append(el("span", "percent", "%"));
   }
-  const element = el("div", "dial", dial.canvas, el("div", "pupil-text", readout));
+  const text = el("div", "pupil-text", readout);
+  if (showsLabel) text.append(el("span", "pupil-label", window?.label ?? "단기"));
+  const element = el("div", showsLabel ? "dial labelled" : "dial", dial.canvas, text);
   element.style.setProperty("--tint", tint.join(" "));
+  element.style.setProperty("--dial-size", `${size}px`);
   return element;
 }
 

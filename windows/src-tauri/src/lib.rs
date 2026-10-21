@@ -34,6 +34,7 @@ pub fn run() {
             panel::get_state,
             panel::set_opacity,
             panel::set_scale,
+            panel::choose_layout,
             panel::hide_panel,
             panel::resize_panel
         ])

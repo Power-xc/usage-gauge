@@ -1,4 +1,5 @@
 import { prepareCanvas } from "./canvas";
+import { Glide } from "./glide";
 import { WHITE, rgba, type Rgb } from "./theme";
 import type { PanelStyle } from "./types";
 
@@ -15,23 +16,52 @@ const GLOW_ROOM = 14;
 /**
  * The remaining share as an upright column in the style's voice: a luminous gradient with a soft
  * head glow (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
- * marks the top of what is left. Still; it is drawn once.
+ * marks the top of what is left. It glides to a new share like the dials and bars do.
  */
-export function verticalMeter(style: PanelStyle, remainingPercent: number, tint: Rgb, width: number, height: number): HTMLCanvasElement {
-  const share = Math.min(100, Math.max(0, remainingPercent)) / 100;
-  const canvas = document.createElement("canvas");
-  if (style === "iris") {
-    const context = prepareCanvas(canvas, width + 2 * GLOW_ROOM, height + 2 * GLOW_ROOM);
-    // The extra room is only for the glow; it must not push the layout apart.
-    canvas.style.margin = `${-GLOW_ROOM}px`;
-    context.translate(GLOW_ROOM, GLOW_ROOM);
-    drawLuminous(context, share, tint, width, height);
-  } else {
-    const context = prepareCanvas(canvas, width, height);
-    if (style === "dot") drawDots(context, share, tint, width, height);
+export class VerticalMeter {
+  readonly canvas = document.createElement("canvas");
+  readonly glides: readonly Glide[];
+  private readonly context: CanvasRenderingContext2D;
+  private readonly share = new Glide();
+  private drawn: number | null = null;
+
+  constructor(
+    private readonly style: PanelStyle,
+    remainingPercent: number,
+    private readonly tint: Rgb,
+    private readonly width: number,
+    private readonly height: number,
+  ) {
+    this.glides = [this.share];
+    this.share.to(Math.min(100, Math.max(0, remainingPercent)) / 100);
+    if (style === "iris") {
+      this.context = prepareCanvas(this.canvas, width + 2 * GLOW_ROOM, height + 2 * GLOW_ROOM);
+      // The extra room is only for the glow; it must not push the layout apart.
+      this.canvas.style.margin = `${-GLOW_ROOM}px`;
+      this.context.translate(GLOW_ROOM, GLOW_ROOM);
+    } else {
+      this.context = prepareCanvas(this.canvas, width, height);
+    }
+  }
+
+  /** Repaints only when the share has moved since the last paint. */
+  draw(): void {
+    const share = this.share.value;
+    if (share === this.drawn) return;
+    this.drawn = share;
+    const { context, style, tint, width, height } = this;
+    context.clearRect(-GLOW_ROOM, -GLOW_ROOM, width + 2 * GLOW_ROOM, height + 2 * GLOW_ROOM);
+    if (style === "iris") drawLuminous(context, share, tint, width, height);
+    else if (style === "dot") drawDots(context, share, tint, width, height);
     else drawSegments(context, share, tint, width, height);
   }
-  return canvas;
+}
+
+/** A meter drawn once, for callers whose reading never changes. */
+export function verticalMeter(style: PanelStyle, remainingPercent: number, tint: Rgb, width: number, height: number): HTMLCanvasElement {
+  const meter = new VerticalMeter(style, remainingPercent, tint, width, height);
+  meter.draw();
+  return meter.canvas;
 }
 
 function drawLuminous(context: CanvasRenderingContext2D, share: number, tint: Rgb, width: number, height: number): void {

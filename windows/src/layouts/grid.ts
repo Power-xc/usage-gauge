@@ -18,6 +18,7 @@ export function buildGrid(providers: ProviderView[], style: PanelStyle, columns:
     const row = el("div", "row");
     providers.slice(start, start + columns).forEach((provider, offset) => {
       const cell = el("div", "cell", block(provider, start + offset, width, drawables));
+      cell.dataset.tool = provider.id;
       cell.style.width = `${isMono ? width + 2 * PANEL_PADDING : width}px`;
       row.append(cell);
     });

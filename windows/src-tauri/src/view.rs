@@ -9,6 +9,7 @@ use crate::store::Store;
 
 const DEFAULT_SESSION_LABEL: &str = "단기";
 const DEFAULT_WEEKLY_LABEL: &str = "장기";
+const MILLIS_PER_SECOND: i64 = 1000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,6 +21,8 @@ pub struct WindowView {
     pub countdown: String,
     /// Terse countdown for the monospaced styles ("3h 50m").
     pub countdown_compact: String,
+    /// Epoch milliseconds the window resets at, for the clock time on the detail page.
+    pub resets_at: Option<i64>,
     pub level: UsageLevel,
 }
 
@@ -35,6 +38,8 @@ pub struct ProviderView {
     pub message: Option<String>,
     /// How the short window drained so far; `None` for a provider without readings.
     pub history: Option<HistoryView>,
+    /// Epoch milliseconds this tool's numbers were measured at.
+    pub measured_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,6 +58,7 @@ fn window_view(window: &UsageWindow, default_label: &str, now: i64) -> WindowVie
         label: window.label().unwrap_or_else(|| default_label.into()),
         countdown: countdown_text(window.resets_at, now),
         countdown_compact: compact_countdown_text(window.resets_at, now),
+        resets_at: window.resets_at.map(|seconds| seconds * MILLIS_PER_SECOND),
         level: UsageLevel::from_remaining(window.remaining_percent()),
     }
 }
@@ -71,6 +77,7 @@ fn provider_view(usage: &ProviderUsage, history: &UsageHistory, now: i64) -> Pro
             .as_ref()
             .or(usage.weekly.as_ref())
             .map(|window| history_view(history, usage.id, window, now)),
+        measured_at: usage.measured_at.map(|seconds| seconds * MILLIS_PER_SECOND),
     }
 }
 
@@ -78,7 +85,7 @@ pub fn usage_view(store: &Store) -> UsageView {
     let now = store.now();
     UsageView {
         providers: store.providers().iter().map(|usage| provider_view(usage, store.history(), now)).collect(),
-        measured_at: store.measured_at().map(|seconds| seconds * 1000),
+        measured_at: store.measured_at().map(|seconds| seconds * MILLIS_PER_SECOND),
     }
 }
 
@@ -107,9 +114,10 @@ mod tests {
             label: "5시간".into(),
             countdown: "1분".into(),
             countdown_compact: "1m".into(),
+            resets_at: None,
             level: UsageLevel::Comfortable,
         });
-        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None, history: None }
+        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None, history: None, measured_at: None }
     }
 
     #[test]
@@ -118,5 +126,20 @@ mod tests {
         assert_eq!(tooltip(&view), "Claude 94% · Codex 8%");
         let view = UsageView { providers: vec![provider("Claude", Some(94)), provider("Codex", None)], measured_at: None };
         assert_eq!(tooltip(&view), "Claude 94% · Codex –");
+    }
+
+    #[test]
+    fn reset_and_measured_times_reach_the_webview_in_milliseconds() {
+        let usage = ProviderUsage {
+            id: "claude",
+            plan: None,
+            session: Some(UsageWindow { used_percent: 10.0, resets_at: Some(2000), window_minutes: Some(300) }),
+            weekly: None,
+            error_message: None,
+            measured_at: Some(1500),
+        };
+        let view = provider_view(&usage, &UsageHistory::default(), 1000);
+        assert_eq!(view.session.and_then(|window| window.resets_at), Some(2_000_000));
+        assert_eq!(view.measured_at, Some(1_500_000));
     }
 }

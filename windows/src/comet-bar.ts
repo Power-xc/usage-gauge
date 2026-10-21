@@ -1,4 +1,5 @@
 import { prepareCanvas } from "./canvas";
+import { Glide } from "./glide";
 import { WHITE, rgba, type Rgb } from "./theme";
 
 const PULSE_CYCLE_SECONDS = 2.8;
@@ -15,7 +16,8 @@ export class CometBar {
   private readonly width: number;
   private readonly height: number;
   private readonly thickness: number;
-  private remainingShare = 0;
+  private readonly share = new Glide();
+  readonly glides = [this.share];
   private color: Rgb = WHITE;
 
   constructor(width: number, thickness: number) {
@@ -28,8 +30,12 @@ export class CometBar {
   }
 
   update(remainingPercent: number, color: Rgb): void {
-    this.remainingShare = Math.min(100, Math.max(0, remainingPercent)) / 100;
+    this.share.to(Math.min(100, Math.max(0, remainingPercent)) / 100);
     this.color = color;
+  }
+
+  private get remainingShare(): number {
+    return this.share.value;
   }
 
   draw(seconds: number): void {

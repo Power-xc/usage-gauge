@@ -29,6 +29,8 @@ export interface WindowView {
   countdown: string;
   /** Terse form for the monospaced styles, e.g. "3h 50m". */
   countdownCompact: string;
+  /** Epoch milliseconds the window resets at; null when unknown. */
+  resetsAt: number | null;
   level: UsageLevel;
 }
 
@@ -77,6 +79,8 @@ export interface ProviderView {
    */
   hourAgo?: HourAgo | null;
   history: HistoryView | null;
+  /** Epoch milliseconds this tool's numbers were measured at; null before its first reading. */
+  measuredAt: number | null;
 }
 
 /** Where a tool stood an hour ago; null for a window without a sample that far back. */
@@ -91,6 +95,12 @@ export interface UsageView {
   measuredAt: number | null;
 }
 
+/** One graph form the header picker offers, as the backend lists them. */
+export interface LayoutChoice {
+  id: string;
+  title: string;
+}
+
 export interface PanelState {
   usage: UsageView;
   opacity: number;
@@ -99,6 +109,7 @@ export interface PanelState {
   hasGlass: boolean;
   style: PanelStyle;
   layout: PanelLayout;
+  layouts: LayoutChoice[];
   /** Panel size factor, 0.7...1.6. */
   scale: number;
 }

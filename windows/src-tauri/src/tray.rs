@@ -2,7 +2,7 @@
 
 use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuItem, PredefinedMenuItem, SubmenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Listener, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::app::{refresh, set_layout, set_style, toggle_panel, AppState, TRAY_ID};
@@ -43,6 +43,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
             CheckMenuItem::with_id(app, id, style.title(), true, style == current_style, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
+    watch_layout(app, &layouts);
     let mut layout_menu = SubmenuBuilder::new(app, "그래프");
     for item in &layouts {
         layout_menu = layout_menu.item(item);
@@ -130,9 +131,23 @@ fn choose_style(app: &AppHandle, style: PanelStyle, items: &[CheckMenuItem<tauri
 /// Same as `choose_style`, for the layout group.
 fn choose_layout(app: &AppHandle, layout: PanelLayout, items: &[CheckMenuItem<tauri::Wry>]) {
     set_layout(app, layout);
+    check_layout(items, layout);
+}
+
+fn check_layout(items: &[CheckMenuItem<tauri::Wry>], layout: PanelLayout) {
     for (item, candidate) in items.iter().zip(PanelLayout::ALL) {
         if let Err(error) = item.set_checked(candidate == layout) {
             eprintln!("usage-gauge: could not update the menu: {error}");
         }
     }
+}
+
+/// Keeps the menu's check on the layout in use when the panel's own picker changes it.
+fn watch_layout(app: &AppHandle, items: &[CheckMenuItem<tauri::Wry>]) {
+    let items = items.to_vec();
+    app.listen("panel-layout", move |event| {
+        if let Some(layout) = serde_json::from_str::<String>(event.payload()).ok().and_then(|id| PanelLayout::from_id(&id)) {
+            check_layout(&items, layout);
+        }
+    });
 }

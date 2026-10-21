@@ -8,6 +8,7 @@ export const bridge = {
   state: () => invoke<PanelState>("get_state"),
   setOpacity: (value: number) => invoke("set_opacity", { value }),
   setScale: (value: number) => invoke("set_scale", { value }),
+  chooseLayout: (id: string) => invoke("choose_layout", { id }),
   hidePanel: () => invoke("hide_panel"),
   resize: (width: number, height: number) => invoke("resize_panel", { width, height }),
   startDragging: () => getCurrentWindow().startDragging(),

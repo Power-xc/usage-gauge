@@ -1,4 +1,5 @@
 import { prepareCanvas } from "./canvas";
+import { Glide } from "./glide";
 import { WHITE, rgba, type Rgb } from "./theme";
 
 const PITCH = 3.2;
@@ -10,7 +11,8 @@ export class TickBar {
   readonly canvas = document.createElement("canvas");
   private readonly context: CanvasRenderingContext2D;
   private readonly width: number;
-  private remainingShare = 0;
+  private readonly share = new Glide();
+  readonly glides = [this.share];
   private color: Rgb = WHITE;
 
   constructor(width: number) {
@@ -19,8 +21,12 @@ export class TickBar {
   }
 
   update(remainingPercent: number, color: Rgb): void {
-    this.remainingShare = Math.min(100, Math.max(0, remainingPercent)) / 100;
+    this.share.to(Math.min(100, Math.max(0, remainingPercent)) / 100);
     this.color = color;
+  }
+
+  private get remainingShare(): number {
+    return this.share.value;
   }
 
   draw(): void {
