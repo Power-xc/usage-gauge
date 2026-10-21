@@ -180,32 +180,34 @@ struct ReadmeScene: View {
 /// centre, clear of the app's own name bar at the top and caption and buttons at the bottom.
 struct ReelScene: View {
     static let size = CGSize(width: 1080, height: 1920)
-    static let duration = 20.0
-    private static let styleTurns: [(style: PanelStyle, start: Double)] = [(.mono, 0), (.iris, 11.6), (.dot, 13.1)]
+    static let duration = 21.0
+    private static let styleTurns: [(style: PanelStyle, start: Double)] = [(.mono, 0), (.iris, 12.0), (.dot, 13.6)]
+    /// Where the panel leaves and the menu bar close-up takes over.
+    private static let panelExit = 15.2
 
     let time: Double
 
     var body: some View {
         ZStack {
             Backdrop()
-            hook.opacity(Motion.visibility(time, start: 0, end: 3.4, fade: 0.5))
-            caption.offset(y: -520)
-            panel.offset(y: 60)
-            menuBarFocus.offset(y: 60)
-            outro.opacity(Motion.progress(time, from: 16.6, to: 17.3))
+            hook.opacity(1 - Motion.progress(time, from: 2.9, to: 3.4))
+            caption.offset(y: -440)
+            panel
+            menuBarFocus
+            outro.opacity(Motion.progress(time, from: 17.8, to: 18.5))
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .clipped()
         .environment(\.colorScheme, .dark)
     }
 
-    // 0 – 3.4 s: one dial fills up under the headline.
+    // 0 – 3.4 s: the dial starts full (the cover), drains into the warning colours and refills.
     private var hook: some View {
-        let fill = Motion.progress(time, from: 0.2, to: 2.4)
-        let window = SampleData.window(remaining: 94 * fill, minutes: 300, resetIn: 230 * 60)
+        let drain = Motion.progress(time, from: 0.6, to: 1.7)
+        let refill = Motion.progress(time, from: 1.9, to: 3.0)
+        let window = SampleData.window(remaining: Motion.mix(Motion.mix(94, 18, drain), 94, refill), minutes: 300, resetIn: 230 * 60)
         return VStack(spacing: 96) {
             SessionGauge(window: window, tint: Theme.brand(for: "claude"), size: 560, now: SampleData.now, frozenAt: time)
-                .scaleEffect(Motion.mix(0.92, 1, Motion.progress(time, from: 0, to: 2.4)))
             VStack(spacing: 18) {
                 Text("AI 코딩 한도,").font(Theme.font(84, .bold))
                 Text("이제 한눈에").font(Theme.font(84, .bold)).foregroundStyle(Theme.mutedText)
@@ -214,13 +216,13 @@ struct ReelScene: View {
         .foregroundStyle(.white)
     }
 
-    // 3.4 – 16.4 s: one caption at a time, a headline over a quieter line.
+    // 3.4 – 17.6 s: one caption at a time, a headline over a quieter line.
     private var caption: some View {
         let lines: [(start: Double, end: Double, title: String, detail: String)] = [
             (3.4, 7.2, "쓰는 모든 AI의 남은 한도", "Claude · Codex · Gemini · Cursor …"),
             (7.2, 10.4, "줄어들면 숫자가 먼저", "30% 이하 노랑 · 10% 이하 산호색"),
-            (10.4, 14.6, "스타일 3종, 취향대로", "모노 터미널 · 홍채 · 도트 매트릭스"),
-            (14.6, 16.4, "메뉴바에도 항상", "⌥⌘U 로 켜고 끄기"),
+            (10.4, 15.0, "스타일 3종, 취향대로", "모노 터미널 · 홍채 · 도트 매트릭스"),
+            (15.4, 17.6, "메뉴바에도 항상", "⌥⌘U 로 켜고 끄기"),
         ]
         return ZStack {
             ForEach(lines, id: \.title) { line in
@@ -234,10 +236,10 @@ struct ReelScene: View {
         }
     }
 
-    // 3.0 – 14.6 s: the panel enters, fills, one tool drains, then it changes style twice.
+    // 3.0 – 15.2 s: the panel enters, fills, one tool drains, then it changes style twice.
     private var panel: some View {
         let enter = Motion.progress(time, from: 3.0, to: 4.0)
-        let exit = Motion.progress(time, from: 14.3, to: 14.9)
+        let exit = Motion.progress(time, from: Self.panelExit - 0.6, to: Self.panelExit)
         return ZStack {
             ForEach(Array(Self.styleTurns.enumerated()), id: \.element.style) { index, turn in
                 let next = index + 1 < Self.styleTurns.count ? Self.styleTurns[index + 1].start : 99
@@ -278,9 +280,9 @@ struct ReelScene: View {
         ]
     }
 
-    // 14.6 – 16.4 s: the menu bar companion, enlarged.
+    // 15.4 – 17.6 s: the menu bar companion, enlarged.
     private var menuBarFocus: some View {
-        let show = Motion.progress(time, from: 14.7, to: 15.3) * (1 - Motion.progress(time, from: 16.0, to: 16.5))
+        let show = Motion.progress(time, from: 15.4, to: 16.0) * (1 - Motion.progress(time, from: 17.2, to: 17.7))
         let providers = [SampleData.claude(session: 94, weekly: 37), SampleData.codex(session: 8, weekly: 26)]
         return MenuBarView(providers: providers)
             .foregroundStyle(.white)
@@ -293,7 +295,7 @@ struct ReelScene: View {
             .blur(radius: (1 - show) * 10)
     }
 
-    // 16.6 – 20 s: name, platforms and the call to action.
+    // 17.8 – 21 s: name, platforms and the call to action.
     private var outro: some View {
         VStack(spacing: 36) {
             HStack(spacing: 28) {
