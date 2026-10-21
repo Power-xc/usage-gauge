@@ -8,7 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
-use crate::prefs::Prefs;
+use crate::prefs::{PanelStyle, Prefs};
 use crate::providers;
 use crate::store::Store;
 use crate::view::{tooltip, usage_view};
@@ -120,6 +120,15 @@ pub fn publish(app: &AppHandle) {
     }
     if let Err(error) = app.emit("usage", view) {
         eprintln!("usage-gauge: could not publish usage: {error}");
+    }
+}
+
+/// Remembers the chosen style and restyles the open panel.
+pub fn set_style(app: &AppHandle, style: PanelStyle) {
+    app.state::<AppState>().prefs().style = style;
+    AppState::save_prefs_soon(app);
+    if let Err(error) = app.emit("panel-style", style) {
+        eprintln!("usage-gauge: could not announce the panel style: {error}");
     }
 }
 

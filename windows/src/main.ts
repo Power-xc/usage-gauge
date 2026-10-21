@@ -7,6 +7,7 @@ async function start(): Promise<void> {
   if (!root) throw new Error("Missing #root");
   const panel = new Panel(root, await bridge.state());
   await bridge.onUsage((usage) => panel.render(usage));
+  await bridge.onStyle((style) => panel.setStyle(style));
   await bridge.onVisibility((isShown) => panel.setShown(isShown));
 }
 

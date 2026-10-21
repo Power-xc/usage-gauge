@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 
-use crate::model::{countdown_text, ProviderUsage, UsageLevel, UsageWindow};
+use crate::model::{compact_countdown_text, countdown_text, ProviderUsage, UsageLevel, UsageWindow};
 use crate::store::Store;
 
 const DEFAULT_SESSION_LABEL: &str = "단기";
@@ -16,6 +16,8 @@ pub struct WindowView {
     pub elapsed_fraction: Option<f64>,
     pub label: String,
     pub countdown: String,
+    /// Terse countdown for the monospaced styles ("3h 50m").
+    pub countdown_compact: String,
     pub level: UsageLevel,
 }
 
@@ -46,6 +48,7 @@ fn window_view(window: &UsageWindow, default_label: &str, now: i64) -> WindowVie
         elapsed_fraction: window.elapsed_fraction(now),
         label: window.label().unwrap_or_else(|| default_label.into()),
         countdown: countdown_text(window.resets_at, now),
+        countdown_compact: compact_countdown_text(window.resets_at, now),
         level: UsageLevel::from_remaining(window.remaining_percent()),
     }
 }
@@ -94,6 +97,7 @@ mod tests {
             elapsed_fraction: None,
             label: "5시간".into(),
             countdown: "1분".into(),
+            countdown_compact: "1m".into(),
             level: UsageLevel::Comfortable,
         });
         ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None }

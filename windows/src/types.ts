@@ -1,6 +1,9 @@
 /** How urgent a remaining allowance is; mirrors the Rust `UsageLevel`. */
 export type UsageLevel = "comfortable" | "low" | "critical";
 
+/** The panel's look; mirrors the Rust `PanelStyle`. */
+export type PanelStyle = "iris" | "dot" | "mono";
+
 /** One rate-limit window, already resolved and formatted by the backend. */
 export interface WindowView {
   displayPercent: number;
@@ -9,6 +12,8 @@ export interface WindowView {
   elapsedFraction: number | null;
   label: string;
   countdown: string;
+  /** Terse form for the monospaced styles, e.g. "3h 50m". */
+  countdownCompact: string;
   level: UsageLevel;
 }
 
@@ -34,4 +39,5 @@ export interface PanelState {
   isShown: boolean;
   /** Whether the system blur is active behind the window; without it the smoke is denser. */
   hasGlass: boolean;
+  style: PanelStyle;
 }

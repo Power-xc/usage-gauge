@@ -11,6 +11,9 @@
   --dial-size: 72px;
   --detail-width: 140px;
   --font: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --signal: rgb(255 90 54);
+  --hairline: rgb(255 255 255 / 0.1);
 }
 
 * {
@@ -88,10 +91,25 @@ body {
   pointer-events: none;
 }
 
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .header {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Live-status lamp of the dot style. */
+.lamp {
+  display: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
 }
 
 .header-title {
@@ -369,4 +387,102 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Dot: a matte charcoal card lit warmly from the top-left, with a fine lit rim. */
+.panel[data-style="dot"] {
+  font-family: var(--font-mono);
+  background:
+    radial-gradient(circle 260px at 0 0, rgb(255 158 97 / 0.06), transparent),
+    linear-gradient(rgb(33 33 33), rgb(19 19 19));
+}
+
+.panel[data-style="dot"]::before,
+.panel[data-style="mono"]::before {
+  display: none;
+}
+
+.panel[data-style="dot"]::after {
+  background: linear-gradient(rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03));
+}
+
+.panel[data-style="dot"] .lamp {
+  display: block;
+}
+
+/* Mono: a black terminal pane, nearly square, with hairlines between its cells. */
+.panel[data-style="mono"] {
+  --panel-radius: 8px;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  background: rgb(10 10 10 / 0.97);
+}
+
+.panel[data-style="mono"]::after {
+  background: rgb(255 255 255 / 0.16);
+}
+
+.panel[data-style="mono"] .head {
+  padding: 10px 12px;
+}
+
+.panel[data-style="mono"] .grid {
+  gap: 0;
+}
+
+.panel[data-style="mono"] .row {
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.panel[data-style="mono"] .card {
+  padding: 12px;
+}
+
+.panel[data-style="mono"] .card + .card {
+  border-left: 1px solid var(--hairline);
+}
+
+.panel[data-style="mono"] .glyph {
+  border-radius: 3px;
+}
+
+/* Dot and mono: no glow behind the dial, plain figures, terse monospaced labels. */
+.panel[data-style="dot"] .dial::before,
+.panel[data-style="mono"] .dial::before {
+  display: none;
+}
+
+.panel[data-style="mono"] .figure {
+  font-size: calc(var(--dial-size) * 0.22);
+  background: none;
+  color: var(--figure-color);
+}
+
+.panel[data-style="mono"] .figure::before {
+  display: none;
+}
+
+.panel[data-style="mono"] .percent {
+  font-size: calc(var(--dial-size) * 0.09);
+}
+
+.panel[data-style="dot"] .name,
+.panel[data-style="mono"] .name {
+  font-size: 11.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.index {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.swatch {
+  width: 6px;
+  height: 6px;
 }

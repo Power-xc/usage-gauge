@@ -186,6 +186,21 @@ pub fn countdown_text(until: Option<i64>, now: i64) -> String {
     }
 }
 
+/// Terse form for the monospaced styles, e.g. "3h 50m", "3d 4h", "47m", "<1m".
+pub fn compact_countdown_text(until: Option<i64>, now: i64) -> String {
+    let Some(until) = until else { return COUNTDOWN_UNKNOWN.into() };
+    let minutes = (until - now) / SECONDS_PER_MINUTE;
+    if minutes < 1 {
+        "<1m".into()
+    } else if minutes >= MINUTES_PER_DAY {
+        format!("{}d {}h", minutes / MINUTES_PER_DAY, minutes % MINUTES_PER_DAY / MINUTES_PER_HOUR)
+    } else if minutes >= MINUTES_PER_HOUR {
+        format!("{}h {}m", minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
+    } else {
+        format!("{minutes}m")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -271,6 +286,16 @@ mod tests {
         assert_eq!(countdown_text(Some(NOW + (3 * 60 + 50) * 60), NOW), "3시간 50분");
         assert_eq!(countdown_text(Some(NOW + (3 * 24 * 60) * 60), NOW), "3일 0시간");
         assert_eq!(countdown_text(Some(NOW + (6 * 24 + 16) * 3600), NOW), "6일 16시간");
+    }
+
+    #[test]
+    fn compact_countdown_is_terse() {
+        assert_eq!(compact_countdown_text(None, NOW), "–");
+        assert_eq!(compact_countdown_text(Some(NOW + 30), NOW), "<1m");
+        assert_eq!(compact_countdown_text(Some(NOW + 47 * 60), NOW), "47m");
+        assert_eq!(compact_countdown_text(Some(NOW + (3 * 60 + 50) * 60), NOW), "3h 50m");
+        assert_eq!(compact_countdown_text(Some(NOW + (3 * 24 * 60) * 60), NOW), "3d 0h");
+        assert_eq!(compact_countdown_text(Some(NOW + (3 * 24 + 4) * 3600), NOW), "3d 4h");
     }
 
     #[test]
