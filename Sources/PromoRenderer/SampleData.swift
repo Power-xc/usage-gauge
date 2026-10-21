@@ -40,4 +40,31 @@ enum SampleData {
     }
 
     static let still = [claude(session: 94, weekly: 37), codex(session: 8, weekly: 26)]
+
+    /// When the sample numbers were measured; every scene shows this one moment.
+    static let measuredAt = now.addingTimeInterval(-10 * 60)
+
+    /// The header's "오후 4:50 기준" for the sample moment.
+    static let status: String = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "a h:mm"
+        return "\(formatter.string(from: measuredAt)) 기준"
+    }()
+
+    /// The menu bar clock at the sample moment, e.g. "1월 15일 (금) 오후 5:00".
+    static let menuBarClock: String = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 (E) a h:mm"
+        return formatter.string(from: now)
+    }()
+
+    /// The four sample tools of the stills, each stamped with the measuring time.
+    static let tools = stamped(still + extras(scale: 1).prefix(2))
+
+    /// Re-stamps tools with the sample measuring time (for the demo, whose values move).
+    static func stamped(_ providers: [ProviderUsage]) -> [ProviderUsage] {
+        providers.map { ProviderUsage(id: $0.id, plan: $0.plan, session: $0.session, weekly: $0.weekly, measuredAt: measuredAt) }
+    }
 }

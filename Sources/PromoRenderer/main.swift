@@ -2,19 +2,18 @@ import AppKit
 import SwiftUI
 
 // Usage:
-//   PromoRenderer preview <out.jpg|png>  static hero image
-//   PromoRenderer stills  <dir>          all-providers, menu-bar, levels, styles and layouts images
-//   PromoRenderer readme  <frames-dir>   README loop frames (PNG sequence, encode with ffmpeg)
-//   PromoRenderer reel    <frames-dir>   9:16 reel frames
-//   PromoRenderer forms   <dir>          every graph form in every style (plus edge cases), and the tab row with 2 to 8 tools
+//   PromoRenderer stills <dir>          graphs, styles, interaction, menu-bar, sizes (.jpg) and social-preview (.png)
+//   PromoRenderer readme <frames-dir>   README hero loop frames (PNG sequence, encode with ffmpeg)
+//   PromoRenderer reel   <frames-dir> [fps]  9:16 reel frames (30 fps unless a lower rate is given for a quick look)
 
 /// JPEG keeps the README images light; the dark, soft renders show no visible artefacts at this level.
 let jpegQuality = 0.9
 
 /// Renders a view to an image file; the extension picks the format (.jpg/.jpeg or PNG).
 @MainActor
-func writeImage<V: View>(_ view: V, size: CGSize, scale: CGFloat, to url: URL) throws {
-    let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height))
+func writeImage<V: View>(_ view: V, size: CGSize? = nil, scale: CGFloat = 2, to url: URL) throws {
+    // Without a size the scene is drawn at its natural size.
+    let renderer = ImageRenderer(content: size.map { AnyView(view.frame(width: $0.width, height: $0.height)) } ?? AnyView(view.fixedSize()))
     renderer.scale = scale
     guard let image = renderer.cgImage else { throw CocoaError(.fileWriteUnknown) }
     let rep = NSBitmapImageRep(cgImage: image)
@@ -38,8 +37,8 @@ func writeFrames<V: View>(duration: Double, fps: Double, size: CGSize, scale: CG
 }
 
 let arguments = CommandLine.arguments
-guard arguments.count == 3 else {
-    print("usage: PromoRenderer preview|readme|reel <output>")
+guard (3...4).contains(arguments.count) else {
+    print("usage: PromoRenderer stills|readme|reel <output> [reel fps]")
     exit(2)
 }
 let output = URL(fileURLWithPath: arguments[2])
@@ -47,35 +46,19 @@ let output = URL(fileURLWithPath: arguments[2])
 do {
     try MainActor.assumeIsolated {
         switch arguments[1] {
-        case "preview":
-            try writeImage(PreviewScene(), size: PreviewScene.size, scale: 2, to: output)
         case "stills":
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-            try writeImage(AllProvidersScene(), size: AllProvidersScene.size, scale: 2, to: output.appendingPathComponent("all-providers.jpg"))
-            try writeImage(MenuBarScene(), size: MenuBarScene.size, scale: 2, to: output.appendingPathComponent("menu-bar.jpg"))
-            try writeImage(LevelsScene(), size: LevelsScene.size, scale: 2, to: output.appendingPathComponent("levels.jpg"))
-            try writeImage(StylesScene(), size: StylesScene.size, scale: 2, to: output.appendingPathComponent("styles.jpg"))
-            try writeImage(LayoutsScene(), size: LayoutsScene.size, scale: 2, to: output.appendingPathComponent("layouts.jpg"))
-            try writeImage(ShapeLayoutsScene(), size: ShapeLayoutsScene.size, scale: 2, to: output.appendingPathComponent("shape-layouts.jpg"))
-            try writeImage(TrendScene(), size: TrendScene.size, scale: 2, to: output.appendingPathComponent("trend.jpg"))
-            try writeImage(InteractionScene(), size: InteractionScene.size, scale: 2, to: output.appendingPathComponent("interaction.jpg"))
-            try writeImage(SizesScene(), size: SizesScene.size, scale: 2, to: output.appendingPathComponent("sizes.jpg"))
-            try writeImage(HistoryBarsScene(), size: HistoryBarsScene.size, scale: 2, to: output.appendingPathComponent("history-bars.jpg"))
-            try writeImage(HistoryFormsScene(), size: HistoryFormsScene.size, scale: 2, to: output.appendingPathComponent("history-forms.jpg"))
-            try writeImage(ConstellationRulerScene(), size: ConstellationRulerScene.size, scale: 2, to: output.appendingPathComponent("constellation-ruler.jpg"))
-        case "forms":
-            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-            for variant in AllFormsScene.Variant.allCases {
-                let scene = AllFormsScene(variant: variant)
-                try writeImage(scene, size: scene.size, scale: 2, to: output.appendingPathComponent(variant.fileName))
-            }
-            try writeImage(ChromeScene(), size: ChromeScene.size, scale: 2, to: output.appendingPathComponent("chrome-check.jpg"))
-            try writeImage(TabsCheckScene(), size: TabsCheckScene.size, scale: 2, to: output.appendingPathComponent("tabs-check.jpg"))
+            try writeImage(GraphsScene(), to: output.appendingPathComponent("graphs.jpg"))
+            try writeImage(StylesScene(), to: output.appendingPathComponent("styles.jpg"))
+            try writeImage(InteractionScene(), to: output.appendingPathComponent("interaction.jpg"))
+            try writeImage(MenuBarScene(), size: MenuBarScene.size, to: output.appendingPathComponent("menu-bar.jpg"))
+            try writeImage(SizesScene(), to: output.appendingPathComponent("sizes.jpg"))
+            try writeImage(SocialPreviewScene(), size: SocialPreviewScene.size, scale: 1, to: output.appendingPathComponent("social-preview.png"))
         case "readme":
-            try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
+            try writeFrames(duration: ReadmeScene.duration, fps: ReadmeScene.fps, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":
             // Drawn at 2x and scaled down when encoding, so fine lines stay clean at 1080 × 1920.
-            try writeFrames(duration: ReelScene.duration, fps: 30, size: ReelScene.size, scale: 2, to: output) { ReelScene(time: $0) }
+            try writeFrames(duration: ReelScene.duration, fps: arguments.count == 4 ? Double(arguments[3]) ?? 30 : 30, size: ReelScene.size, scale: 2, to: output) { ReelScene(time: $0) }
         default:
             print("unknown mode \(arguments[1])")
             exit(2)
