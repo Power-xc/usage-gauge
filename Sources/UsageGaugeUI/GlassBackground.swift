@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Smoked Liquid Glass on macOS 26, a dark vibrancy blur before that.
+/// Clear smoked Liquid Glass on macOS 26, a dark vibrancy blur before that. Clear glass has no
+/// milky frost, so the pane reads as dark glass rather than grey.
 public struct GlassBackground: ViewModifier {
     let tintOpacity: Double
 
@@ -10,17 +11,17 @@ public struct GlassBackground: ViewModifier {
         self.tintOpacity = tintOpacity
     }
 
-    private static let layerShare = 0.6
+    private static let layerShare = 0.85
 
     private let shape = RoundedRectangle(cornerRadius: Theme.panelCornerRadius, style: .continuous)
 
     public func body(content: Content) -> some View {
         if #available(macOS 26, *) {
             content
-                // Smoked, frosted glass: shapes behind blur through. The ink layer under the type
-                // guarantees depth that the glass tint alone does not over bright content.
+                // Clear smoked glass: what is behind shows through without a grey frost. The ink
+                // layer under the type keeps it legible over bright content.
                 .background(shape.fill(Theme.smoke.opacity(tintOpacity * Self.layerShare)))
-                .glassEffect(.regular.tint(Theme.smoke.opacity(tintOpacity)), in: shape)
+                .glassEffect(.clear.tint(Theme.smoke.opacity(tintOpacity)), in: shape)
                 .overlay(GlassSheen(shape: shape))
                 .overlay(GlassSlabEdge(shape: shape))
         } else {
@@ -63,8 +64,8 @@ public struct GlassSheen<S: Shape>: View {
 
     public var body: some View {
         shape.fill(LinearGradient(stops: [
-            .init(color: .white.opacity(0.075), location: 0),
-            .init(color: .white.opacity(0.02), location: 0.35),
+            .init(color: .white.opacity(0.05), location: 0),
+            .init(color: .white.opacity(0.012), location: 0.35),
             .init(color: .clear, location: 0.6),
         ], startPoint: .top, endPoint: .bottom))
         .allowsHitTesting(false)
