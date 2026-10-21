@@ -21,11 +21,13 @@ public struct GlassBackground: ViewModifier {
                 // guarantees depth that the glass tint alone does not over bright content.
                 .background(shape.fill(Theme.smoke.opacity(tintOpacity * Self.layerShare)))
                 .glassEffect(.regular.tint(Theme.smoke.opacity(tintOpacity)), in: shape)
+                .overlay(GlassSheen(shape: shape))
                 .overlay(GlassSlabEdge(shape: shape))
         } else {
             content
                 .background(VibrancyBlur().overlay(Theme.smoke.opacity(tintOpacity)))
                 .clipShape(shape)
+                .overlay(GlassSheen(shape: shape))
                 .overlay(GlassSlabEdge(shape: shape))
         }
     }
@@ -48,6 +50,24 @@ public struct GlassSlabEdge<S: InsettableShape>: View {
             .init(color: .white.opacity(0.16), location: 1),
         ], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
         .overlay(shape.inset(by: 1.5).strokeBorder(.white.opacity(0.04), lineWidth: 1))
+    }
+}
+
+/// Soft light pooled along the top of a glass pane, as when a slab catches an overhead light.
+public struct GlassSheen<S: Shape>: View {
+    let shape: S
+
+    public init(shape: S) {
+        self.shape = shape
+    }
+
+    public var body: some View {
+        shape.fill(LinearGradient(stops: [
+            .init(color: .white.opacity(0.075), location: 0),
+            .init(color: .white.opacity(0.02), location: 0.35),
+            .init(color: .clear, location: 0.6),
+        ], startPoint: .top, endPoint: .bottom))
+        .allowsHitTesting(false)
     }
 }
 

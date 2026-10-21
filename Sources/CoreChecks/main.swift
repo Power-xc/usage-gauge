@@ -86,6 +86,11 @@ let failed = ProviderUsage(id: "codex", session: nil, weekly: nil, errorMessage:
 expect(ProviderCatalog.merge(latest: [failed], previous: [good]) == [good], "a dropped request keeps the last good numbers")
 expect(ProviderCatalog.merge(latest: [failed], previous: []) == [failed], "with nothing to keep, the error shows")
 
+// Colours for providers without a signature colour
+expect(ProviderCatalog.hue(for: "windsurf") == ProviderCatalog.hue(for: "windsurf"), "a provider keeps its hue")
+expect(ProviderCatalog.hue(for: "windsurf") != ProviderCatalog.hue(for: "openrouter"), "different providers get different hues")
+expect((0..<1).contains(ProviderCatalog.hue(for: "grok")), "hues stay within 0..<1")
+
 // Glass tint follows the backdrop
 expect(BackdropTone.tintOpacity(luminance: 1) > BackdropTone.tintOpacity(luminance: 0), "glass is darker over a bright backdrop")
 expect(BackdropTone.tintOpacity(luminance: 5) == BackdropTone.tintRange.upperBound, "brightness above 1 clamps to the darkest tint")

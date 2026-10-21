@@ -15,6 +15,13 @@ public enum ProviderCatalog {
         titles[id] ?? id.prefix(1).uppercased() + id.dropFirst()
     }
 
+    /// A stable hue (0..<1) for a provider without a signature colour, so every tool still gets
+    /// its own colour and keeps it across launches. FNV-1a, since `hashValue` changes per run.
+    public static func hue(for id: String) -> Double {
+        let hash = id.utf8.reduce(UInt64(0xcbf2_9ce4_8422_2325)) { ($0 ^ UInt64($1)) &* 0x100_0000_01b3 }
+        return Double(hash % 360) / 360
+    }
+
     /// A provider that failed this time keeps its last good reading, so one dropped request does
     /// not blank the gauge. Its older `measuredAt` still shows how old the numbers are.
     public static func merge(latest: [ProviderUsage], previous: [ProviderUsage]) -> [ProviderUsage] {

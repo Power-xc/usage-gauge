@@ -16,7 +16,7 @@ public enum Theme {
     public static let hairline = Color.white.opacity(0.10)
     public static let track = Color.white.opacity(0.10)
 
-    public static let panelCornerRadius: CGFloat = 18
+    public static let panelCornerRadius: CGFloat = 22
     public static let panelPadding: CGFloat = 12
     public static let dialSize: CGFloat = 72
     public static let detailWidth: CGFloat = 140
@@ -35,15 +35,15 @@ public enum Theme {
         .system(size: size, weight: weight, design: .rounded).monospacedDigit()
     }
 
-    /// Signature colour of each tool; unknown providers fall back to the accent.
+    /// Deep signature colour of each tool; any other provider gets its own stable hue at the same depth.
     public static func brand(for providerID: String) -> Color {
         switch providerID {
-        case "claude": Color(red: 217 / 255, green: 119 / 255, blue: 87 / 255)
-        case "codex", "openai": Color(red: 16 / 255, green: 163 / 255, blue: 127 / 255)
-        case "gemini", "antigravity": Color(red: 78 / 255, green: 134 / 255, blue: 248 / 255)
-        case "copilot": Color(red: 140 / 255, green: 108 / 255, blue: 245 / 255)
-        case "cursor": Color(red: 214 / 255, green: 218 / 255, blue: 228 / 255)
-        default: accent
+        case "claude": Color(red: 193 / 255, green: 95 / 255, blue: 60 / 255)
+        case "codex", "openai": Color(red: 13 / 255, green: 138 / 255, blue: 104 / 255)
+        case "gemini", "antigravity": Color(red: 52 / 255, green: 98 / 255, blue: 214 / 255)
+        case "copilot": Color(red: 112 / 255, green: 78 / 255, blue: 226 / 255)
+        case "cursor": Color(red: 168 / 255, green: 176 / 255, blue: 192 / 255)
+        default: Color(hue: ProviderCatalog.hue(for: providerID), saturation: 0.62, brightness: 0.8)
         }
     }
 

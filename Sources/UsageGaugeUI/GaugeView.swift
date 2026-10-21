@@ -1,11 +1,13 @@
 import SwiftUI
 import UsageGaugeCore
 
-/// Panel content: a wide, low grid of provider cards. Each card puts the iris dial for the short
-/// window beside its reset time and a light-streak bar for the long one, so the panel grows
-/// sideways instead of crowding the dial.
+/// Panel content: a wide, low grid of providers. Each puts the iris dial for the short window
+/// beside its reset time and a light-streak bar for the long one, so the panel grows sideways
+/// instead of crowding the dial.
 public struct GaugeView: View {
     public static let cardsPerRow = 2
+    private static let rowSpacing: CGFloat = 10
+    private static let columnSpacing: CGFloat = 24
 
     let providers: [ProviderUsage]
     let status: String
@@ -33,7 +35,7 @@ public struct GaugeView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Self.rowSpacing) {
             header.modifier(WindowDragArea())
             if isAdjustingOpacity, let opacity {
                 OpacityControl(value: opacity, range: opacityRange)
@@ -44,13 +46,9 @@ public struct GaugeView: View {
                     .foregroundStyle(Theme.mutedText)
                     .frame(height: Theme.dialSize)
             }
-            ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
-                if rowIndex > 0 { HorizontalHairline() }
-                HStack(alignment: .top, spacing: 0) {
-                    ForEach(Array(row.enumerated()), id: \.element.id) { index, usage in
-                        if index > 0 { VerticalHairline() }
-                        ProviderCard(usage: usage, now: now, frozenAt: frozenAt)
-                    }
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .top, spacing: Self.columnSpacing) {
+                    ForEach(row) { ProviderCard(usage: $0, now: now, frozenAt: frozenAt) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .modifier(WindowDragArea())
@@ -183,6 +181,7 @@ private struct ProviderCard: View {
             }
             .frame(width: Theme.detailWidth, height: Theme.dialSize, alignment: .topLeading)
         }
+        .background(alignment: .leading) { DialGlow(tint: tint) }
     }
 
     private var titleRow: some View {
@@ -293,20 +292,21 @@ private struct LongWindowBar: View {
     }
 }
 
-private struct VerticalHairline: View {
-    var body: some View {
-        Rectangle()
-            .fill(LinearGradient(colors: [.clear, Theme.hairline, .clear], startPoint: .top, endPoint: .bottom))
-            .frame(width: 1)
-            .padding(.horizontal, 12)
-    }
-}
+/// The tool's colour glowing through the glass from behind the dial. It fades out within the
+/// panel's padding, so it never spills past the glass.
+private struct DialGlow: View {
+    let tint: Color
 
-private struct HorizontalHairline: View {
+    private static let opacity = 0.28
+    private static let reach = 0.7
+
     var body: some View {
-        Rectangle()
-            .fill(LinearGradient(colors: [.clear, Theme.hairline, .clear], startPoint: .leading, endPoint: .trailing))
-            .frame(height: 1)
+        let dial = Theme.dialSize
+        RadialGradient(colors: [tint.opacity(Self.opacity), tint.opacity(0)], center: .center,
+                       startRadius: dial * 0.3, endRadius: dial * Self.reach)
+            .frame(width: dial * Self.reach * 2, height: dial * Self.reach * 2)
+            .offset(x: dial / 2 - dial * Self.reach)
+            .allowsHitTesting(false)
     }
 }
 
