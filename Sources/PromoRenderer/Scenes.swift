@@ -154,110 +154,146 @@ struct ReadmeScene: View {
     }
 }
 
-/// Vertical 9:16 reel for Instagram.
+/// Vertical 9:16 reel for Instagram. Captions sit in the upper middle and the visuals in the
+/// centre, clear of the app's own name bar at the top and caption and buttons at the bottom.
 struct ReelScene: View {
     static let size = CGSize(width: 1080, height: 1920)
-    static let duration = 18.0
+    static let duration = 20.0
+    private static let styleTurns: [(style: PanelStyle, start: Double)] = [(.mono, 0), (.iris, 11.6), (.dot, 13.1)]
 
     let time: Double
 
     var body: some View {
         ZStack {
             Backdrop()
-            intro.opacity(Motion.visibility(time, start: 0, end: 3.4, fade: 0.6))
-            caption.offset(y: -620)
-            panel.offset(y: 80)
-            menuBarFocus.offset(y: 40)
-            outro.opacity(Motion.progress(time, from: 14.8, to: 15.6))
+            hook.opacity(Motion.visibility(time, start: 0, end: 3.4, fade: 0.5))
+            caption.offset(y: -520)
+            panel.offset(y: 60)
+            menuBarFocus.offset(y: 60)
+            outro.opacity(Motion.progress(time, from: 16.6, to: 17.3))
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .clipped()
         .environment(\.colorScheme, .dark)
     }
 
-    // 0 – 3.4 s: the gauge fills up under the headline.
-    private var intro: some View {
-        let fill = Motion.progress(time, from: 0.3, to: 2.6)
+    // 0 – 3.4 s: one dial fills up under the headline.
+    private var hook: some View {
+        let fill = Motion.progress(time, from: 0.2, to: 2.4)
         let window = SampleData.window(remaining: 94 * fill, minutes: 300, resetIn: 230 * 60)
-        return VStack(spacing: 110) {
-            SessionGauge(window: window, tint: Theme.brand(for: "claude"), size: 600, now: SampleData.now, frozenAt: time)
-                .scaleEffect(Motion.mix(0.9, 1, Motion.progress(time, from: 0, to: 2.6)))
-            VStack(spacing: 22) {
-                Text("AI 코딩 한도,").font(Theme.font(80, .bold))
-                Text("이제 한눈에").font(Theme.font(80, .bold)).foregroundStyle(Theme.accent)
+        return VStack(spacing: 96) {
+            SessionGauge(window: window, tint: Theme.brand(for: "claude"), size: 560, now: SampleData.now, frozenAt: time)
+                .scaleEffect(Motion.mix(0.92, 1, Motion.progress(time, from: 0, to: 2.4)))
+            VStack(spacing: 18) {
+                Text("AI 코딩 한도,").font(Theme.font(84, .bold))
+                Text("이제 한눈에").font(Theme.font(84, .bold)).foregroundStyle(Theme.mutedText)
             }
         }
         .foregroundStyle(.white)
     }
 
-    // 3.4 – 15 s: one line at a time above the visual.
+    // 3.4 – 16.4 s: one caption at a time, a headline over a quieter line.
     private var caption: some View {
-        let lines: [(start: Double, end: Double, text: String)] = [
-            (3.4, 6.6, "Claude와 Codex 남은 한도를 실시간으로"),
-            (6.6, 9.6, "줄어들수록 색으로 먼저 알려줘요"),
-            (9.6, 12.4, "연결한 모든 AI 서비스까지 한 화면에"),
-            (12.4, 15.0, "메뉴바에도 항상, ⌥⌘U로 켜고 끄기"),
+        let lines: [(start: Double, end: Double, title: String, detail: String)] = [
+            (3.4, 7.2, "쓰는 모든 AI의 남은 한도", "Claude · Codex · Gemini · Cursor …"),
+            (7.2, 10.4, "줄어들면 숫자가 먼저", "30% 이하 노랑 · 10% 이하 산호색"),
+            (10.4, 14.6, "스타일 3종, 취향대로", "모노 터미널 · 홍채 · 도트 매트릭스"),
+            (14.6, 16.4, "메뉴바에도 항상", "⌥⌘U 로 켜고 끄기"),
         ]
         return ZStack {
-            ForEach(lines, id: \.text) { line in
-                Text(line.text)
-                    .font(Theme.font(48, .bold))
-                    .foregroundStyle(.white)
-                    .opacity(Motion.visibility(time, start: line.start, end: line.end, fade: 0.4))
+            ForEach(lines, id: \.title) { line in
+                VStack(spacing: 18) {
+                    Text(line.title).font(Theme.font(64, .bold)).foregroundStyle(.white)
+                    Text(line.detail).font(Theme.font(32, .medium)).foregroundStyle(Theme.mutedText)
+                }
+                .opacity(Motion.visibility(time, start: line.start, end: line.end, fade: 0.45))
+                .offset(y: 12 * (1 - Motion.progress(time, from: line.start, to: line.start + 0.45)))
             }
         }
     }
 
-    // 3.0 – 12.6 s: panel enters, one provider drains, then every provider joins.
+    // 3.0 – 14.6 s: the panel enters, fills, one tool drains, then it changes style twice.
     private var panel: some View {
-        let enter = Motion.progress(time, from: 3.0, to: 4.2)
-        let fill = Motion.progress(time, from: 3.6, to: 5.6)
-        let drain = Motion.progress(time, from: 6.6, to: 8.8)
-        let expand = Motion.progress(time, from: 9.6, to: 10.6)
-        let exit = Motion.progress(time, from: 12.0, to: 12.7)
-        var providers = [
-            SampleData.claude(session: 94 * fill, weekly: 37 * fill),
-            SampleData.codex(session: Motion.mix(62, 8, drain) * fill, weekly: 26 * fill),
-        ]
-        if expand > 0 { providers += SampleData.extras(scale: expand) }
-        let scale = expand > 0 ? 1.42 : 2.0
-        return GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, frozenAt: time)
-            .modifier(RenderedGlass())
-            .scaleEffect(scale * Motion.mix(0.94, 1, enter) * Motion.mix(1, 0.92, exit))
-            .opacity(enter * (1 - exit))
-            .blur(radius: (1 - enter) * 18 + exit * 12)
+        let enter = Motion.progress(time, from: 3.0, to: 4.0)
+        let exit = Motion.progress(time, from: 14.3, to: 14.9)
+        return ZStack {
+            ForEach(Array(Self.styleTurns.enumerated()), id: \.element.style) { index, turn in
+                let next = index + 1 < Self.styleTurns.count ? Self.styleTurns[index + 1].start : 99
+                let shown = Motion.progress(time, from: turn.start - 0.25, to: turn.start + 0.25)
+                    * (1 - Motion.progress(time, from: next - 0.25, to: next + 0.25))
+                if shown > 0 {
+                    VStack(spacing: 30) {
+                        GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                                  opacity: .constant(1), style: turn.style, frozenAt: time)
+                            .modifier(RenderedSurface(style: turn.style))
+                            .scaleEffect(1.95)
+                            .frame(height: 440)
+                        GlassChip {
+                            Text(turn.style.title).font(Theme.font(28, .semibold)).foregroundStyle(Theme.mutedText)
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                        }
+                        .opacity(Motion.progress(time, from: 10.6, to: 11.0))
+                    }
+                    .opacity(shown)
+                    .blur(radius: (1 - shown) * 10)
+                }
+            }
+        }
+        .scaleEffect(Motion.mix(0.94, 1, enter) * Motion.mix(1, 0.94, exit))
+        .opacity(enter * (1 - exit))
+        .blur(radius: (1 - enter) * 16 + exit * 10)
     }
 
-    // 12.4 – 15 s: the menu bar companion, enlarged.
+    private var providers: [ProviderUsage] {
+        let fill = Motion.progress(time, from: 3.4, to: 5.2)
+        let drain = Motion.progress(time, from: 7.6, to: 9.6)
+        let others = SampleData.extras(scale: fill)
+        return [
+            SampleData.claude(session: 94 * fill, weekly: 37 * fill),
+            SampleData.codex(session: Motion.mix(62, 8, drain) * fill, weekly: 26 * fill),
+            others[0],
+            SampleData.cursor(session: Motion.mix(46, 24, drain) * fill, weekly: 53 * fill),
+        ]
+    }
+
+    // 14.6 – 16.4 s: the menu bar companion, enlarged.
     private var menuBarFocus: some View {
-        let show = Motion.progress(time, from: 12.5, to: 13.2) * (1 - Motion.progress(time, from: 14.5, to: 15.1))
+        let show = Motion.progress(time, from: 14.7, to: 15.3) * (1 - Motion.progress(time, from: 16.0, to: 16.5))
         let providers = [SampleData.claude(session: 94, weekly: 37), SampleData.codex(session: 8, weekly: 26)]
         return MenuBarView(providers: providers)
             .foregroundStyle(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Capsule().fill(Theme.smoke.opacity(0.5)))
+            .background(Capsule().fill(Theme.smoke.opacity(0.6)))
             .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.6))
-            .scaleEffect(Motion.mix(2.9, 3.2, show))
+            .scaleEffect(Motion.mix(2.9, 3.1, show))
             .opacity(show)
             .blur(radius: (1 - show) * 10)
     }
 
-    // 15 – 18 s: name and call to action.
+    // 16.6 – 20 s: name, platforms and the call to action.
     private var outro: some View {
-        VStack(spacing: 40) {
-            SessionGauge(window: SampleData.window(remaining: 94, minutes: 300, resetIn: 230 * 60), tint: Theme.brand(for: "claude"), size: 260, now: SampleData.now, frozenAt: time)
-            Text("usage-gauge").font(Theme.font(88, .bold))
-            Text("macOS · 무료 · 오픈소스").font(Theme.font(36, .medium)).foregroundStyle(Theme.mutedText)
+        VStack(spacing: 36) {
+            HStack(spacing: 28) {
+                ForEach(PanelStyle.allCases, id: \.self) { style in
+                    SessionGauge(window: SampleData.window(remaining: 94, minutes: 300, resetIn: 230 * 60),
+                                 tint: Theme.brand(for: "claude"), size: 190, now: SampleData.now, frozenAt: time)
+                        .environment(\.panelStyle, style)
+                }
+            }
+            .padding(.bottom, 24)
+            Text("usage-gauge").font(Theme.font(92, .bold))
+            Text("macOS · Windows · 무료 오픈소스").font(Theme.font(36, .medium)).foregroundStyle(Theme.mutedText)
             GlassChip {
                 Text("팔로우 + 댓글 「링크」 → DM으로 보내드려요")
                     .font(Theme.font(34, .semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 12)
             }
-            .padding(.top, 30)
+            .padding(.top, 34)
         }
         .foregroundStyle(.white)
+        .offset(y: -40)
     }
 }
 

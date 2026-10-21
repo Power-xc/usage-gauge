@@ -57,7 +57,8 @@ do {
         case "readme":
             try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":
-            try writeFrames(duration: ReelScene.duration, fps: 30, size: ReelScene.size, scale: 1, to: output) { ReelScene(time: $0) }
+            // Drawn at 2x and scaled down when encoding, so fine lines stay clean at 1080 × 1920.
+            try writeFrames(duration: ReelScene.duration, fps: 30, size: ReelScene.size, scale: 2, to: output) { ReelScene(time: $0) }
         default:
             print("unknown mode \(arguments[1])")
             exit(2)
