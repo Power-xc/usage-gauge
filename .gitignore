@@ -1,0 +1,9 @@
+# Build output
+.build/
+.swiftpm/
+dist/
+
+# Rendered frames and videos (regenerate with PromoRenderer)
+media/
+
+.DS_Store
