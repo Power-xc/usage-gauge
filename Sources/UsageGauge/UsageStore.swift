@@ -68,7 +68,7 @@ final class UsageStore: ObservableObject {
         now = Date()
         switch result {
         case .success(let usage):
-            fetched = usage
+            fetched = ProviderCatalog.merge(latest: usage, previous: fetched)
             lastFetched = now
             lastError = nil
         case .failure(let error):

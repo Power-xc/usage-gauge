@@ -15,6 +15,17 @@ public enum ProviderCatalog {
         titles[id] ?? id.prefix(1).uppercased() + id.dropFirst()
     }
 
+    /// A provider that failed this time keeps its last good reading, so one dropped request does
+    /// not blank the gauge. Its older `measuredAt` still shows how old the numbers are.
+    public static func merge(latest: [ProviderUsage], previous: [ProviderUsage]) -> [ProviderUsage] {
+        latest.map { usage in
+            guard !usage.isAvailable, let kept = previous.first(where: { $0.id == usage.id && $0.isAvailable }) else {
+                return usage
+            }
+            return kept
+        }
+    }
+
     /// Pinned providers first, then everything else in the order CodexBar listed it.
     public static func sorted(_ usage: [ProviderUsage]) -> [ProviderUsage] {
         let pinned = pinnedOrder.compactMap { id in usage.first { $0.id == id } }
