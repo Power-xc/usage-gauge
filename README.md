@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Power-xc/usage-gauge/actions/workflows/ci.yml/badge.svg)](https://github.com/Power-xc/usage-gauge/actions/workflows/ci.yml)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111?logo=apple)
+[![Windows 10+](https://img.shields.io/badge/Windows-10%2B-0078D4)](windows/README.md)
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 쓰고 있는 **모든 AI 서비스의 남은 사용량**을 화면 위에 떠 있는 유리 게이지와 메뉴바로 보여주는 앱입니다. Claude·Codex·Gemini·Cursor·Copilot·Windsurf·Grok·OpenRouter 등 [CodexBar](https://github.com/steipete/CodexBar)가 읽을 수 있는 100여 개 서비스를 한 패널에 모아, 한도가 얼마나 남았는지와 언제 초기화되는지를 작업 중에 시선만 돌려 확인할 수 있습니다.
@@ -27,7 +28,7 @@
 
 ![메뉴바](docs/menu-bar.jpg)
 
-## 요구 사항
+## 요구 사항 (macOS)
 
 - macOS 14 이상 (Liquid Glass 유리는 macOS 26부터, 그 이전은 블러 유리로 대체)
 - [CodexBar](https://codexbar.app) — 서비스별 사용량을 읽어 오는 CLI가 함께 설치됩니다
@@ -39,7 +40,7 @@ brew install --cask codexbar
 
 CodexBar에서 보고 싶은 서비스를 켜고 로그인해 두면, 게이지에 그대로 나타납니다. 메뉴바 앱 자체는 켜 둘 필요가 없습니다 — 게이지는 CLI만 사용합니다.
 
-## 설치
+## 설치 (macOS)
 
 ```sh
 git clone https://github.com/Power-xc/usage-gauge.git
@@ -48,6 +49,19 @@ scripts/install.sh
 ```
 
 `~/Applications/UsageGauge.app`에 설치되고 로그인할 때 자동으로 켜집니다. 화면 기록이나 손쉬운 사용 권한은 묻지 않습니다. 지우려면 `scripts/uninstall.sh`를 실행합니다.
+
+## Windows
+
+같은 패널을 Windows 10/11에서도 씁니다. [`windows/`](windows/README.md)의 Tauri(Rust + TypeScript) 앱이 같은 다이얼·바·갱신 규칙을 그대로 옮겼고, 유리는 Windows 11 아크릴 블러 위에 깔립니다.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/windows/preview.png" width="552" alt="Windows 패널 미리보기: Claude와 Codex의 홍채 다이얼과 주간 바">
+</p>
+
+- **지원 서비스** — CodexBar가 macOS 전용이라, Windows 판은 Claude Code와 Codex CLI의 로그인 파일로 각 서비스의 공식 사용량 응답을 직접 읽습니다. 지금은 Claude·Codex 두 서비스입니다.
+- **설치** — [Actions의 windows 워크플로](https://github.com/Power-xc/usage-gauge/actions/workflows/windows.yml)에서 `UsageGauge-windows-installer`를 받아 실행하거나, `cd windows && npm ci && npm run tauri build`로 직접 빌드합니다.
+- **사용** — 트레이 아이콘 클릭이나 `Ctrl+Alt+U`로 켜고 끄고, 트레이 메뉴에서 로그인 시 시작을 켭니다.
+- **토큰** — 요청할 때마다 파일에서 읽어 `api.anthropic.com`·`chatgpt.com`으로만 HTTPS로 보내고, 기록·저장하거나 화면(웹뷰)에 넘기지 않습니다. 토큰을 갱신하거나 고치지도 않습니다.
 
 ## 사용법
 
@@ -91,10 +105,12 @@ scripts/install.sh
 | `UsageGauge`     | 앱 셸 — 패널·메뉴바·단축키·주기 갱신·바탕화면 밝기 판독                                       |
 | `PromoRenderer`  | 실제 뷰를 샘플 데이터로 렌더해 README 이미지와 데모 GIF를 만듭니다                            |
 | `CoreChecks`     | XCTest 없이 도는 검사 실행기 (`swift run CoreChecks`)                                         |
+| `windows/`       | Windows 판 — Rust 쪽이 사용량을 읽고 해석하며, 같은 그림을 Canvas로 그립니다                   |
 
 ### 스택 선정 이유
 
-- **Swift Package + SwiftUI/AppKit (2026-10-21)** — 떠 있는 비활성 패널(`NSPanel`)과 메뉴바 아이템은 AppKit이, 다이얼 같은 그림은 SwiftUI `Canvas`가 가장 적은 코드로 정확하게 그립니다. Xcode 프로젝트 없이 `swift build`만으로 빌드되어 Command Line Tools만 있는 Mac에서도 설치됩니다. Electron·Tauri는 상시 떠 있는 작은 위젯에 비해 메모리와 시작 비용이 커서 제외했습니다.
+- **Swift Package + SwiftUI/AppKit (2026-10-21)** — 떠 있는 비활성 패널(`NSPanel`)과 메뉴바 아이템은 AppKit이, 다이얼 같은 그림은 SwiftUI `Canvas`가 가장 적은 코드로 정확하게 그립니다. Xcode 프로젝트 없이 `swift build`만으로 빌드되어 Command Line Tools만 있는 Mac에서도 설치됩니다. macOS에서는 Electron·Tauri가 상시 떠 있는 작은 위젯에 비해 메모리와 시작 비용이 커서 제외했습니다.
+- **Windows 판은 Tauri v2 (2026-10-21)** — SwiftUI가 없는 Windows에서 같은 다이얼을 그리기에는 Canvas가 가장 가깝고, Tauri는 OS에 이미 있는 WebView2를 써서 Electron보다 설치 파일과 메모리가 작습니다. 토큰을 다루는 사용량 읽기와 해석은 Rust 쪽에 두어 웹뷰가 토큰을 볼 일이 없게 했습니다.
 - **CodexBar CLI를 데이터 원천으로 (2026-10-21)** — 서비스마다 다른 인증·사용량 API를 CodexBar가 이미 다루고 있어, 게이지는 표시와 해석에만 집중합니다. 각 서비스 API를 직접 부르는 방식은 토큰 보관과 API 변경 추적 부담이 커서 제외했습니다.
 
 ### 구조 선정 이유
@@ -115,6 +131,7 @@ scripts/install.sh
 swift build                 # 전체 빌드
 swift run CoreChecks        # 판단 로직 검사
 scripts/render-media.sh     # README 이미지와 데모 GIF 다시 렌더 (ffmpeg 필요)
+cd windows && npm ci && npm run build && (cd src-tauri && cargo test)   # Windows 판 프런트·Rust 검사
 ```
 
 ## 라이선스
