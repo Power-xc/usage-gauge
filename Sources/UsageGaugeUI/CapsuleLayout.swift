@@ -50,7 +50,7 @@ private struct CapsuleBlock: View {
     private var readout: some View {
         VStack(alignment: .trailing, spacing: 3) {
             if usage.isAvailable {
-                ShapeFigure(window: usage.session, size: Self.figureSize).frame(height: Self.figureSize, alignment: .trailing)
+                PercentFigure(window: usage.session, size: Self.figureSize).frame(height: Self.figureSize, alignment: .trailing)
                 Text(countdown(until: usage.session?.resetsAt, now: now, style: style))
                     .font(Theme.figure(9.5, .regular, style: style))
                     .foregroundStyle(Theme.faintText)

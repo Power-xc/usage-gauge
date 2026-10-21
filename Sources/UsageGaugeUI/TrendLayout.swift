@@ -19,7 +19,7 @@ struct TrendLayout: View {
 
 private struct TrendBlock: View {
     private static let figureHeight: CGFloat = 36
-    private static let dotPitch: CGFloat = 3.6
+    private static let figureSize: CGFloat = 32
     /// Data this long makes a burn rate meaningful; below it the caption says it is still recording.
     private static let enoughData: TimeInterval = 10 * 60
 
@@ -37,7 +37,7 @@ private struct TrendBlock: View {
             ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
             if let window = usage.session ?? usage.weekly, usage.isAvailable {
                 let series = TrendSeries(id: usage.id, window: window, history: history, now: now)
-                figure(window).frame(height: Self.figureHeight, alignment: .leading)
+                PercentFigure(window: window, size: Self.figureSize).frame(height: Self.figureHeight, alignment: .leading)
                 caption(series, window: window)
                 TrendChart(series: series, tint: tint)
                 axis(window)
@@ -89,28 +89,5 @@ private struct TrendBlock: View {
         .font(Theme.figure(9, .regular, style: style))
         .foregroundStyle(Theme.faintText)
         .opacity(window == nil ? 0 : 1)
-    }
-
-    @ViewBuilder
-    private func figure(_ window: UsageWindow) -> some View {
-        let alert = Theme.alert(window.remainingPercent)
-        let text = "\(window.displayPercent)"
-        switch style {
-        case .iris:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.display(32)).tracking(-0.8).foregroundStyle(alert ?? Theme.primaryText)
-                Text("%").font(Theme.font(14, .medium)).foregroundStyle(Theme.mutedText)
-            }
-        case .dot:
-            HStack(alignment: .bottom, spacing: Self.dotPitch) {
-                DotMatrixText(text, pitch: Self.dotPitch, color: alert ?? .white)
-                DotMatrixText("%", pitch: Self.dotPitch * 0.55, color: Theme.mutedText)
-            }
-        case .mono:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.mono(30, .semibold)).foregroundStyle(alert ?? .white)
-                Text("%").font(Theme.mono(13, .medium)).foregroundStyle(Theme.mutedText)
-            }
-        }
     }
 }

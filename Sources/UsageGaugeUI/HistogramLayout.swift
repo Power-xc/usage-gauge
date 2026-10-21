@@ -21,7 +21,7 @@ struct HistogramLayout: View {
 
 private struct HistogramBlock: View {
     private static let figureHeight: CGFloat = 36
-    private static let dotPitch: CGFloat = 3.6
+    private static let figureSize: CGFloat = 32
 
     let usage: ProviderUsage
     let index: Int
@@ -55,7 +55,7 @@ private struct HistogramBlock: View {
         let isRecording = history.samples(for: usage.id, in: window, now: now).count < 2
         let used = history.usedPerSlice(for: usage.id, window: window, now: now, slices: HistogramLayout.slices)
         HStack(alignment: .lastTextBaseline, spacing: 6) {
-            figure(isRecording ? nil : history.burnRate(for: usage.id, window: window, now: now))
+            usedFigure(isRecording ? nil : history.burnRate(for: usage.id, window: window, now: now))
             Text("최근 1시간 사용")
                 .font(Theme.label(9.5, style: style))
                 .foregroundStyle(Theme.faintText)
@@ -86,26 +86,10 @@ private struct HistogramBlock: View {
         }
     }
 
-    @ViewBuilder
-    private func figure(_ used: Double?) -> some View {
-        let text = used.map { "\(Int($0.rounded()))" } ?? ResetCountdown.unknown
-        switch style {
-        case .iris:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.display(32)).tracking(-0.8)
-                if used != nil { Text("%").font(Theme.font(14, .medium)).foregroundStyle(Theme.mutedText) }
-            }
-        case .dot:
-            HStack(alignment: .bottom, spacing: Self.dotPitch) {
-                DotMatrixText(text, pitch: Self.dotPitch, color: .white)
-                if used != nil { DotMatrixText("%", pitch: Self.dotPitch * 0.55, color: Theme.mutedText) }
-            }
-        case .mono:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.mono(30, .semibold))
-                if used != nil { Text("%").font(Theme.mono(13, .medium)).foregroundStyle(Theme.mutedText) }
-            }
-        }
+    /// The share used over the last hour, in the style's large figure.
+    private func usedFigure(_ used: Double?) -> some View {
+        StyleFigure(text: used.map { "\(Int($0.rounded()))" } ?? ResetCountdown.unknown, showsPercent: used != nil,
+                    color: Theme.primaryText, size: Self.figureSize)
     }
 }
 

@@ -18,7 +18,7 @@ struct FiguresLayout: View {
 
 private struct FiguresBlock: View {
     private static let figureHeight: CGFloat = 36
-    private static let dotPitch: CGFloat = 3.6
+    private static let figureSize: CGFloat = 32
 
     let usage: ProviderUsage
     let index: Int
@@ -32,7 +32,7 @@ private struct FiguresBlock: View {
         VStack(alignment: .leading, spacing: 6) {
             ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
             if usage.isAvailable {
-                figure(usage.session).frame(height: Self.figureHeight, alignment: .leading)
+                PercentFigure(window: usage.session, size: Self.figureSize).frame(height: Self.figureHeight, alignment: .leading)
                 Text(detailLine)
                     .font(Theme.figure(10, .regular, style: style))
                     .foregroundStyle(Theme.mutedText)
@@ -53,29 +53,5 @@ private struct FiguresBlock: View {
     private var detailLine: String {
         let label = usage.weekly?.label ?? "장기"
         return "\(label) \(percentText(usage.weekly)) · \(countdown(until: usage.session?.resetsAt, now: now, style: style))"
-    }
-
-    @ViewBuilder
-    private func figure(_ window: UsageWindow?) -> some View {
-        let alert = window.flatMap { Theme.alert($0.remainingPercent) }
-        let text = window.map { "\($0.displayPercent)" } ?? ResetCountdown.unknown
-        switch style {
-        case .iris:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.display(32)).tracking(-0.8)
-                    .foregroundStyle(alert ?? Theme.primaryText)
-                if window != nil { Text("%").font(Theme.font(14, .medium)).foregroundStyle(Theme.mutedText) }
-            }
-        case .dot:
-            HStack(alignment: .bottom, spacing: Self.dotPitch) {
-                DotMatrixText(text, pitch: Self.dotPitch, color: alert ?? .white)
-                if window != nil { DotMatrixText("%", pitch: Self.dotPitch * 0.55, color: Theme.mutedText) }
-            }
-        case .mono:
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(text).font(Theme.mono(30, .semibold)).foregroundStyle(alert ?? .white)
-                if window != nil { Text("%").font(Theme.mono(13, .medium)).foregroundStyle(Theme.mutedText) }
-            }
-        }
     }
 }

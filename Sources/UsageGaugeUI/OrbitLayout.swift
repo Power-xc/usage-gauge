@@ -55,7 +55,7 @@ private struct OrbitCentre: View {
 
     var body: some View {
         VStack(spacing: 3) {
-            ShapeFigure(window: lowest?.session, size: Self.figureSize)
+            PercentFigure(window: lowest?.session, size: Self.figureSize)
             Text(lowest.map { "최저 · \($0.title)" } ?? "연결 안 됨")
                 .font(Theme.label(8.5, .medium, style: style))
                 .foregroundStyle(Theme.faintText)
