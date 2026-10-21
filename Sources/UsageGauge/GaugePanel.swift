@@ -37,12 +37,20 @@ final class GaugePanel: NSPanel {
         keepOnScreen()
     }
 
+    /// Uses the display the panel overlaps most, not `screen`, which can still be unset at launch and
+    /// would pull a panel parked on a second display over to the main one.
     private func keepOnScreen() {
-        guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { return }
+        let home = NSScreen.screens.max { overlap($0) < overlap($1) }.flatMap { overlap($0) > 0 ? $0 : nil }
+        guard let visible = (home ?? NSScreen.main)?.visibleFrame else { return }
         var origin = frame.origin
         origin.x = min(max(origin.x, visible.minX), visible.maxX - frame.width)
         origin.y = min(max(origin.y, visible.minY), visible.maxY - frame.height)
         if origin != frame.origin { setFrameOrigin(origin) }
+    }
+
+    private func overlap(_ screen: NSScreen) -> CGFloat {
+        let shared = screen.frame.intersection(frame)
+        return shared.isNull ? 0 : shared.width * shared.height
     }
 
     private func placeTopLeft() {
