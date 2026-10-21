@@ -225,3 +225,18 @@ mod disk {
         assert_eq!(history_with_file("shape", r#"{"samples": 3}"#), UsageHistory::default());
     }
 }
+
+#[test]
+fn the_share_an_hour_ago_is_the_sample_closest_to_it_among_those_at_least_ten_minutes_old() {
+    let window = hour_window(40.0);
+    // Samples every 5 min for 75 min, 90 % at the first and 1 % less with each.
+    let steady: Vec<f64> = (0..16).map(|step| 90.0 - f64::from(step)).collect();
+    let history = drained(&steady, 300, NOW);
+    assert_eq!(history.share_an_hour_ago("claude", &window, NOW), Some(87.0), "the sample exactly an hour old");
+
+    let recent = drained(&[60.0, 59.0, 58.0], 120, NOW);
+    assert_eq!(recent.share_an_hour_ago("claude", &window, NOW), None, "nothing is at least 10 min old");
+
+    let mixed = drained(&[80.0, 70.0, 50.0], 300, NOW);
+    assert_eq!(mixed.share_an_hour_ago("claude", &window, NOW), Some(80.0), "a sample 10 min old is old enough; younger ones are not");
+}

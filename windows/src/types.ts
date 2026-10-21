@@ -8,12 +8,12 @@ export type PanelStyle = "iris" | "dot" | "mono";
 export type PanelLayout =
   | "dial"
   | "bars"
-  | "columns"
   | "figures"
-  | "orbit"
+  | "columns"
   | "capsule"
-  | "constellation"
   | "ruler"
+  | "orbit"
+  | "constellation"
   | "trend"
   | "histogram"
   | "spark"
@@ -75,15 +75,16 @@ export interface ProviderView {
   message: string | null;
   /**
    * Remaining percent of each window about an hour ago, from the recorded usage history. The
-   * constellation draws a trail from there when it is present; absent until history is recorded.
+   * constellation draws a trail from there; null unless every window the tool has has a sample
+   * from that time.
    */
-  hourAgo?: HourAgo | null;
+  hourAgo: HourAgo | null;
   history: HistoryView | null;
   /** Epoch milliseconds this tool's numbers were measured at; null before its first reading. */
   measuredAt: number | null;
 }
 
-/** Where a tool stood an hour ago; null for a window without a sample that far back. */
+/** Where a tool stood an hour ago; null for a window the tool does not have. */
 export interface HourAgo {
   session: number | null;
   weekly: number | null;

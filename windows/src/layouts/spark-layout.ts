@@ -2,6 +2,7 @@ import { el } from "../dom";
 import { WHITE, alert, brand, rgba, type Rgb } from "../theme";
 import { sparkSlices, sparkStrip } from "../spark-strip";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid } from "./grid";
 import { chartSlot } from "./history-parts";
 import { countdown, percentText, planTag, providerName, windowBar } from "./parts";
@@ -14,7 +15,7 @@ export function buildSparkLayout(providers: ProviderView[], style: PanelStyle): 
     const block = el("div", "history-block", titleRow(provider, index, style, tint));
     const { session, history } = provider;
     if (session) {
-      block.append(windowBar(style, width, session.remainingPercent, tint, drawables), caption(session, provider.weekly, style));
+      block.append(windowBar(style, width, session.remainingPercent, tint, drawables), revealingCaption(provider, caption(session, provider.weekly, style), { width }));
       const isRecording = history?.isRecording ?? true;
       const slices = history?.remainingSlices[style] ?? [];
       const count = isRecording || slices.length === 0 ? sparkSlices(width, style) : slices.length;

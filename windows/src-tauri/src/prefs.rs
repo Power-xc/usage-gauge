@@ -67,18 +67,18 @@ pub enum PanelLayout {
     Dial,
     /// A compact list: both windows of a tool as labelled bars.
     Bars,
-    /// A column chart comparing every tool's two windows.
-    Columns,
     /// The short-window figure and one line for the long window.
     Figures,
-    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
-    Orbit,
+    /// A column chart comparing every tool's two windows.
+    Columns,
     /// A capsule per tool filled to the short window's share, the long window under it.
     Capsule,
-    /// One field for every tool: short window across, long window up, tools linked into a constellation.
-    Constellation,
     /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
     Ruler,
+    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
+    Orbit,
+    /// One field for every tool: short window across, long window up, tools linked into a constellation.
+    Constellation,
     /// A line chart of each tool's short window over its period, from the recorded history.
     Trend,
     /// Per tool, the short window's recent use as a row of columns.
@@ -93,12 +93,12 @@ impl PanelLayout {
     pub const ALL: [Self; 12] = [
         Self::Dial,
         Self::Bars,
-        Self::Columns,
         Self::Figures,
-        Self::Orbit,
+        Self::Columns,
         Self::Capsule,
-        Self::Constellation,
         Self::Ruler,
+        Self::Orbit,
+        Self::Constellation,
         Self::Trend,
         Self::Histogram,
         Self::Spark,
@@ -109,12 +109,12 @@ impl PanelLayout {
         match self {
             Self::Dial => "다이얼",
             Self::Bars => "바",
-            Self::Columns => "막대 그래프",
             Self::Figures => "숫자",
-            Self::Orbit => "궤도",
+            Self::Columns => "막대 그래프",
             Self::Capsule => "캡슐",
-            Self::Constellation => "별자리",
             Self::Ruler => "눈금자",
+            Self::Orbit => "궤도",
+            Self::Constellation => "별자리",
             Self::Trend => "추이",
             Self::Histogram => "히스토그램",
             Self::Spark => "스파크 바",
@@ -126,12 +126,12 @@ impl PanelLayout {
         match self {
             Self::Dial => "dial",
             Self::Bars => "bars",
-            Self::Columns => "columns",
             Self::Figures => "figures",
-            Self::Orbit => "orbit",
+            Self::Columns => "columns",
             Self::Capsule => "capsule",
-            Self::Constellation => "constellation",
             Self::Ruler => "ruler",
+            Self::Orbit => "orbit",
+            Self::Constellation => "constellation",
             Self::Trend => "trend",
             Self::Histogram => "histogram",
             Self::Spark => "spark",

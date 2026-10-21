@@ -1,9 +1,14 @@
-import { prepareCanvas, pointAt, type Point } from "./canvas";
+import type { Drawable } from "./animation";
+import { el } from "./dom";
+import { pointAt, type Point } from "./canvas";
+import { GlidingCanvas } from "./gliding-canvas";
+import { TOOL_ENTER, TOOL_LEAVE, TOOL_OPEN } from "./tool-cells";
 import { WHITE, rgba, type Rgb } from "./theme";
 import type { PanelStyle } from "./types";
 
 /** One ring of the orbit chart: the short window's remaining share in the tool's colour, or null for a tool that reports nothing (an empty track). */
 export interface OrbitRing {
+  id: string;
   remainingPercent: number | null;
   tint: Rgb;
 }
@@ -24,24 +29,63 @@ const pitchOf = (ringCount: number, size: number): number =>
 /** Radius of the space left free in the middle. */
 export const innerRadius = (ringCount: number, size: number): number => size / 2 - EDGE_INSET - pitchOf(ringCount, size) * ringCount;
 
+/** The ring under a point of a chart `size` wide, if any; the first ring is the outermost. */
+export function ringIndexAt(point: Point, size: number, ringCount: number): number | null {
+  const reach = Math.hypot(point.x - size / 2, point.y - size / 2);
+  const index = Math.floor((size / 2 - EDGE_INSET - reach) / pitchOf(ringCount, size));
+  return index >= 0 && index < ringCount ? index : null;
+}
+
 /**
  * Concentric rings, the first outermost, each lit clockwise from 12 o'clock: rings of dots (dot),
  * of thin radial ticks (mono) or solid arcs over faint tracks (iris). A white head marks the end
- * of every lit arc. Still.
+ * of every lit arc. Each ring is a canvas of its own marked `data-tool`, so the focused tool's
+ * ring can brighten and the others dim; a transparent layer over them finds the ring under the
+ * pointer and tells that ring's canvas, which cannot take the pointer itself.
  */
-export function orbitRings(style: PanelStyle, rings: OrbitRing[], size: number): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  const context = prepareCanvas(canvas, size, size);
-  const center = { x: size / 2, y: size / 2 };
+export function orbitRings(style: PanelStyle, rings: OrbitRing[], size: number, drawables: Drawable[]): HTMLElement {
   const pitch = pitchOf(rings.length, size);
-  rings.forEach((ring, index) => {
+  const center = { x: size / 2, y: size / 2 };
+  const chart = el("div", "orbit-rings");
+  chart.style.width = chart.style.height = `${size}px`;
+  const layers = rings.map((ring, index) => {
     const radius = size / 2 - EDGE_INSET - pitch * (index + 0.5);
-    const share = (ring.remainingPercent ?? 0) / 100;
-    if (style === "dot") drawDots(context, center, radius, pitch, ring, share);
-    else if (style === "mono") drawTicks(context, center, radius, pitch, ring, share);
-    else drawArc(context, center, radius, pitch, ring, share);
+    const layer = new GlidingCanvas(size, size, [ring.remainingPercent], (context, [percent]) => {
+      const share = (percent ?? 0) / 100;
+      if (style === "dot") drawDots(context, center, radius, pitch, ring, share);
+      else if (style === "mono") drawTicks(context, center, radius, pitch, ring, share);
+      else drawArc(context, center, radius, pitch, ring, share);
+    });
+    layer.canvas.className = "orbit-ring";
+    layer.canvas.dataset.tool = ring.id;
+    drawables.push(layer);
+    chart.append(layer.canvas);
+    return layer.canvas;
   });
-  return canvas;
+  chart.append(hitLayer(layers, size));
+  return chart;
+}
+
+function hitLayer(layers: HTMLCanvasElement[], size: number): HTMLElement {
+  const hit = el("div", "orbit-hit");
+  let current: HTMLElement | null = null;
+  const ringAt = (event: PointerEvent | MouseEvent): HTMLElement | null => {
+    const box = hit.getBoundingClientRect();
+    const point = { x: ((event.clientX - box.left) / box.width) * size, y: ((event.clientY - box.top) / box.height) * size };
+    const index = ringIndexAt(point, size, layers.length);
+    return index === null ? null : layers[index];
+  };
+  const point = (target: HTMLElement | null): void => {
+    if (target === current) return;
+    current?.dispatchEvent(new Event(TOOL_LEAVE));
+    current = target;
+    current?.dispatchEvent(new Event(TOOL_ENTER));
+    hit.classList.toggle("over-ring", current !== null);
+  };
+  hit.addEventListener("pointermove", (event) => point(ringAt(event)));
+  hit.addEventListener("pointerleave", () => point(null));
+  hit.addEventListener("click", (event) => ringAt(event)?.dispatchEvent(new Event(TOOL_OPEN)));
+  return hit;
 }
 
 const angleOf = (step: number, count: number): number => (step / count) * FULL_TURN + TWELVE_OCLOCK;

@@ -20,18 +20,18 @@ export function buildLayout(layout: PanelLayout, providers: ProviderView[], styl
       return buildDialLayout(providers, style);
     case "bars":
       return buildBarsLayout(providers, style);
-    case "columns":
-      return buildColumnsLayout(providers, style);
     case "figures":
       return buildFiguresLayout(providers, style);
-    case "orbit":
-      return buildOrbitLayout(providers, style);
+    case "columns":
+      return buildColumnsLayout(providers, style);
     case "capsule":
       return buildCapsuleLayout(providers, style);
-    case "constellation":
-      return buildConstellationLayout(providers, style);
     case "ruler":
       return buildRulerLayout(providers, style);
+    case "orbit":
+      return buildOrbitLayout(providers, style);
+    case "constellation":
+      return buildConstellationLayout(providers, style);
     case "trend":
       return buildTrendLayout(providers, style);
     case "histogram":

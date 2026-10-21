@@ -1,6 +1,7 @@
 // Drives the built frontend in headless Chrome and checks the interaction layer: tabs open a tool's
-// page, hover reveals the detail line, the picker lists every form and persists through the
-// backend, a fresh reading glides, the window follows a page change in small steps and many tools
+// page, hover reveals the detail line in place (never over a bar, a rule or the next row), the
+// one-chart forms focus the hovered tool, the picker lists the twelve forms in the macOS order and
+// persists through the backend, a fresh reading glides, the window follows a page change in small steps and many tools
 // never collide in the tab row. Run `npm run build` first.
 // The Tauri bridge is a mock that records every command and lets the test emit backend events.
 import assert from "node:assert/strict";
@@ -26,7 +27,24 @@ const types = {
 const TRANSITION_MS = 450;
 const REDUCED_MOTION_MS = 250;
 const GLIDE_MIDWAY_MS = 250;
-const FORMS = 12;
+/** The twelve forms in the macOS order, as the backend lists them. */
+const FORMS = [
+  ["dial", "다이얼"],
+  ["bars", "바"],
+  ["figures", "숫자"],
+  ["columns", "막대 그래프"],
+  ["capsule", "캡슐"],
+  ["ruler", "눈금자"],
+  ["orbit", "궤도"],
+  ["constellation", "별자리"],
+  ["trend", "추이"],
+  ["histogram", "히스토그램"],
+  ["spark", "스파크 바"],
+  ["burst", "버스트"],
+];
+const ONE_CHART_FORMS = ["orbit", "constellation"];
+const STYLES = ["iris", "mono", "dot"];
+const DIMMED_OPACITY = 0.5;
 const TOOL_NAMES = [
   "Claude",
   "Codex",
@@ -59,14 +77,13 @@ const view = (title, remaining) => {
     measuredAt: 1_799_999_000_000,
     session: window_,
     weekly: { ...window_, label: "주간" },
+    hourAgo: null,
+    history: null,
   };
 };
 const providers = (count, remaining = 80) =>
   TOOL_NAMES.slice(0, count).map((title) => view(title, remaining));
-const layouts = Array.from({ length: FORMS }, (_, index) => ({
-  id: index === 0 ? "dial" : `form${index}`,
-  title: `형태${index}`,
-}));
+const layouts = FORMS.map(([id, title]) => ({ id, title }));
 
 function serve() {
   const server = createServer((request, response) => {
@@ -120,6 +137,7 @@ async function open(
   count,
   style = "mono",
   reducedMotion = false,
+  layout = "dial",
 ) {
   const page = await browser.newPage();
   await page.setViewport({ width: 800, height: 600 });
@@ -133,7 +151,7 @@ async function open(
     isShown: true,
     hasGlass: true,
     style,
-    layout: "dial",
+    layout,
     layouts,
     scale: 1,
   };
@@ -158,6 +176,52 @@ const calls = (page, command) =>
   );
 const pageCount = (page) =>
   page.$$eval(".grid-slot > *", (nodes) => nodes.length);
+
+/** Ring of the second tool in a 150-point orbit of four rings (see `orbit-rings.ts`), from the middle. */
+const ORBIT_RINGS_RADIUS = 59;
+const HOVER_SETTLE_MS = 300;
+
+/** Which marks of a one-chart form are brightened and which are dimmed. */
+const focusOf = (page, selector) =>
+  page.$$eval(
+    selector,
+    (nodes, dimmedOpacity) => ({
+      hovered: nodes.filter((node) => node.classList.contains("hovered")).map((node) => node.dataset.tool),
+      dimmed: nodes
+        .filter((node) => node.classList.contains("dimmed") && Number(getComputedStyle(node).opacity) <= dimmedOpacity + 0.01)
+        .map((node) => node.dataset.tool),
+    }),
+    DIMMED_OPACITY,
+  );
+
+// Runs in the page: what in the hovered cell the revealed line lands on. The line must sit inside
+// the cell, and no element that is showing (a canvas, a text, a bar) may share its box, except
+// the caption slot that it replaces.
+function overlapsOfReveal(tool) {
+  const cell = document.querySelector(`.cell[data-tool="${tool}"]`);
+  const line = cell.querySelector(".reveal");
+  if (!line) return [];
+  const area = line.getBoundingClientRect();
+  const home = cell.getBoundingClientRect();
+  const found = [];
+  if (area.left < home.left - 0.5 || area.right > home.right + 0.5) found.push("the cell's edge");
+  const isShowing = (node) => {
+    for (let at = node; at && at !== cell; at = at.parentElement) if (Number(getComputedStyle(at).opacity) < 0.05) return false;
+    return true;
+  };
+  const isLeaf = (node) => node.children.length === 0 || node.tagName === "CANVAS";
+  for (const node of cell.querySelectorAll("*")) {
+    if (node === line || line.parentElement.contains(node) || !isLeaf(node) || !isShowing(node)) continue;
+    const box = node.getBoundingClientRect();
+    if (box.width < 1 || box.height < 1) continue;
+    const isHidden = getComputedStyle(node).visibility === "hidden";
+    const isEmpty = node.tagName !== "CANVAS" && !node.textContent.trim() && getComputedStyle(node).backgroundColor === "rgba(0, 0, 0, 0)";
+    if (isHidden || isEmpty) continue;
+    const overlaps = box.left < area.right - 0.5 && box.right > area.left + 0.5 && box.top < area.bottom - 0.5 && box.bottom > area.top + 0.5;
+    if (overlaps) found.push(`${node.tagName.toLowerCase()}.${node.className}`);
+  }
+  return found;
+}
 
 const server = await serve();
 const browser = await puppeteer.launch({
@@ -215,12 +279,60 @@ try {
 
   // The picker lists every form and a choice goes to the backend; the panel follows the event.
   await page.click('.glyph[aria-label="그래프 모양"]');
-  assert.equal(await page.$$eval(".choice", (nodes) => nodes.length), FORMS);
-  await page.click('.choice[data-layout="form3"]');
-  assert.deepEqual(await calls(page, "choose_layout"), [{ id: "form3" }]);
+  assert.deepEqual(
+    await page.$$eval(".choice", (nodes) => nodes.map((node) => node.dataset.layout)),
+    FORMS.map(([id]) => id),
+    "the picker lists the twelve forms in the macOS order",
+  );
+  await page.click('.choice[data-layout="columns"]');
+  assert.deepEqual(await calls(page, "choose_layout"), [{ id: "columns" }]);
   await page.evaluate(() => window.__emit("panel-layout", "dial"));
   assert.ok(await page.$('.choice[data-layout="dial"].selected'));
   await page.close();
+
+  // Hover reveals the times where the caption was: the line stays inside its cell and clear of
+  // every bar, rule and number that is still showing, in every grid form and style.
+  for (const style of STYLES) {
+    for (const [layout] of FORMS.filter(([id]) => !ONE_CHART_FORMS.includes(id) && id !== "constellation")) {
+      page = await open(browser, port, 4, style, false, layout);
+      await page.hover('.cell[data-tool="codex"]');
+      await wait(page, HOVER_SETTLE_MS);
+      const crossings = await page.evaluate(overlapsOfReveal, "codex");
+      assert.deepEqual(crossings, [], `${style} ${layout}: the reveal line overlaps ${crossings.join(", ")}`);
+      await page.close();
+    }
+  }
+
+  // One-chart forms: the hovered tool's marks brighten and the others dim; a click opens its tab.
+  for (const style of STYLES) {
+    page = await open(browser, port, 4, style, false, "constellation");
+    await page.hover('.constellation-node[data-tool="codex"] .tag-slot');
+    await wait(page, HOVER_SETTLE_MS);
+    assert.deepEqual(await focusOf(page, ".constellation-node"), { hovered: ["codex"], dimmed: ["claude", "gemini", "cursor"] }, `${style} constellation focus`);
+    assert.equal(await page.$eval('.footnote-time[data-follows="codex"]', (node) => getComputedStyle(node).opacity), "1", "the times show under the field");
+    await page.mouse.move(2, 2);
+    await wait(page, HOVER_SETTLE_MS);
+    assert.deepEqual(await focusOf(page, ".constellation-node"), { hovered: [], dimmed: [] }, "focus ends with the pointer");
+    await page.click('.constellation-node[data-tool="gemini"] .tag-slot');
+    await wait(page, TRANSITION_MS);
+    assert.equal(await page.$eval(".tab.selected", (node) => node.dataset.tab), "gemini");
+    await page.close();
+
+    page = await open(browser, port, 4, style, false, "orbit");
+    await page.hover('.orbit-row[data-tool="gemini"]');
+    await wait(page, HOVER_SETTLE_MS);
+    assert.deepEqual(await focusOf(page, ".orbit-ring"), { hovered: ["gemini"], dimmed: ["claude", "codex", "cursor"] }, `${style} orbit focus from the legend`);
+    const box = await (await page.$(".orbit-hit")).boundingBox();
+    const secondRing = ORBIT_RINGS_RADIUS;
+    await page.mouse.move(box.x + box.width / 2 + secondRing, box.y + box.height / 2);
+    await wait(page, HOVER_SETTLE_MS);
+    assert.deepEqual((await focusOf(page, ".orbit-ring")).hovered, ["codex"], `${style} orbit focus from the ring`);
+    assert.equal(await page.$eval(".orbit-hit", (node) => getComputedStyle(node).cursor), "pointer");
+    await page.mouse.click(box.x + box.width / 2 + secondRing, box.y + box.height / 2);
+    await wait(page, TRANSITION_MS);
+    assert.equal(await page.$eval(".tab.selected", (node) => node.dataset.tab), "codex");
+    await page.close();
+  }
 
   // A fresh reading glides: mid-way the dial shows neither the old nor the new share.
   page = await open(browser, port, 2, "mono");

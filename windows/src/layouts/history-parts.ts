@@ -3,6 +3,7 @@ import { dotMatrixText } from "../dot-matrix";
 import { el } from "../dom";
 import { WHITE, alert, rgba, type Rgb } from "../theme";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { NO_READING, planTag, providerName } from "./parts";
 
 /** Dot pitch of a large figure as a share of its size: a glyph is seven pitches tall. */
@@ -36,9 +37,10 @@ export function percentFigure(window: WindowView | null, size: number, style: Pa
   return styleFigure(window ? String(window.displayPercent) : NO_READING, window !== null, window ? alert(window.level) : null, size, style);
 }
 
-/** The tool's name with its plan beside it. */
-export function nameRow(provider: ProviderView, index: number, style: PanelStyle, tint: Rgb): HTMLElement {
-  return el("div", "history-name", providerName(provider, index, style, tint, true), ...planTag(provider));
+/** The tool's name with its plan beside it. With a `revealWidth` (the cell's), a hover swaps the plan for the reset and measuring times. */
+export function nameRow(provider: ProviderView, index: number, style: PanelStyle, tint: Rgb, revealWidth?: number): HTMLElement {
+  const plan = revealWidth === undefined ? planTag(provider) : [revealingCaption(provider, planTag(provider)[0] ?? null, { width: revealWidth })];
+  return el("div", "history-name", providerName(provider, index, style, tint, true), ...plan);
 }
 
 /** Small status at the end of a footer: a dot and the projected run-out in the alert colour, or "여유". Light and colour only, no frame. */

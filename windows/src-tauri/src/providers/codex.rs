@@ -1,4 +1,4 @@
-//! Codex: the Codex CLI login and `GET /backend-api/wham/usage` (the request CodexBar makes).
+//! Codex: the Codex CLI login and `GET /backend-api/wham/usage` (the official usage endpoint).
 
 use serde::Deserialize;
 

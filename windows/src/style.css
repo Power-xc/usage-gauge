@@ -11,7 +11,9 @@
   --dial-size: 72px;
   --detail-width: 140px;
   --content-width: 472px;
-  --font: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font:
+    "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui,
+    sans-serif;
   --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
   --signal: rgb(255 90 54);
   --hairline: rgb(255 255 255 / 0.1);
@@ -43,8 +45,8 @@ body {
   width: max-content;
 }
 
-/* Clear smoked glass: the acrylic behind the window shows through a dark tint, with no grey
-   frost, and a little light pooled along the top as when a slab catches an overhead light. */
+/* Clear smoked glass: the acrylic behind the window shows through a flat dark tint, with no grey
+   frost. No gradients anywhere on the iris surface: solid fills and hairlines only. */
 .panel {
   position: relative;
   display: flex;
@@ -52,36 +54,21 @@ body {
   gap: 10px;
   padding: var(--panel-padding);
   border-radius: var(--panel-radius);
-  background:
-    linear-gradient(rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.012) 35%, transparent 60%),
-    rgb(var(--smoke) / var(--smoke-alpha));
+  background: rgb(var(--smoke) / var(--smoke-alpha));
 }
 
 .panel.solid {
   --smoke-alpha: 0.94;
 }
 
-/* Edge of a thick glass slab: a highlight on the top-left corner and a faint inner line. */
+/* Edge of the glass slab: one flat 1px line. */
 .panel::after {
   content: "";
   position: absolute;
   inset: 0;
+  border: 1px solid rgb(255 255 255 / 0.16);
   border-radius: inherit;
-  padding: 1px;
   pointer-events: none;
-  background: linear-gradient(
-    135deg,
-    rgb(255 255 255 / 0.42) 0%,
-    rgb(255 255 255 / 0.08) 35%,
-    rgb(255 255 255 / 0.04) 70%,
-    rgb(255 255 255 / 0.16) 100%
-  );
-  mask:
-    linear-gradient(#000 0 0) content-box exclude,
-    linear-gradient(#000 0 0);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box xor,
-    linear-gradient(#000 0 0);
 }
 
 .panel::before {
@@ -176,7 +163,7 @@ body {
   padding: 4px 10px;
   border-radius: 16px;
   background: rgb(255 255 255 / 0.05);
-  box-shadow: inset 0 0 0 0.8px rgb(255 255 255 / 0.16);
+  border: 0.8px solid rgb(255 255 255 / 0.16);
 }
 
 .value-row {
@@ -227,7 +214,7 @@ body {
 
 .value-fill {
   width: calc(var(--knob) / 2 + (100% - var(--knob)) * var(--fraction));
-  background: linear-gradient(90deg, rgb(201 182 255 / 0.25), var(--accent));
+  background: var(--accent);
 }
 
 .value-knob {
@@ -239,7 +226,6 @@ body {
   margin-top: calc(var(--knob) / -2);
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 5px rgb(201 182 255 / 0.7);
 }
 
 .grid {
@@ -272,22 +258,12 @@ body {
   flex: none;
 }
 
-/* The tool's colour glowing through the glass from behind the dial; it fades out within the
-   panel's padding. */
-.dial::before {
-  content: "";
-  position: absolute;
-  inset: calc(var(--dial-size) * -0.2);
-  background: radial-gradient(closest-side, rgb(var(--tint) / 0.28) 43%, rgb(var(--tint) / 0));
-  pointer-events: none;
-}
-
 .dial canvas {
   position: relative;
   display: block;
 }
 
-/* The figure sits in the pupil, lit from below by the tool's colour. */
+/* The figure sits in the pupil: crisp white type, or the warning colour when low. */
 .pupil-text {
   position: absolute;
   inset: 0;
@@ -305,26 +281,11 @@ body {
 }
 
 .figure {
-  position: relative;
   font-size: calc(var(--dial-size) * 0.22);
   font-weight: 600;
   letter-spacing: calc(var(--dial-size) * -0.004);
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(180deg, #fff 40%, var(--figure-color) 115%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.figure::before {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  z-index: -1;
   color: var(--figure-color);
-  opacity: 0.55;
-  filter: blur(calc(var(--dial-size) * 0.05));
-  transform: translateY(calc(var(--dial-size) * 0.02));
 }
 
 .percent {
@@ -358,8 +319,11 @@ body {
   color: var(--text-faint);
 }
 
-.session-line {
+.detail > .reveal-slot {
   margin-top: 4px;
+}
+
+.session-line {
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
@@ -432,7 +396,7 @@ body {
 }
 
 .panel[data-style="dot"]::after {
-  background: rgb(255 255 255 / 0.09);
+  border-color: rgb(255 255 255 / 0.09);
 }
 
 .panel[data-style="dot"] .lamp {
@@ -450,7 +414,7 @@ body {
 }
 
 .panel[data-style="mono"]::after {
-  background: rgb(255 255 255 / 0.16);
+  border-color: rgb(255 255 255 / 0.16);
 }
 
 .panel[data-style="mono"] .head {
@@ -479,22 +443,7 @@ body {
   border-radius: 3px;
 }
 
-/* Dot and mono: no glow behind the dial, plain figures, terse monospaced labels. */
-.panel[data-style="dot"] .dial::before,
-.panel[data-style="mono"] .dial::before {
-  display: none;
-}
-
-.panel[data-style="mono"] .figure {
-  font-size: calc(var(--dial-size) * 0.22);
-  background: none;
-  color: var(--figure-color);
-}
-
-.panel[data-style="mono"] .figure::before {
-  display: none;
-}
-
+/* Dot and mono: terse monospaced labels. */
 .panel[data-style="mono"] .percent {
   font-size: calc(var(--dial-size) * 0.09);
 }
@@ -842,6 +791,25 @@ body {
   display: block;
 }
 
+.orbit-rings {
+  position: relative;
+}
+
+.orbit-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbit-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.opens-tools .orbit-hit.over-ring {
+  cursor: pointer;
+}
+
 .orbit-centre {
   position: absolute;
   top: 50%;
@@ -851,6 +819,28 @@ body {
   align-items: center;
   gap: 3px;
   transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.16s ease-out;
+}
+
+/* While a tool is focused its own share replaces the lowest one in the middle. */
+.focusing .orbit-centre.lowest {
+  opacity: 0;
+}
+
+.orbit-times {
+  position: relative;
+  justify-content: flex-end;
+}
+
+.orbit-time {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .orbit-centre-label {
@@ -956,6 +946,60 @@ body {
 
 .constellation canvas {
   display: block;
+}
+
+/* A node (marker, leader and tag) lies over the whole field and takes the pointer only on its
+   marker and tag, so the empty field between tools stays inert. */
+.constellation-node {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.constellation-node canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.node-hit {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.constellation-node .tag-slot {
+  pointer-events: auto;
+}
+
+.constellation-footnote {
+  position: absolute;
+  pointer-events: none;
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.footnote-text {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  transition: opacity 0.16s ease-out;
+}
+
+.focusing .footnote-text {
+  opacity: 0;
+}
+
+.footnote-time {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .tag-slot {
@@ -1092,11 +1136,6 @@ body {
   transition:
     transform 0.3s ease-in-out,
     background-color 0.3s ease-in-out;
-}
-
-/* Iris lets the underline glow; dot and mono keep it a clean line. */
-.panel[data-style="iris"] .tab-underline {
-  box-shadow: 0 0 6px var(--underline);
 }
 
 .panel[data-style="dot"] .tab-name,
@@ -1302,18 +1341,11 @@ body {
   font-size: calc(var(--dial-size) * 0.09);
 }
 
-/* Hover is light only: the tool brightens, a soft glow of its colour rises behind its cell and a line
-   with its reset and measuring times appears in place. Nothing moves and nothing is framed. */
+/* Hover is light and colour only: the tool brightens, a flat tint of its colour covers its cell and
+   a line with its reset and measuring times replaces the caption in place. Nothing moves, nothing is
+   framed, and nothing is blurred. */
 .tool-cell.clickable {
   cursor: pointer;
-}
-
-.tool-cell:not(.cell) {
-  transition: filter 0.16s ease-out;
-}
-
-.tool-cell:not(.cell).hovered {
-  filter: brightness(1.1);
 }
 
 .cell.tool-cell {
@@ -1324,48 +1356,97 @@ body {
 .cell.tool-cell::before {
   content: "";
   position: absolute;
-  inset: 0 24px;
+  inset: -8px;
   z-index: -1;
-  border-radius: 50%;
-  background: rgb(var(--tool-tint) / 0.16);
-  filter: blur(22px);
+  border-radius: 12px;
+  background: rgb(var(--tool-tint) / 0.08);
   opacity: 0;
   transition: opacity 0.16s ease-out;
   pointer-events: none;
-}
-
-.cell.tool-cell > :not(.reveal) {
-  transition: filter 0.16s ease-out;
 }
 
 .cell.tool-cell.hovered::before {
   opacity: 1;
 }
 
-.cell.tool-cell.hovered > :not(.reveal) {
+/* Mono cells are a hairline grid: the tint fills the cell square, padding and all. */
+.panel[data-style="mono"] .cell.tool-cell::before {
+  inset: 0;
+  border-radius: 0;
+}
+
+.cell.tool-cell > * {
+  transition: filter 0.16s ease-out;
+}
+
+.cell.tool-cell.hovered > * {
+  filter: brightness(1.08);
+}
+
+/* One-chart forms: the focused tool's marks brighten, the others dim a little. */
+.tool-cell:not(.cell) {
+  transition:
+    filter 0.16s ease-out,
+    opacity 0.16s ease-out;
+}
+
+.tool-cell:not(.cell).hovered {
   filter: brightness(1.1);
+}
+
+.tool-cell:not(.cell).dimmed {
+  opacity: 0.5;
+}
+
+/* A caption and the line that replaces it share one slot; the line crossfades in over the caption. */
+.reveal-slot {
+  position: relative;
+}
+
+.reveal-slot > :not(.reveal) {
+  transition: opacity 0.16s ease-out;
 }
 
 .reveal {
   position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translate(-50%, 12px);
-  font-size: 9px;
-  line-height: 11px;
+  top: 50%;
+  left: 0;
+  font-size: 9.5px;
+  line-height: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   opacity: 0;
+  transform: translateY(-50%);
   transition: opacity 0.16s ease-out;
   pointer-events: none;
 }
 
-.tool-cell.hovered > .reveal {
+.reveal-slot.center .reveal {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.reveal-slot.trailing .reveal {
+  left: auto;
+  right: 0;
+}
+
+.tool-cell.hovered .reveal-slot > :not(.reveal) {
+  opacity: 0;
+}
+
+.tool-cell.hovered .reveal {
   opacity: 1;
 }
 
-.panel[data-style="mono"] .reveal {
-  transform: translate(-50%, -3px);
+/* Elements that follow the focused tool of a one-chart form fade in with it. */
+[data-follows] {
+  opacity: 0;
+  transition: opacity 0.16s ease-out;
+}
+
+[data-follows].hovered {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

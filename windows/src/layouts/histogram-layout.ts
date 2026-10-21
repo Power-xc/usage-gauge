@@ -20,7 +20,7 @@ export function buildHistogramLayout(providers: ProviderView[], style: PanelStyl
 
 function buildBlock(provider: ProviderView, index: number, width: number, style: PanelStyle): HTMLElement {
   const tint = brand(provider.id);
-  const block = el("div", "history-block", nameRow(provider, index, style, tint));
+  const block = el("div", "history-block", nameRow(provider, index, style, tint, width));
   const { session, history } = provider;
   if (!session || !history) {
     const status = el("div", "status-text", provider.message === null ? "단기 창 없음" : "연결 안 됨");

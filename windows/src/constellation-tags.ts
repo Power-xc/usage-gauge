@@ -12,13 +12,13 @@ const NO_READING = "–";
  * style a 1 px outlined box, in dot bare dot-matrix figures knocked out of the card, in iris a flat
  * chip. `width` is the room reserved for it; the tag itself is as wide as its content.
  */
-export function constellationTag(provider: ProviderView, tint: Rgb, style: PanelStyle, width: number, placement: TagPlacement): HTMLElement {
+export function constellationTag(provider: ProviderView, tint: Rgb, style: PanelStyle, width: number): HTMLElement {
   const isDot = style === "dot";
   const title = el("span", "tag-title", style === "iris" ? provider.title : provider.title.toUpperCase());
   const parts = [title, figure(provider.session, "tag-short", isDot), el("span", "tag-sep", "·"), figure(provider.weekly, "tag-long", isDot)];
   const tag = el("span", "constellation-tag", ...parts);
   if (style === "mono") tag.style.borderColor = rgba(tint, 0.85);
-  const slot = el("div", `tag-slot ${placement.side}`, tag);
+  const slot = el("div", "tag-slot", tag);
   slot.style.width = `${width}px`;
   slot.style.height = `${TAG_HEIGHT}px`;
   return slot;

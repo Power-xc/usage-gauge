@@ -4,6 +4,7 @@ import { WARNING, alert, brand, rgba } from "../theme";
 import { trendChart, TREND_AXIS_INSET } from "../trend-chart";
 import { trendSeries, type TrendSeries } from "../trend-series";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid, toolColumns } from "./grid";
 import { FIGURE_SIZE, percentFigure } from "./history-parts";
 import { NO_READING, providerName } from "./parts";
@@ -28,7 +29,7 @@ function buildBlock(provider: ProviderView, index: number, width: number, style:
     block.append(figure, el("div", "status-detail", provider.message ?? ""));
     const chart = trendChart(null, tint, style, width);
     chart.style.opacity = "0.5";
-    block.append(chart, axis(null, style));
+    block.append(chart, axis(null, provider, style, width));
     return block;
   }
   const series = trendSeries(history, window);
@@ -36,7 +37,7 @@ function buildBlock(provider: ProviderView, index: number, width: number, style:
     el("div", "figure-band", percentFigure(window, FIGURE_SIZE, style)),
     caption(series, window, history.now, style),
     trendChart(series, tint, style, width),
-    axis(window, style),
+    axis(window, provider, style, width),
   );
   return block;
 }
@@ -59,11 +60,12 @@ function caption(series: TrendSeries | null, window: WindowView, now: number, st
   return line;
 }
 
-/** "시작" at the window's start and the time to its reset at the right edge. */
-function axis(window: WindowView | null, style: PanelStyle): HTMLElement {
+/** "시작" at the window's start and the time to its reset at the right edge; a hover swaps it for the times. */
+function axis(window: WindowView | null, provider: ProviderView, style: PanelStyle, width: number): HTMLElement {
   const hasReset = window !== null && window.countdown !== NO_READING;
   const line = el("div", "axis-line", el("span", "", "시작"), el("span", "", hasReset ? `초기화 ${style === "iris" ? window.countdown : window.countdownCompact}` : ""));
-  line.style.paddingLeft = `${TREND_AXIS_INSET}px`;
-  line.style.visibility = window ? "visible" : "hidden";
-  return line;
+  const slot = revealingCaption(provider, line, { width });
+  slot.style.marginLeft = `${TREND_AXIS_INSET}px`;
+  slot.style.visibility = window ? "visible" : "hidden";
+  return slot;
 }

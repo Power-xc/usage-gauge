@@ -8,6 +8,10 @@ const BURN_LOOKBACK_SECONDS: i64 = 3600;
 /// Under this much data there is no burn rate.
 const MINIMUM_BURN_SPAN_SECONDS: i64 = 600;
 const SECONDS_PER_HOUR: f64 = 3600.0;
+/// The constellation's trail looks back this far for where a tool stood...
+const TRAIL_AGE_SECONDS: i64 = 3600;
+/// ...but only trusts a sample at least this old, so a trail is never drawn from noise.
+const MINIMUM_TRAIL_AGE_SECONDS: i64 = 600;
 /// For samples without window lengths: windows longer than this are taken for the long one.
 const LONG_WINDOW_MINUTES: u32 = 1440;
 
@@ -55,6 +59,17 @@ impl UsageHistory {
             }
         }
         Vec::new()
+    }
+
+    /// The remaining share of `window` at the recorded sample closest to an hour ago, among
+    /// samples at least 10 min old; `None` without one.
+    pub fn share_an_hour_ago(&self, id: &str, window: &UsageWindow, now: i64) -> Option<f64> {
+        let target = now - TRAIL_AGE_SECONDS;
+        self.points(id, window, now)
+            .into_iter()
+            .filter(|point| point.at <= now - MINIMUM_TRAIL_AGE_SECONDS)
+            .min_by_key(|point| (point.at - target).abs())
+            .map(|point| point.remaining)
     }
 
     /// % of `window` used per hour over the last 60 min of its current period; `None` with under

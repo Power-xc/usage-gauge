@@ -10,12 +10,12 @@ const SEGMENT_HEIGHT = 3;
 const DIM_ALPHA = 0.14;
 const TRACK_ALPHA = 0.1;
 const FULL_TURN = 2 * Math.PI;
-/** Room around an iris column for its head glow, which spills past the track. */
-const GLOW_ROOM = 14;
+/** The white head dot of an iris column, as a share of its width. */
+const HEAD_SHARE = 0.4;
 
 /**
- * The remaining share as an upright column in the style's voice: a luminous gradient with a soft
- * head glow (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
+ * The remaining share as an upright column in the style's voice: a solid fill with a white head
+ * dot (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
  * marks the top of what is left. It glides to a new share like the dials and bars do.
  */
 export class VerticalMeter {
@@ -34,14 +34,7 @@ export class VerticalMeter {
   ) {
     this.glides = [this.share];
     this.share.to(Math.min(100, Math.max(0, remainingPercent)) / 100);
-    if (style === "iris") {
-      this.context = prepareCanvas(this.canvas, width + 2 * GLOW_ROOM, height + 2 * GLOW_ROOM);
-      // The extra room is only for the glow; it must not push the layout apart.
-      this.canvas.style.margin = `${-GLOW_ROOM}px`;
-      this.context.translate(GLOW_ROOM, GLOW_ROOM);
-    } else {
-      this.context = prepareCanvas(this.canvas, width, height);
-    }
+    this.context = prepareCanvas(this.canvas, width, height);
   }
 
   /** Repaints only when the share has moved since the last paint. */
@@ -50,8 +43,8 @@ export class VerticalMeter {
     if (share === this.drawn) return;
     this.drawn = share;
     const { context, style, tint, width, height } = this;
-    context.clearRect(-GLOW_ROOM, -GLOW_ROOM, width + 2 * GLOW_ROOM, height + 2 * GLOW_ROOM);
-    if (style === "iris") drawLuminous(context, share, tint, width, height);
+    context.clearRect(0, 0, width, height);
+    if (style === "iris") drawSolid(context, share, tint, width, height);
     else if (style === "dot") drawDots(context, share, tint, width, height);
     else drawSegments(context, share, tint, width, height);
   }
@@ -64,34 +57,25 @@ export function verticalMeter(style: PanelStyle, remainingPercent: number, tint:
   return meter.canvas;
 }
 
-function drawLuminous(context: CanvasRenderingContext2D, share: number, tint: Rgb, width: number, height: number): void {
+function drawSolid(context: CanvasRenderingContext2D, share: number, tint: Rgb, width: number, height: number): void {
   const radius = width / 2;
   context.fillStyle = rgba(WHITE, TRACK_ALPHA);
   context.beginPath();
   context.roundRect(0, 0, width, height, radius);
   context.fill();
-  const fill = Math.max(height * share, width);
   if (share <= 0) return;
 
+  const fill = Math.max(height * share, width);
   const top = height - fill;
-  const gradient = context.createLinearGradient(0, height, 0, top);
-  gradient.addColorStop(0, rgba(tint, 0.1));
-  gradient.addColorStop(0.6, rgba(tint, 0.6));
-  gradient.addColorStop(0.92, rgba(tint, 1));
-  gradient.addColorStop(1, rgba(WHITE, 1));
-  context.fillStyle = gradient;
+  context.fillStyle = rgba(tint, 1);
   context.beginPath();
   context.roundRect(0, top, width, fill, radius);
   context.fill();
 
-  const glowY = top + radius;
-  const glow = context.createRadialGradient(radius, glowY, 0, radius, glowY, radius * 1.9);
-  glow.addColorStop(0, rgba(WHITE, 0.7));
-  glow.addColorStop(0.5, rgba(tint, 0.35));
-  glow.addColorStop(1, rgba(tint, 0));
-  context.fillStyle = glow;
+  const head = (width * HEAD_SHARE) / 2;
+  context.fillStyle = rgba(WHITE, 1);
   context.beginPath();
-  context.ellipse(radius, glowY, radius * 2, radius * 1.5, 0, 0, FULL_TURN);
+  context.arc(radius, top + radius, head, 0, FULL_TURN);
   context.fill();
 }
 

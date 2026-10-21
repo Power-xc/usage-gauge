@@ -3,6 +3,7 @@ import { el } from "../dom";
 import { alert, brand, rgba, type Rgb } from "../theme";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
 import { VerticalMeter } from "../vertical-meter";
+import { revealingCaption } from "../reveal";
 import { buildGrid, toolColumns } from "./grid";
 import { countdown, percentText, providerName } from "./parts";
 import type { LayoutContent } from "./types";
@@ -13,18 +14,19 @@ const COLUMN_HEIGHT = 84;
 
 /** A column chart comparing the tools: per tool a column for each window, as tall as what is left. */
 export function buildColumnsLayout(providers: ProviderView[], style: PanelStyle): LayoutContent {
-  return buildGrid(providers, style, toolColumns(providers.length, TOOLS_PER_ROW), (provider, index, _width, drawables) => buildBlock(provider, index, style, drawables));
+  return buildGrid(providers, style, toolColumns(providers.length, TOOLS_PER_ROW), (provider, index, width, drawables) => buildBlock(provider, index, width, style, drawables));
 }
 
-function buildBlock(provider: ProviderView, index: number, style: PanelStyle, drawables: Drawable[]): HTMLElement {
+function buildBlock(provider: ProviderView, index: number, width: number, style: PanelStyle, drawables: Drawable[]): HTMLElement {
   const tint = brand(provider.id);
   const isConnected = provider.message === null;
-  const caption = isConnected ? el("span", "caption", countdown(provider.session, style)) : el("span", "caption muted", "연결 안 됨");
+  const caption = revealingCaption(provider, el("span", "caption", countdown(provider.session, style)), { align: "center", width });
+  const offline = el("span", "caption muted", "연결 안 됨");
   const block = el(
     "div",
     "columns-block",
     el("div", "columns", column(provider.session, "단", style, tint, drawables), column(provider.weekly, "장", style, tint, drawables)),
-    el("div", "columns-name", providerName(provider, index, style, tint, true), caption),
+    el("div", "columns-name", providerName(provider, index, style, tint, true), isConnected ? caption : offline),
   );
   block.classList.toggle("unavailable", !isConnected);
   return block;

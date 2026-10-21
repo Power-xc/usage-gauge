@@ -2,6 +2,7 @@ import type { Drawable } from "../animation";
 import { el } from "../dom";
 import { alert, brand, rgba, type Rgb } from "../theme";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid } from "./grid";
 import { countdown, percentText, planTag, providerName, windowBar } from "./parts";
 import type { LayoutContent } from "./types";
@@ -20,7 +21,7 @@ export function buildBarsLayout(providers: ProviderView[], style: PanelStyle): L
 
 function buildBlock(provider: ProviderView, index: number, width: number, style: PanelStyle, drawables: Drawable[]): HTMLElement {
   const tint = brand(provider.id);
-  const name = el("div", "bars-name", providerName(provider, index, style, tint), ...planTag(provider));
+  const name = el("div", "bars-name", providerName(provider, index, style, tint), revealingCaption(provider, planTag(provider)[0] ?? null, { isCompact: true }));
   const block = el("div", "bars-block", name);
   if (provider.message === null) {
     const barWidth = width - NAME_WIDTH - BLOCK_GAP - LABEL_WIDTH - FIGURE_WIDTH - COUNTDOWN_WIDTH - 3 * ROW_GAP;

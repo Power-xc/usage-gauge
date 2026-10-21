@@ -15,10 +15,14 @@ function plainClock(epochMs: number): string {
     .join("");
 }
 
-/** "초기화 오후 4:00 · 측정 12:04"; whichever part is unknown is left out. */
-export function hoverLine(provider: ProviderView): string {
+/**
+ * "초기화 오후 4:00 · 측정 12:04"; whichever part is unknown is left out. The compact form keeps
+ * the reset only ("오후 4:00 초기화"), for cells too narrow for both.
+ */
+export function hoverLine(provider: ProviderView, isCompact = false): string {
   const parts: string[] = [];
   const reset = provider.session?.resetsAt ?? provider.weekly?.resetsAt;
+  if (isCompact && reset != null) return `${clockTime(reset)} 초기화`;
   if (reset != null) parts.push(`초기화 ${clockTime(reset)}`);
   if (provider.measuredAt !== null) parts.push(`측정 ${plainClock(provider.measuredAt)}`);
   return parts.length > 0 ? parts.join(" · ") : "연결 안 됨";

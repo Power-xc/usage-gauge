@@ -3,6 +3,7 @@ import { percentFigure } from "../figure";
 import { FIGURE_X, rulerTrack, shareY } from "../ruler-track";
 import { brand } from "../theme";
 import type { PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid, toolColumns } from "./grid";
 import { countdown, providerName } from "./parts";
 import type { LayoutContent } from "./types";
@@ -48,7 +49,7 @@ function buildBlock(provider: ProviderView, index: number, width: number, style:
   const ruler = el("div", "ruler", track, ...readout(provider, content, style));
   ruler.style.width = `${content}px`;
   ruler.style.height = `${RULER_HEIGHT}px`;
-  const name = el("div", "ruler-name", providerName(provider, index, style, tint, true), el("span", "caption", caption(provider, style)));
+  const name = el("div", "ruler-name", providerName(provider, index, style, tint, true), revealingCaption(provider, el("span", "caption", caption(provider, style)), { width }));
   const block = el("div", "ruler-block", ruler, name);
   block.style.width = `${content}px`;
   block.classList.toggle("unavailable", !isConnected);

@@ -1,5 +1,5 @@
-import { prepareCanvas, type Point } from "./canvas";
-import { FIELD, FRAME, GUTTER_WIDTH } from "./constellation-plot";
+import type { Point } from "./canvas";
+import { FIELD, GUTTER_WIDTH } from "./constellation-plot";
 import { REACH, MARKER_SIZE, type TagPlacement } from "./layouts/tag-layout";
 import { FONT_MONO, FONT_SANS, WHITE, rgba, type Rgb } from "./theme";
 import type { PanelStyle } from "./types";
@@ -15,7 +15,8 @@ const MARKER_DOT_PITCH = 3.1;
 const MARKER_DOT_SIZE = 2.3;
 const IRIS_RING_SIZE = 13;
 const FULL_TURN = 2 * Math.PI;
-const CAPTION_Y = 14;
+/** Distance of the caption row under the field from the field's bottom. */
+export const CAPTION_Y = 14;
 
 /** One tool's drawing: where it is, where it stood an hour ago, and where its tag sits. */
 export interface FieldStar {
@@ -26,25 +27,24 @@ export interface FieldStar {
 }
 
 /**
- * The still part of the constellation: the quiet scaffolding (hairline axes with ticks at 0, 50
- * and 100, a faint cross at the middle, corner hints and captions), the trails and links between
- * tools, and every node's leader and marker. The tags are elements above it. Iris keeps lines
- * solid: white links and trails in the tool's colour, without glow.
+ * The field of the constellation: the quiet scaffolding (hairline axes with ticks at 0, 50 and 100,
+ * a faint cross at the middle, corner hints and captions), the trails and the links between tools.
+ * Iris keeps lines solid: white links and trails in the tool's colour, without glow. The nodes and
+ * tags are drawn apart (see `drawNode`), so they can be focused on their own.
  */
-export function constellationField(style: PanelStyle, stars: FieldStar[], footnote: string | null): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  const context = prepareCanvas(canvas, FRAME.width, FRAME.height);
+export function drawField(context: CanvasRenderingContext2D, style: PanelStyle, stars: FieldStar[]): void {
   if (style === "dot") drawDotGrid(context);
   else drawAxes(context, style);
-  drawLabels(context, style, footnote);
+  drawLabels(context, style);
   for (const star of stars) if (star.past) drawTrail(context, style, star.tint, star.point, star.past);
   const path = [...stars].sort((a, b) => a.point.x - b.point.x);
   path.slice(1).forEach((to, index) => drawLink(context, style, path[index], to));
-  for (const star of stars) {
-    drawLeader(context, style, star);
-    drawMarker(context, style, star.tint, star.point);
-  }
-  return canvas;
+}
+
+/** A tool's leader and marker. */
+export function drawNode(context: CanvasRenderingContext2D, style: PanelStyle, star: FieldStar): void {
+  drawLeader(context, style, star);
+  drawMarker(context, style, star.tint, star.point);
 }
 
 /** Hairline at `y` or `x` snapped to the pixel grid. */
@@ -102,8 +102,8 @@ function drawDotGrid(context: CanvasRenderingContext2D): void {
   context.fill(axis);
 }
 
-/** Corner hints, the axes' captions and, for tools that report nothing, a line naming them. */
-function drawLabels(context: CanvasRenderingContext2D, style: PanelStyle, footnote: string | null): void {
+/** Corner hints and the axes' captions. */
+function drawLabels(context: CanvasRenderingContext2D, style: PanelStyle): void {
   const family = style === "iris" ? FONT_SANS : FONT_MONO;
   context.font = `500 8.5px ${family}`;
   context.textBaseline = "middle";
@@ -116,7 +116,6 @@ function drawLabels(context: CanvasRenderingContext2D, style: PanelStyle, footno
   context.fillStyle = rgba(WHITE, 0.42);
   context.textAlign = "left";
   context.fillText("장기 ↑", 0, FIELD.top, GUTTER_WIDTH - 4);
-  if (footnote) context.fillText(footnote, FIELD.left, FIELD.bottom + CAPTION_Y);
   context.textAlign = "right";
   context.fillText("단기 →", FIELD.right, FIELD.bottom + CAPTION_Y);
 }
@@ -155,15 +154,18 @@ function drawTrail(context: CanvasRenderingContext2D, style: PanelStyle, tint: R
   const line = new Path2D();
   line.moveTo(past.x, past.y);
   line.lineTo(point.x, point.y);
-  const fade = context.createLinearGradient(past.x, past.y, point.x, point.y);
-  fade.addColorStop(0, rgba(tint, 0.1));
-  fade.addColorStop(1, rgba(tint, 0.75));
+  const fade = (): CanvasGradient => {
+    const gradient = context.createLinearGradient(past.x, past.y, point.x, point.y);
+    gradient.addColorStop(0, rgba(tint, 0.1));
+    gradient.addColorStop(1, rgba(tint, 0.75));
+    return gradient;
+  };
   const ghost = new Path2D();
   context.lineCap = "butt";
   context.setLineDash([]);
   if (style === "mono") {
     ghost.rect(past.x - 2.5, past.y - 2.5, 5, 5);
-    context.strokeStyle = fade;
+    context.strokeStyle = fade();
     context.lineWidth = 1;
     context.stroke(line);
     context.strokeStyle = rgba(tint, 0.55);
@@ -172,7 +174,7 @@ function drawTrail(context: CanvasRenderingContext2D, style: PanelStyle, tint: R
   }
   ghost.arc(past.x, past.y, 2.5, 0, FULL_TURN);
   if (style === "dot") {
-    context.strokeStyle = fade;
+    context.strokeStyle = fade();
     context.lineWidth = 1.4;
     context.lineCap = "round";
     context.setLineDash([0.01, 3.2]);

@@ -15,17 +15,16 @@ export interface Star {
 
 const unit = (short: number | null, long: number | null): Point => ({ x: (short ?? 0) / 100, y: (long ?? 0) / 100 });
 
-/** The tools that report something, in the order given. The trail comes from `ProviderView.hourAgo`. */
+/** The tools that report something, in the order given. The trail comes from `ProviderView.hourAgo`, which the backend sets only when every window of the tool has a past share. */
 export function starsOf(providers: ProviderView[]): Star[] {
   const stars: Star[] = [];
   for (const provider of providers) {
     if (provider.message !== null) continue;
     const past = provider.hourAgo;
-    const hasTrail = past && (provider.session === null || past.session !== null) && (provider.weekly === null || past.weekly !== null);
     stars.push({
       provider,
       position: unit(provider.session?.remainingPercent ?? null, provider.weekly?.remainingPercent ?? null),
-      before: hasTrail ? unit(past.session, past.weekly) : null,
+      before: past ? unit(past.session, past.weekly) : null,
     });
   }
   return stars;

@@ -1,3 +1,5 @@
+import type { Drawable } from "../animation";
+import { hoverLine } from "../clock";
 import { el } from "../dom";
 import { percentFigure } from "../figure";
 import { innerRadius, orbitRings, type OrbitRing } from "../orbit-rings";
@@ -16,25 +18,42 @@ const CENTRE_MARGIN = 6;
 /**
  * One chart for every tool: concentric rings (the first tool outermost) lit for the short
  * window's remaining share, the lowest of them in the middle, and a legend with both windows and
- * the reset countdown per tool.
+ * the reset countdown per tool. A tool is one ring and one legend row: pointing at either focuses
+ * it (the middle then shows its share and the legend its times) and clicking opens it.
  */
 export function buildOrbitLayout(providers: ProviderView[], style: PanelStyle): LayoutContent {
-  const orbit = el("div", "orbit", chart(providers, style), legend(providers, style));
-  return singleCell(orbit, style);
+  const drawables: Drawable[] = [];
+  const orbit = el("div", "orbit", chart(providers, style, drawables), legend(providers, style));
+  return { element: singleCell(orbit, style).element, drawables };
 }
 
-function chart(providers: ProviderView[], style: PanelStyle): HTMLElement {
-  const rings: OrbitRing[] = providers.slice(0, MAX_RINGS).map((provider) => ({
+function chart(providers: ProviderView[], style: PanelStyle, drawables: Drawable[]): HTMLElement {
+  const ringed = providers.slice(0, MAX_RINGS);
+  const rings: OrbitRing[] = ringed.map((provider) => ({
+    id: provider.id,
     remainingPercent: provider.message === null ? (provider.session?.remainingPercent ?? null) : null,
     tint: brand(provider.id),
   }));
-  const centre = lowest(providers);
-  const caption = el("span", "orbit-centre-label", centre ? `최저 · ${centre.title}` : "연결 안 됨");
-  const middle = el("div", "orbit-centre", percentFigure(centre?.session ?? null, CENTRE_FIGURE_SIZE, style), caption);
-  middle.style.width = `${innerRadius(rings.length, CHART_SIZE) * 2 - CENTRE_MARGIN}px`;
-  const element = el("div", "orbit-chart", orbitRings(style, rings, CHART_SIZE), middle);
+  const width = `${innerRadius(rings.length, CHART_SIZE) * 2 - CENTRE_MARGIN}px`;
+  const lowestTool = lowest(providers);
+  const middles = [
+    centre(lowestTool, lowestTool ? `최저 · ${lowestTool.title}` : "연결 안 됨", style, width, "lowest"),
+    ...ringed.map((provider) => {
+      const middle = centre(provider, provider.title, style, width, "of-tool");
+      middle.dataset.follows = provider.id;
+      return middle;
+    }),
+  ];
+  const element = el("div", "orbit-chart", orbitRings(style, rings, CHART_SIZE, drawables), ...middles);
   element.style.width = element.style.height = `${CHART_SIZE}px`;
   return element;
+}
+
+/** The share in the middle and whose it is: the focused tool's, else the lowest. */
+function centre(provider: ProviderView | null, label: string, style: PanelStyle, width: string, kind: string): HTMLElement {
+  const middle = el("div", `orbit-centre ${kind}`, percentFigure(provider?.session ?? null, CENTRE_FIGURE_SIZE, style), el("span", "orbit-centre-label", label));
+  middle.style.width = width;
+  return middle;
 }
 
 /** The tool with the least left in its short window. */
@@ -50,7 +69,17 @@ function lowest(providers: ProviderView[]): ProviderView | null {
 /** One row per tool in aligned columns: name, short window, long window and the short window's countdown. */
 function legend(providers: ProviderView[], style: PanelStyle): HTMLElement {
   const heading = el("div", "orbit-row orbit-heading", el("span", "orbit-spacer"), cell("단기", "short"), cell("장기", "long"), cell("초기화", "countdown"));
-  return el("div", "orbit-legend", heading, ...providers.map((provider) => row(provider, style)));
+  return el("div", "orbit-legend", heading, ...providers.map((provider) => row(provider, style)), revealedTimes(providers));
+}
+
+/** The focused tool's reset and measuring times, in a line the legend always keeps free. */
+function revealedTimes(providers: ProviderView[]): HTMLElement {
+  const times = providers.filter((provider) => provider.message === null).map((provider) => {
+    const line = el("span", "orbit-time", hoverLine(provider));
+    line.dataset.follows = provider.id;
+    return line;
+  });
+  return el("div", "orbit-row orbit-times", ...times);
 }
 
 function cell(text: string, kind: string, color?: string): HTMLElement {
@@ -64,10 +93,13 @@ function row(provider: ProviderView, style: PanelStyle): HTMLElement {
   bullet.style.background = rgba(brand(provider.id), 1);
   const name = el("span", "orbit-name", provider.title);
   const label = el("span", "orbit-label", bullet, name);
-  if (provider.message !== null) return el("div", "orbit-row", label, el("span", "orbit-spacer"), el("span", "orbit-offline", "연결 안 됨"));
-  return el(
-    "div",
-    "orbit-row",
+  const line = (...cells: HTMLElement[]): HTMLElement => {
+    const node = el("div", "orbit-row", ...cells);
+    node.dataset.tool = provider.id;
+    return node;
+  };
+  if (provider.message !== null) return line(label, el("span", "orbit-spacer"), el("span", "orbit-offline", "연결 안 됨"));
+  return line(
     label,
     el("span", "orbit-spacer"),
     cell(percentText(provider.session), "short", warning(provider.session)),

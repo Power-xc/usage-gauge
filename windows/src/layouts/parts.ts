@@ -65,10 +65,7 @@ export function windowBar(style: PanelStyle, width: number, remainingPercent: nu
   return bar.canvas;
 }
 
-/**
- * Dial for the style with the remaining percent in the middle; iris also glows through the glass
- * (see `style.css`). `showsLabel` names the window under the figure, as on the tool page.
- */
+/** Dial for the style with the remaining percent in the middle. `showsLabel` names the window under the figure, as on the tool page. */
 export function sessionGauge(
   window: WindowView | null,
   style: PanelStyle,
@@ -90,17 +87,14 @@ export function sessionGauge(
     readout.append(dotMatrixText(value, pitch, rgba(warning ?? WHITE, 1)));
     if (window) readout.append(dotMatrixText("%", pitch * DOT_PERCENT_SCALE, rgba(WHITE, MUTED_ALPHA)));
   } else {
-    const figureColor = warning ?? (style === "mono" ? WHITE : tint);
     const figure = el("span", "figure", value);
-    figure.dataset.text = value;
-    figure.style.setProperty("--figure-color", rgba(figureColor, 1));
+    figure.style.setProperty("--figure-color", rgba(warning ?? WHITE, 1));
     readout.append(figure);
     if (window) readout.append(el("span", "percent", "%"));
   }
   const text = el("div", "pupil-text", readout);
   if (showsLabel) text.append(el("span", "pupil-label", window?.label ?? "단기"));
   const element = el("div", showsLabel ? "dial labelled" : "dial", dial.canvas, text);
-  element.style.setProperty("--tint", tint.join(" "));
   element.style.setProperty("--dial-size", `${size}px`);
   return element;
 }

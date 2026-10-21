@@ -1,4 +1,4 @@
-//! Claude: the Claude Code login and `GET /api/oauth/usage` (the request CodexBar makes).
+//! Claude: the Claude Code login and `GET /api/oauth/usage` (the official usage endpoint).
 
 use chrono::DateTime;
 use serde::Deserialize;
@@ -65,7 +65,7 @@ fn usage_from(response: UsageResponse, plan: Option<&str>, now: i64) -> Provider
     }
 }
 
-/// The API does not report window lengths, so they are fixed per window as CodexBar does.
+/// The API does not report window lengths, so they are fixed per window.
 fn window(raw: RawWindow, minutes: u32) -> Option<UsageWindow> {
     Some(UsageWindow {
         used_percent: raw.utilization?,

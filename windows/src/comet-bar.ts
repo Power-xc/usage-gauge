@@ -2,13 +2,16 @@ import { prepareCanvas } from "./canvas";
 import { Glide } from "./glide";
 import { WHITE, rgba, type Rgb } from "./theme";
 
-const PULSE_CYCLE_SECONDS = 2.8;
+const BREATH_CYCLE_SECONDS = 3.2;
 const TRACK_ALPHA = 0.1;
+const HEAD_SCALE = 1.7;
+const DIMMEST_HEAD = 0.7;
+const FULL_TURN = 2 * Math.PI;
 
 /**
- * Remaining share drawn as a streak of light: a fading tail, a white-hot head with a soft flare,
- * and a pulse that runs along the tail towards the head. The bar is `thickness` tall and centred
- * in a taller canvas so the head's flare has room.
+ * Remaining share as a solid bar in the tool's colour over a solid track, ending in a white head
+ * dot that breathes slowly. The bar is `thickness` tall and centred in a taller canvas so the head,
+ * which is a little larger than the bar, has room.
  */
 export class CometBar {
   readonly canvas = document.createElement("canvas");
@@ -25,7 +28,7 @@ export class CometBar {
     this.thickness = thickness;
     this.height = thickness * 3;
     this.context = prepareCanvas(this.canvas, width, this.height);
-    // The extra height is only room for the flare; it must not push the layout apart.
+    // The extra height is only room for the head; it must not push the layout apart.
     this.canvas.style.margin = `${-thickness}px 0`;
   }
 
@@ -34,65 +37,28 @@ export class CometBar {
     this.color = color;
   }
 
-  private get remainingShare(): number {
-    return this.share.value;
-  }
-
   draw(seconds: number): void {
     const { context, width, height, thickness } = this;
-    const phase = (seconds / PULSE_CYCLE_SECONDS) % 1;
     const top = (height - thickness) / 2;
     context.clearRect(0, 0, width, height);
     context.fillStyle = rgba(WHITE, TRACK_ALPHA);
     context.beginPath();
     context.roundRect(0, top, width, thickness, thickness / 2);
     context.fill();
-    if (this.remainingShare <= 0) return;
+    const share = this.share.value;
+    if (share <= 0) return;
 
-    const length = Math.max(thickness * 2, width * this.remainingShare);
-    const bar = new Path2D();
-    bar.roundRect(0, top, length, thickness, thickness / 2);
-    const tail = context.createLinearGradient(0, 0, length, 0);
-    tail.addColorStop(0, rgba(this.color, 0.08));
-    tail.addColorStop(0.55, rgba(this.color, 0.55));
-    tail.addColorStop(0.88, rgba(this.color, 1));
-    tail.addColorStop(1, rgba(WHITE, 1));
-    context.fillStyle = tail;
-    context.fill(bar);
-
-    this.drawPulse(bar, length, top, phase);
-    this.drawFlare(length);
-  }
-
-  /** Pulse travelling along the tail, fading out as it reaches the head. */
-  private drawPulse(bar: Path2D, length: number, top: number, phase: number): void {
-    const { context, thickness } = this;
-    const x = length * phase;
-    const reach = thickness * 6;
-    const pulse = context.createLinearGradient(x - reach, 0, x + reach, 0);
-    pulse.addColorStop(0, rgba(WHITE, 0));
-    pulse.addColorStop(0.5, rgba(WHITE, 0.7));
-    pulse.addColorStop(1, rgba(WHITE, 0));
-    context.save();
-    context.clip(bar);
-    context.globalAlpha = Math.sin(phase * Math.PI);
-    context.fillStyle = pulse;
-    context.fillRect(x - reach, top, reach * 2, thickness);
-    context.restore();
-  }
-
-  private drawFlare(length: number): void {
-    const { context, thickness } = this;
-    const headX = length - thickness / 2;
-    const headY = this.height / 2;
-    const flare = thickness * 1.4;
-    const glow = context.createRadialGradient(headX, headY, 0, headX, headY, flare * 1.6);
-    glow.addColorStop(0, rgba(WHITE, 0.75));
-    glow.addColorStop(0.5, rgba(this.color, 0.35));
-    glow.addColorStop(1, rgba(this.color, 0));
-    context.fillStyle = glow;
+    const length = Math.max(thickness * 2, width * share);
+    context.fillStyle = rgba(this.color, 1);
     context.beginPath();
-    context.ellipse(headX, headY, flare * 1.6, flare, 0, 0, 2 * Math.PI);
+    context.roundRect(0, top, length, thickness, thickness / 2);
+    context.fill();
+
+    const breath = 0.5 + 0.5 * Math.sin((seconds * FULL_TURN) / BREATH_CYCLE_SECONDS);
+    const radius = (thickness * HEAD_SCALE) / 2;
+    context.fillStyle = rgba(WHITE, DIMMEST_HEAD + (1 - DIMMEST_HEAD) * breath);
+    context.beginPath();
+    context.arc(length - radius, height / 2, radius, 0, FULL_TURN);
     context.fill();
   }
 }

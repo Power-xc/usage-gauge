@@ -242,3 +242,8 @@
 .burst-details .faint {
   color: var(--text-faint);
 }
+
+/* A caption slot keeps the full row it replaces. */
+.history-block > .reveal-slot {
+  align-self: stretch;
+}

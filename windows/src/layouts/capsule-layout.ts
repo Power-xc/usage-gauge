@@ -4,6 +4,7 @@ import { el } from "../dom";
 import { percentFigure } from "../figure";
 import { brand } from "../theme";
 import type { PanelStyle, ProviderView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid, toolColumns } from "./grid";
 import { countdown, longWindow, planTag, providerName } from "./parts";
 import type { LayoutContent } from "./types";
@@ -22,16 +23,17 @@ function buildBlock(provider: ProviderView, index: number, width: number, style:
   const tint = brand(provider.id);
   const isConnected = provider.message === null;
   const title = el("div", "capsule-title", providerName(provider, index, style, tint), ...planTag(provider));
-  const head = el("div", "capsule-head", title, readout(provider, style));
+  const head = el("div", "capsule-head", title, readout(provider, width, style));
   const bar = capsuleBar(style, width, isConnected ? (provider.session?.remainingPercent ?? 0) : 0, tint);
   return el("div", "capsule-block", head, bar, longWindow(isConnected ? provider : { ...provider, weekly: null }, style, tint, drawables, width));
 }
 
 /** The big share with the reset countdown under it, at the right end. */
-function readout(provider: ProviderView, style: PanelStyle): HTMLElement {
+function readout(provider: ProviderView, width: number, style: PanelStyle): HTMLElement {
   if (provider.message !== null) {
     const status = el("div", "capsule-status", "연결 안 됨");
     return el("div", "capsule-readout", status, el("span", "caption", provider.message));
   }
-  return el("div", "capsule-readout", percentFigure(provider.session, FIGURE_SIZE, style), el("span", "caption", countdown(provider.session, style)));
+  const caption = revealingCaption(provider, el("span", "caption", countdown(provider.session, style)), { align: "trailing", width });
+  return el("div", "capsule-readout", percentFigure(provider.session, FIGURE_SIZE, style), caption);
 }

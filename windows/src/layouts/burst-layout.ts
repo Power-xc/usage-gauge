@@ -3,6 +3,7 @@ import { countdownUntil } from "../countdown";
 import { el } from "../dom";
 import { WARNING, alert, brand, rgba } from "../theme";
 import type { HistoryView, PanelStyle, ProviderView, WindowView } from "../types";
+import { revealingCaption } from "../reveal";
 import { buildGrid, toolColumns } from "./grid";
 import { nameRow, percentFigure } from "./history-parts";
 import { countdown } from "./parts";
@@ -45,6 +46,6 @@ function details(provider: ProviderView, window: WindowView | null, history: His
   } else {
     lines.append(el("span", "muted", burn === null ? "사용 없음 · 여유" : "여유"));
   }
-  lines.append(el("span", "faint", `초기화 ${countdown(window, style)}`));
+  lines.append(revealingCaption(provider, el("span", "faint", `초기화 ${countdown(window, style)}`), { isCompact: true }));
   return lines;
 }

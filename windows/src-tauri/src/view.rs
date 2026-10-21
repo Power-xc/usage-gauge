@@ -26,6 +26,14 @@ pub struct WindowView {
     pub level: UsageLevel,
 }
 
+/// Where a tool's windows stood about an hour ago; `None` for a window the tool does not have.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HourAgo {
+    pub session: Option<f64>,
+    pub weekly: Option<f64>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderView {
@@ -36,6 +44,9 @@ pub struct ProviderView {
     pub weekly: Option<WindowView>,
     /// Why the provider is not connected; `None` while it has readings.
     pub message: Option<String>,
+    /// Remaining shares an hour ago, for the constellation's trail; `None` unless every window the
+    /// tool has has a sample from that time.
+    pub hour_ago: Option<HourAgo>,
     /// How the short window drained so far; `None` for a provider without readings.
     pub history: Option<HistoryView>,
     /// Epoch milliseconds this tool's numbers were measured at.
@@ -63,6 +74,18 @@ fn window_view(window: &UsageWindow, default_label: &str, now: i64) -> WindowVie
     }
 }
 
+/// A trail needs a past share for every window the tool has, otherwise it would point from a guess.
+fn hour_ago(usage: &ProviderUsage, history: &UsageHistory, now: i64) -> Option<HourAgo> {
+    if !usage.is_available() {
+        return None;
+    }
+    let past = |window: &Option<UsageWindow>| match window {
+        Some(window) => history.share_an_hour_ago(usage.id, window, now).map(Some),
+        None => Some(None),
+    };
+    Some(HourAgo { session: past(&usage.session)?, weekly: past(&usage.weekly)? })
+}
+
 fn provider_view(usage: &ProviderUsage, history: &UsageHistory, now: i64) -> ProviderView {
     let is_available = usage.is_available();
     ProviderView {
@@ -72,6 +95,7 @@ fn provider_view(usage: &ProviderUsage, history: &UsageHistory, now: i64) -> Pro
         session: usage.session.as_ref().map(|window| window_view(window, DEFAULT_SESSION_LABEL, now)),
         weekly: usage.weekly.as_ref().map(|window| window_view(window, DEFAULT_WEEKLY_LABEL, now)),
         message: (!is_available).then(|| usage.error_message.clone().unwrap_or_default()),
+        hour_ago: hour_ago(usage, history, now),
         history: usage
             .session
             .as_ref()
@@ -117,7 +141,7 @@ mod tests {
             resets_at: None,
             level: UsageLevel::Comfortable,
         });
-        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None, history: None, measured_at: None }
+        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None, hour_ago: None, history: None, measured_at: None }
     }
 
     #[test]
@@ -141,5 +165,32 @@ mod tests {
         let view = provider_view(&usage, &UsageHistory::default(), 1000);
         assert_eq!(view.session.and_then(|window| window.resets_at), Some(2_000_000));
         assert_eq!(view.measured_at, Some(1_500_000));
+    }
+
+    #[test]
+    fn a_trail_needs_a_past_share_for_every_window_the_tool_has() {
+        const NOW: i64 = 1_800_000_000;
+        let window = |used: f64, minutes: u32| UsageWindow { used_percent: used, resets_at: Some(NOW + 3 * 3600), window_minutes: Some(minutes) };
+        let mut usage = ProviderUsage {
+            id: "claude",
+            plan: None,
+            session: Some(window(30.0, 300)),
+            weekly: None,
+            error_message: None,
+            measured_at: Some(NOW),
+        };
+        let mut history = UsageHistory::default();
+        history.record(&[usage.clone()], NOW - 3600);
+        let past = hour_ago(&usage, &history, NOW).expect("the only window has a sample from an hour ago");
+        assert_eq!((past.session, past.weekly), (Some(70.0), None));
+
+        usage.weekly = Some(window(10.0, 10_080));
+        history.record(&[usage.clone()], NOW - 3000);
+        let past = hour_ago(&usage, &history, NOW).expect("every window has a sample");
+        assert_eq!(past.weekly, Some(90.0));
+
+        // A short window that reset 5 min ago has no sample of its own period that is old enough.
+        usage.session = Some(UsageWindow { used_percent: 0.0, resets_at: Some(NOW + 295 * 60), window_minutes: Some(300) });
+        assert_eq!(hour_ago(&usage, &history, NOW), None, "one window without a sample leaves the tool without a trail");
     }
 }
