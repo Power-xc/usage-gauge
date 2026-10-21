@@ -58,6 +58,7 @@ do {
             try writeImage(ShapeLayoutsScene(), size: ShapeLayoutsScene.size, scale: 2, to: output.appendingPathComponent("shape-layouts.jpg"))
             try writeImage(TrendScene(), size: TrendScene.size, scale: 2, to: output.appendingPathComponent("trend.jpg"))
             try writeImage(SizesScene(), size: SizesScene.size, scale: 2, to: output.appendingPathComponent("sizes.jpg"))
+            try writeImage(HistoryBarsScene(), size: HistoryBarsScene.size, scale: 2, to: output.appendingPathComponent("history-bars.jpg"))
         case "readme":
             try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":

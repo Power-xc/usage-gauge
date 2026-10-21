@@ -432,3 +432,31 @@ struct TrendScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// The two history layouts in each style; the sample history stands in for what the app records.
+struct HistoryBarsScene: View {
+    static let size = CGSize(width: 1160, height: 1560)
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            HStack(alignment: .top, spacing: 28) {
+                column(.histogram)
+                column(.spark)
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func column(_ layout: PanelLayout) -> some View {
+        VStack(spacing: 28) {
+            ForEach([PanelStyle.mono, .iris, .dot], id: \.self) { style in
+                GaugeView(providers: Array(SampleData.still + SampleData.extras(scale: 1).prefix(2)), status: "오후 12:04 기준",
+                          now: SampleData.now, onClose: {}, opacity: .constant(1), style: style, layout: layout,
+                          history: SampleData.history, frozenAt: 3)
+                    .modifier(RenderedSurface(style: style))
+            }
+        }
+    }
+}

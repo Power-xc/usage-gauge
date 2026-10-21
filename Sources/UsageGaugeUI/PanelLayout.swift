@@ -17,6 +17,10 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case capsule
     /// A line chart of each tool's short window over its period, from the recorded history.
     case trend
+    /// Per tool, the short window's recent use as a row of columns.
+    case histogram
+    /// A list of tools, each with its short-window bar and a strip of how much was left over time.
+    case spark
 
     public var title: String {
         switch self {
@@ -27,6 +31,8 @@ public enum PanelLayout: String, CaseIterable, Sendable {
         case .orbit: "궤도"
         case .capsule: "캡슐"
         case .trend: "추이"
+        case .histogram: "히스토그램"
+        case .spark: "스파크 바"
         }
     }
 
