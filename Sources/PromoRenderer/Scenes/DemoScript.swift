@@ -136,15 +136,20 @@ struct DemoScript {
         switch stop.target {
         case .screen(let point): point
         case .panel(let point): DemoLayout.screen(point, scale: scale, canvas: canvas)
-        case .knob: DemoLayout.screen(DemoLayout.knob(scale: scale), scale: scale, canvas: canvas)
+        case .knob:
+            DemoLayout.screen(DemoLayout.knob(scale: scale, style: style(at: stop.at)), scale: scale, canvas: canvas)
         case .opacityKnob: opacityKnob(at: stop.at, canvas: canvas)
         }
     }
 
     private func opacityKnob(at time: Double, canvas: CGSize) -> CGPoint {
         let scale = scale.value(at: time)
-        return DemoLayout.screen(DemoLayout.opacityKnob(opacity.value(at: time)), scale: scale, canvas: canvas)
+        let knob = DemoLayout.opacityKnob(opacity.value(at: time), style: style(at: time))
+        return DemoLayout.screen(knob, scale: scale, canvas: canvas)
     }
+
+    /// The style on show at `time`; the bars sit a little lower in some styles.
+    private func style(at time: Double) -> PanelStyle { face(at: time).current.style }
 }
 
 /// Where the panel's controls sit, measured on the mono panel (in points at 1x), and how the panel
@@ -166,23 +171,36 @@ enum DemoLayout {
     static let barY: CGFloat = 76
     static let scaleRange = 0.7...1.6
 
+    /// The iris and dot styles pad the whole panel by 12 points where mono's header keeps 10 above
+    /// and below, so their header and bars sit 2 points lower; their tabs follow the header with no
+    /// rule to clear, 3 points higher than mono's.
+    static func headerDrop(_ style: PanelStyle) -> CGFloat { style == .mono ? 0 : 2 }
+
+    static func sliderButton(_ style: PanelStyle) -> CGPoint {
+        CGPoint(x: sliderButton.x, y: sliderButton.y + headerDrop(style))
+    }
+
+    static func tab(_ index: Int, _ style: PanelStyle) -> CGPoint {
+        CGPoint(x: tabs[index].x, y: tabs[index].y - (style == .mono ? 0 : 3))
+    }
+
     static func glyph(_ layout: PanelLayout) -> CGPoint {
         let index = PanelLayout.allCases.firstIndex(of: layout) ?? 0
         return CGPoint(x: glyphStart + glyphPitch * CGFloat(index), y: glyphY)
     }
 
-    static func knob(scale: Double) -> CGPoint {
+    static func knob(scale: Double, style: PanelStyle = .mono) -> CGPoint {
         let fraction = (scale - scaleRange.lowerBound) / (scaleRange.upperBound - scaleRange.lowerBound)
-        return CGPoint(x: barLeft + barTravel * fraction, y: barY)
+        return CGPoint(x: barLeft + barTravel * fraction, y: barY + headerDrop(style))
     }
 
     /// The opacity bar sits one row above the size bar, with the same travel.
     static let opacityRange = 0.3...1.0
     static let opacityBarY: CGFloat = barY - 22
 
-    static func opacityKnob(_ opacity: Double) -> CGPoint {
+    static func opacityKnob(_ opacity: Double, style: PanelStyle = .mono) -> CGPoint {
         let fraction = (opacity - opacityRange.lowerBound) / (opacityRange.upperBound - opacityRange.lowerBound)
-        return CGPoint(x: barLeft + barTravel * fraction, y: opacityBarY)
+        return CGPoint(x: barLeft + barTravel * fraction, y: opacityBarY + headerDrop(style))
     }
 
     /// Top-left of the panel, centred under the menu bar.

@@ -72,7 +72,7 @@ struct ReelScene: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// A line with its chapter mark following the panel: the graph or the style on show.
+    /// A line with its chapter mark following the panel: the graph, the style or both on show.
     private func live(_ line: ReelLine) -> ReelLine {
         guard let live = line.live else { return line }
         var shown = line
@@ -83,6 +83,9 @@ struct ReelScene: View {
             shown.mark = String(format: "%02d / 12  ·  %@", index, layout.title)
         case .style:
             shown.mark = ReelScript.demo.face(at: time).current.style.title
+        case .look:
+            let face = ReelScript.demo.face(at: time).current
+            shown.mark = "\(face.layout.title)  ×  \(face.style.title)"
         }
         return shown
     }

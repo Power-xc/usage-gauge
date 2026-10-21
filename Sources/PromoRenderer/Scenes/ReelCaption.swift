@@ -4,8 +4,8 @@ import UsageGaugeUI
 /// One subtitle of the reel: a small chapter mark, a title of one or two lines with one phrase in
 /// the accent colour, and a quieter line under it.
 struct ReelLine {
-    /// A chapter mark that follows the panel: the graph or the style on show.
-    enum Live { case graph, style }
+    /// A chapter mark that follows the panel: the graph, the style, or the graph × style on show.
+    enum Live { case graph, style, look }
 
     let start: Double
     let end: Double
