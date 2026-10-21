@@ -2,53 +2,50 @@ import SwiftUI
 import UsageGaugeCore
 import UsageGaugeUI
 
-/// Static hero image: menu bar strip + panel on the backdrop.
+/// Static hero image: menu bar strip + panel on a dark desktop.
 struct PreviewScene: View {
     static let size = CGSize(width: 1200, height: 720)
-    static let backdrop = Backdrop(time: 2, focus: UnitPoint(x: 0.5, y: 0.41))
 
     var body: some View {
         ZStack(alignment: .top) {
-            Self.backdrop
+            Backdrop()
             MenuBarStrip(providers: SampleData.still, width: Self.size.width)
             GaugeView(providers: SampleData.still, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1), frozenAt: 3)
-                .modifier(RenderedGlass(backdrop: Self.backdrop, scene: Self.size))
+                .modifier(RenderedGlass())
                 .padding(.top, 150)
         }
         .frame(width: Self.size.width, height: Self.size.height)
-        .coordinateSpace(name: RenderedGlass.space)
         .environment(\.colorScheme, .dark)
     }
 }
 
 /// Every connected provider in one panel.
 struct AllProvidersScene: View {
-    static let size = CGSize(width: 1200, height: 900)
+    static let size = CGSize(width: 640, height: 520)
 
     var body: some View {
         ZStack {
-            Backdrop(time: 5)
+            Backdrop()
             GaugeView(providers: SampleData.still + SampleData.extras(scale: 1), status: "오후 12:04 기준",
                       now: SampleData.now, onClose: {}, opacity: .constant(1), frozenAt: 6)
-                .modifier(RenderedGlass(backdrop: Backdrop(time: 5), scene: Self.size))
+                .modifier(RenderedGlass())
         }
         .frame(width: Self.size.width, height: Self.size.height)
-        .coordinateSpace(name: RenderedGlass.space)
         .environment(\.colorScheme, .dark)
     }
 }
 
 /// The menu bar companion on its own, enlarged.
 struct MenuBarScene: View {
-    static let size = CGSize(width: 1200, height: 360)
+    static let size = CGSize(width: 1280, height: 240)
 
     var body: some View {
         ZStack {
-            Backdrop(time: 1, showsObjects: false)
+            Backdrop()
             MenuBarStrip(providers: SampleData.still, width: 600)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(GlassEdge.gradient, lineWidth: 0.6))
-                .scaleEffect(1.9)
+                .scaleEffect(2)
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .environment(\.colorScheme, .dark)
@@ -57,12 +54,12 @@ struct MenuBarScene: View {
 
 /// The three levels side by side: comfortable, low (≤ 30%), critical (≤ 10%).
 struct LevelsScene: View {
-    static let size = CGSize(width: 1200, height: 520)
+    static let size = CGSize(width: 640, height: 340)
 
     var body: some View {
         ZStack {
-            Backdrop(time: 7, showsObjects: false)
-            HStack(spacing: 90) {
+            Backdrop()
+            HStack(spacing: 28) {
                 level(72, "여유", "claude")
                 level(24, "30% 이하", "codex")
                 level(6, "10% 이하", "gemini")
@@ -74,17 +71,17 @@ struct LevelsScene: View {
     }
 
     private func level(_ remaining: Double, _ title: String, _ provider: String) -> some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 18) {
             SessionGauge(window: SampleData.window(remaining: remaining, minutes: 300, resetIn: 3600),
-                         tint: Theme.brand(for: provider), size: 240, now: SampleData.now, frozenAt: 4)
-            Text(title).font(Theme.font(22, .semibold)).foregroundStyle(Theme.mutedText)
+                         tint: Theme.brand(for: provider), size: 172, now: SampleData.now, frozenAt: 4)
+            Text(title).font(Theme.font(16, .semibold)).foregroundStyle(Theme.mutedText)
         }
     }
 }
 
 /// README loop: values fill in, one provider drains into the warning colours, then it eases back.
 struct ReadmeScene: View {
-    static let size = CGSize(width: 1000, height: 640)
+    static let size = CGSize(width: 720, height: 280)
     static let duration = 9.0
 
     let time: Double
@@ -99,14 +96,14 @@ struct ReadmeScene: View {
             SampleData.codex(session: Motion.mix(62, 8, drain) * level, weekly: 26 * level),
         ]
         ZStack(alignment: .top) {
-            Backdrop(time: time)
+            Backdrop()
             MenuBarStrip(providers: providers, width: Self.size.width)
-            GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, frozenAt: time)
-                .modifier(RenderedGlass(backdrop: Backdrop(time: time), scene: Self.size))
-                .padding(.top, 104)
+            GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1),
+                      frozenAt: time)
+                .modifier(RenderedGlass())
+                .padding(.top, 92)
         }
         .frame(width: Self.size.width, height: Self.size.height)
-        .coordinateSpace(name: RenderedGlass.space)
         .environment(\.colorScheme, .dark)
     }
 }
@@ -120,7 +117,7 @@ struct ReelScene: View {
 
     var body: some View {
         ZStack {
-            Backdrop(time: time)
+            Backdrop()
             intro.opacity(Motion.visibility(time, start: 0, end: 3.4, fade: 0.6))
             caption.offset(y: -620)
             panel.offset(y: 80)
@@ -179,7 +176,7 @@ struct ReelScene: View {
         if expand > 0 { providers += SampleData.extras(scale: expand) }
         let scale = expand > 0 ? 1.42 : 2.0
         return GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, frozenAt: time)
-            .modifier(RenderedGlass(backdrop: Backdrop(time: time), scene: Self.size))
+            .modifier(RenderedGlass())
             .scaleEffect(scale * Motion.mix(0.94, 1, enter) * Motion.mix(1, 0.92, exit))
             .opacity(enter * (1 - exit))
             .blur(radius: (1 - enter) * 18 + exit * 12)

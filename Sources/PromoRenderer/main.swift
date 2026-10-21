@@ -25,13 +25,13 @@ func writeImage<V: View>(_ view: V, size: CGSize, scale: CGFloat, to url: URL) t
 }
 
 @MainActor
-func writeFrames<V: View>(duration: Double, fps: Double, size: CGSize, to directory: URL,
+func writeFrames<V: View>(duration: Double, fps: Double, size: CGSize, scale: CGFloat, to directory: URL,
                           scene: (Double) -> V) throws {
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let count = Int(duration * fps)
     for index in 0..<count {
         let url = directory.appendingPathComponent(String(format: "frame-%04d.png", index))
-        try writeImage(scene(Double(index) / fps), size: size, scale: 1, to: url)
+        try writeImage(scene(Double(index) / fps), size: size, scale: scale, to: url)
         if index % Int(fps) == 0 { print("frame \(index)/\(count)") }
     }
 }
@@ -54,9 +54,9 @@ do {
             try writeImage(MenuBarScene(), size: MenuBarScene.size, scale: 2, to: output.appendingPathComponent("menu-bar.jpg"))
             try writeImage(LevelsScene(), size: LevelsScene.size, scale: 2, to: output.appendingPathComponent("levels.jpg"))
         case "readme":
-            try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, to: output) { ReadmeScene(time: $0) }
+            try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":
-            try writeFrames(duration: ReelScene.duration, fps: 30, size: ReelScene.size, to: output) { ReelScene(time: $0) }
+            try writeFrames(duration: ReelScene.duration, fps: 30, size: ReelScene.size, scale: 1, to: output) { ReelScene(time: $0) }
         default:
             print("unknown mode \(arguments[1])")
             exit(2)
