@@ -1,14 +1,15 @@
 import SwiftUI
 
 /// The panel's look. Every style shows the same numbers and keeps each tool's colour; only the
-/// surface, dial, bar and type change.
+/// surface, dial, bar and type change. Mono comes first: it is the default and reads cleanest
+/// at the panel's small size.
 public enum PanelStyle: String, CaseIterable, Sendable {
+    /// Black terminal grid with radial ticks, segmented bars and monospaced type.
+    case mono
     /// Smoked glass with the iris dial and light-streak bars.
     case iris
     /// Matte charcoal card with dot-matrix figures, dotted rings and dot rows.
     case dot
-    /// Black terminal grid with radial ticks, segmented bars and monospaced type.
-    case mono
 
     public var title: String {
         switch self {
@@ -28,7 +29,7 @@ public enum PanelStyle: String, CaseIterable, Sendable {
 }
 
 private struct PanelStyleKey: EnvironmentKey {
-    static let defaultValue = PanelStyle.iris
+    static let defaultValue = PanelStyle.mono
 }
 
 extension EnvironmentValues {

@@ -25,7 +25,7 @@ public struct GaugeView: View {
     ///   - frozenAt: fixed animation time for still renders; nil animates.
     public init(providers: [ProviderUsage], status: String, now: Date,
                 onClose: (() -> Void)? = nil, opacity: Binding<Double>? = nil,
-                opacityRange: ClosedRange<Double> = 0.3...1.0, style: PanelStyle = .iris,
+                opacityRange: ClosedRange<Double> = 0.3...1.0, style: PanelStyle = .mono,
                 frozenAt: TimeInterval? = nil) {
         self.providers = providers
         self.status = status
