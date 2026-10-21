@@ -3,7 +3,6 @@ import SwiftUI
 
 /// Borderless, non-activating panel that floats above other apps and every Space.
 final class GaugePanel: NSPanel {
-    private static let autosaveName = "UsageGaugePanel"
     private static let screenMargin: CGFloat = 12
 
     init(contentView view: NSView) {
@@ -20,8 +19,28 @@ final class GaugePanel: NSPanel {
         if #unavailable(macOS 15) { isMovableByWindowBackground = true }
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         appearance = NSAppearance(named: .darkAqua)
-        setFrameAutosaveName(Self.autosaveName)
-        if !setFrameUsingName(Self.autosaveName) { placeTopLeft() }
+        restorePosition()
+        NotificationCenter.default.addObserver(self, selector: #selector(rememberPosition),
+                                               name: NSWindow.didMoveNotification, object: self)
+    }
+
+    /// The top-left corner is saved in global coordinates and put back as is. AppKit's frame
+    /// autosave remaps the frame when a display's reported size shifts (menu bar moving between
+    /// displays), which sent a panel parked on a second display over to the main one.
+    private func restorePosition() {
+        guard let topLeft = Preferences.panelTopLeft,
+              NSScreen.screens.contains(where: { $0.frame.contains(NSPoint(x: topLeft.x + 1, y: topLeft.y - 1)) }) else {
+            placeTopLeft()
+            return
+        }
+        setFrameTopLeftPoint(topLeft)
+    }
+
+    /// Saves where the panel is. Called on every move notification, and again from the app's
+    /// tick and at quit, since a drag handed to the window server may not announce its end.
+    @objc func rememberPosition() {
+        let topLeft = NSPoint(x: frame.minX, y: frame.maxY)
+        if Preferences.panelTopLeft != topLeft { Preferences.panelTopLeft = topLeft }
     }
 
     override var canBecomeKey: Bool { false }

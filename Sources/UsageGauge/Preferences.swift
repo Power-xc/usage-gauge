@@ -7,6 +7,21 @@ enum Preferences {
     private static let panelVisibleKey = "panelVisible"
     private static let panelOpacityKey = "panelOpacity"
     private static let adaptiveTintKey = "adaptiveTint"
+    private static let panelLeftKey = "panelLeft"
+    private static let panelTopKey = "panelTop"
+
+    /// Top-left corner of the panel in global screen coordinates; nil until it has been placed.
+    static var panelTopLeft: CGPoint? {
+        get {
+            guard let left = defaults.object(forKey: panelLeftKey) as? Double,
+                  let top = defaults.object(forKey: panelTopKey) as? Double else { return nil }
+            return CGPoint(x: left, y: top)
+        }
+        set {
+            defaults.set(newValue.map { Double($0.x) }, forKey: panelLeftKey)
+            defaults.set(newValue.map { Double($0.y) }, forKey: panelTopKey)
+        }
+    }
 
     static var isPanelVisible: Bool {
         get { defaults.object(forKey: panelVisibleKey) as? Bool ?? true }

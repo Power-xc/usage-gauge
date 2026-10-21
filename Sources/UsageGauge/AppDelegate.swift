@@ -53,7 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { @MainActor in self?.store.refresh() }
             },
             Timer.scheduledTimer(withTimeInterval: Self.tickInterval, repeats: true) { [weak self] _ in
-                Task { @MainActor in self?.store.tick() }
+                Task { @MainActor in
+                    self?.store.tick()
+                    self?.panel.rememberPosition()
+                }
             },
         ]
         // Numbers go stale while the Mac sleeps; fetch as soon as it wakes.
@@ -64,6 +67,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.store.refreshIfStale()
             }
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        panel.rememberPosition()
     }
 
     /// Opening the app again (Spotlight, Finder, `open -a`) toggles the panel.
