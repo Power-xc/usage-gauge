@@ -10,25 +10,33 @@ public struct GaugeView: View {
     let onClose: (() -> Void)?
     let opacity: Binding<Double>?
     let opacityRange: ClosedRange<Double>
+    let scale: Binding<Double>?
+    let scaleRange: ClosedRange<Double>
     let style: PanelStyle
     let layout: PanelLayout
     let frozenAt: TimeInterval?
 
-    @State private var isAdjustingOpacity = false
+    @State private var isAdjusting = false
 
     /// - Parameters:
     ///   - opacity: whole-panel opacity; when given, the header gets a control to adjust it.
+    ///   - scale: whole-panel size factor; when given, the same control also offers a size bar. The
+    ///     panel is scaled by the host (see `panelScale`), not by this view.
     ///   - frozenAt: fixed animation time for still renders; nil animates.
     public init(providers: [ProviderUsage], status: String, now: Date,
                 onClose: (() -> Void)? = nil, opacity: Binding<Double>? = nil,
-                opacityRange: ClosedRange<Double> = 0.3...1.0, style: PanelStyle = .mono,
-                layout: PanelLayout = .dial, frozenAt: TimeInterval? = nil) {
+                opacityRange: ClosedRange<Double> = 0.3...1.0,
+                scale: Binding<Double>? = nil, scaleRange: ClosedRange<Double> = 0.7...1.6,
+                style: PanelStyle = .mono, layout: PanelLayout = .dial,
+                frozenAt: TimeInterval? = nil) {
         self.providers = providers
         self.status = status
         self.now = now
         self.onClose = onClose
         self.opacity = opacity
         self.opacityRange = opacityRange
+        self.scale = scale
+        self.scaleRange = scaleRange
         self.style = style
         self.layout = layout
         self.frozenAt = frozenAt
@@ -79,10 +87,11 @@ public struct GaugeView: View {
         }
     }
 
+    /// The opacity and size bars, shown under the header while adjusting.
     @ViewBuilder
     private var opacityControl: some View {
-        if isAdjustingOpacity, let opacity {
-            OpacityControl(value: opacity, range: opacityRange)
+        if isAdjusting, opacity != nil || scale != nil {
+            PanelControls(opacity: opacity, opacityRange: opacityRange, scale: scale, scaleRange: scaleRange)
         }
     }
 
@@ -108,9 +117,9 @@ public struct GaugeView: View {
                 .foregroundStyle(Theme.faintText)
             Spacer(minLength: 16)
             Text(status).font(Theme.figure(10, .regular, style: style)).foregroundStyle(Theme.faintText)
-            if opacity != nil {
-                HeaderButton(symbol: "circle.lefthalf.filled", help: "투명도", isOn: isAdjustingOpacity) {
-                    withAnimation(.easeOut(duration: 0.2)) { isAdjustingOpacity.toggle() }
+            if opacity != nil || scale != nil {
+                HeaderButton(symbol: "slider.horizontal.3", help: "투명도 · 크기", isOn: isAdjusting) {
+                    withAnimation(.easeOut(duration: 0.2)) { isAdjusting.toggle() }
                 }
             }
             if let onClose {
@@ -159,25 +168,41 @@ private struct HeaderButton: View {
     }
 }
 
-/// Slider for the whole panel's opacity, shown under the header while adjusting.
-private struct OpacityControl: View {
+/// Bars for the whole panel's opacity and size, in one capsule under the header while adjusting.
+private struct PanelControls: View {
+    let opacity: Binding<Double>?
+    let opacityRange: ClosedRange<Double>
+    let scale: Binding<Double>?
+    let scaleRange: ClosedRange<Double>
+
+    var body: some View {
+        VStack(spacing: 2) {
+            if let opacity { ControlRow(title: "투명도", value: opacity, range: opacityRange) }
+            if let scale { ControlRow(title: "크기", value: scale, range: scaleRange) }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white.opacity(0.05)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+}
+
+private struct ControlRow: View {
+    let title: String
     @Binding var value: Double
     let range: ClosedRange<Double>
 
     var body: some View {
         HStack(spacing: 10) {
-            Text("투명도").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
-            OpacityBar(value: $value, range: range)
+            Text(title).font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
+                .frame(width: 34, alignment: .leading)
+            ValueBar(value: $value, range: range)
                 .frame(height: 20)
             Text("\(Int((value * 100).rounded()))%")
                 .font(Theme.number(10))
                 .frame(width: 36, alignment: .trailing)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(.white.opacity(0.05)))
-        .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
-        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 

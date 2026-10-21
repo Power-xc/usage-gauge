@@ -3,10 +3,12 @@ import UsageGaugeUI
 
 enum Preferences {
     static let opacityRange: ClosedRange<Double> = 0.3...1.0
+    static let scaleRange: ClosedRange<Double> = 0.7...1.6
 
     private static let defaults = UserDefaults.standard
     private static let panelVisibleKey = "panelVisible"
     private static let panelOpacityKey = "panelOpacity"
+    private static let panelScaleKey = "panelScale"
     private static let adaptiveTintKey = "adaptiveTint"
     private static let panelStyleKey = "panelStyle"
     private static let panelLayoutKey = "panelLayout"
@@ -57,6 +59,11 @@ enum Preferences {
     static var panelOpacity: Double {
         get { (defaults.object(forKey: panelOpacityKey) as? Double ?? 1.0).clamped(to: opacityRange) }
         set { defaults.set(newValue.clamped(to: opacityRange), forKey: panelOpacityKey) }
+    }
+
+    static var panelScale: Double {
+        get { (defaults.object(forKey: panelScaleKey) as? Double ?? 1.0).clamped(to: scaleRange) }
+        set { defaults.set(newValue.clamped(to: scaleRange), forKey: panelScaleKey) }
     }
 }
 

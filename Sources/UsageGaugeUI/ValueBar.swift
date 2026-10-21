@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Glass track you grab and drag to set the panel's opacity; fill and knob follow the pointer.
-struct OpacityBar: View {
+/// Glass track you grab and drag to set a value in a range (the panel's opacity or size); fill and
+/// knob follow the pointer.
+struct ValueBar: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
 

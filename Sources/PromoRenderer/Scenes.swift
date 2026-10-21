@@ -55,6 +55,28 @@ struct StylesScene: View {
     }
 }
 
+/// The mono panel at three sizes, stacked.
+struct SizesScene: View {
+    static let size = CGSize(width: 1160, height: 760)
+    private static let scales = [0.8, 1.0, 1.4]
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(alignment: .leading, spacing: 28) {
+                ForEach(Self.scales, id: \.self) { scale in
+                    GaugeView(providers: Array(SampleData.still.prefix(2)), status: "오후 12:04 기준", now: SampleData.now,
+                              onClose: {}, opacity: .constant(1), style: .mono, frozenAt: 3)
+                        .modifier(RenderedSurface(style: .mono))
+                        .panelScale(scale)
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+}
+
 /// The menu bar companion on its own, enlarged.
 struct MenuBarScene: View {
     static let size = CGSize(width: 1280, height: 240)

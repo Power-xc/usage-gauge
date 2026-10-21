@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var timers: [Timer] = []
     private var storeObservation: AnyCancellable?
     private var opacitySlider: NSSlider?
+    private var scaleSlider: NSSlider?
     private var adaptiveTintItem: NSMenuItem?
     private var styleItems: [NSMenuItem] = []
     private var layoutItems: [NSMenuItem] = []
@@ -30,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = buildMenu()
         let hostingView = FirstMouseHostingView(rootView: PanelRoot(store: store, state: panelState,
                                                                onOpacity: { [weak self] in self?.setOpacity($0) },
+                                                               onScale: { [weak self] in self?.setScale($0) },
                                                                onResize: { [weak self] in self?.panel.fitContent() },
                                                                onClose: { [weak self] in self?.togglePanel() }))
         hostingView.menu = menu
@@ -174,6 +176,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if panelState.opacity != opacity { panelState.opacity = opacity }
     }
 
+    @objc private func scaleChanged(_ sender: NSSlider) {
+        setScale(sender.doubleValue)
+    }
+
+    /// Single place the size changes; the panel's window follows its scaled content.
+    private func setScale(_ value: Double) {
+        Preferences.panelScale = value
+        let scale = Preferences.panelScale
+        scaleSlider?.doubleValue = scale
+        if panelState.scale != scale { panelState.scale = scale }
+    }
+
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
         menu.addItem(item("게이지 켜기/끄기 (⌥⌘U)", #selector(togglePanel)))
@@ -198,10 +212,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncStyleItems()
         menu.addItem(.separator())
         menu.addItem(NSMenuItem.sectionHeader(title: "게이지 투명도"))
-        menu.addItem(opacitySliderItem())
+        let opacity = liveSliderItem(value: Preferences.panelOpacity, range: Preferences.opacityRange,
+                                     action: #selector(opacityChanged(_:)))
+        opacitySlider = opacity.slider
+        menu.addItem(opacity.item)
         let adaptive = item(Self.adaptiveTintTitle, #selector(toggleAdaptiveTint))
         adaptiveTintItem = adaptive
         menu.addItem(adaptive)
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem.sectionHeader(title: "게이지 크기"))
+        let size = liveSliderItem(value: Preferences.panelScale, range: Preferences.scaleRange,
+                                  action: #selector(scaleChanged(_:)))
+        scaleSlider = size.slider
+        menu.addItem(size.item)
         menu.addItem(.separator())
         let bars = item("메뉴바에 막대 표시", #selector(toggleMenuBarBars))
         bars.state = Preferences.showsMenuBarBars ? .on : .off
@@ -213,19 +236,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Live slider: the panel follows while dragging and the value is remembered.
-    private func opacitySliderItem() -> NSMenuItem {
-        let slider = NSSlider(value: Preferences.panelOpacity,
-                              minValue: Preferences.opacityRange.lowerBound,
-                              maxValue: Preferences.opacityRange.upperBound,
-                              target: self, action: #selector(opacityChanged(_:)))
+    private func liveSliderItem(value: Double, range: ClosedRange<Double>,
+                                action: Selector) -> (item: NSMenuItem, slider: NSSlider) {
+        let slider = NSSlider(value: value, minValue: range.lowerBound, maxValue: range.upperBound,
+                              target: self, action: action)
         slider.isContinuous = true
-        opacitySlider = slider
         slider.frame = NSRect(x: 20, y: 4, width: 180, height: 22)
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 220, height: 30))
         container.addSubview(slider)
         let entry = NSMenuItem()
         entry.view = container
-        return entry
+        return (entry, slider)
     }
 
     private func item(_ title: String, _ action: Selector) -> NSMenuItem {
@@ -241,10 +262,11 @@ private final class FirstMouseHostingView<Content: View>: NSHostingView<Content>
 }
 
 /// Panel state the view follows: whether it is on screen (the animation stops while hidden),
-/// its opacity, style and layout, and how dark the glass is for the current backdrop.
+/// its opacity, size, style and layout, and how dark the glass is for the current backdrop.
 private final class PanelState: ObservableObject {
     @Published var isShown = false
     @Published var opacity = Preferences.panelOpacity
+    @Published var scale = Preferences.panelScale
     @Published var style = Preferences.panelStyle
     @Published var layout = Preferences.panelLayout
     @Published var tintOpacity = BackdropTone.fallbackTint
@@ -254,17 +276,21 @@ private struct PanelRoot: View {
     @ObservedObject var store: UsageStore
     @ObservedObject var state: PanelState
     let onOpacity: (Double) -> Void
+    let onScale: (Double) -> Void
     let onResize: () -> Void
     let onClose: () -> Void
 
     var body: some View {
         GaugeView(providers: store.providers, status: store.statusText, now: store.now, onClose: onClose,
                   opacity: Binding(get: { state.opacity }, set: onOpacity),
-                  opacityRange: Preferences.opacityRange, style: state.style, layout: state.layout,
+                  opacityRange: Preferences.opacityRange,
+                  scale: Binding(get: { state.scale }, set: onScale), scaleRange: Preferences.scaleRange,
+                  style: state.style, layout: state.layout,
                   frozenAt: state.isShown ? nil : 0)
             .modifier(PanelSurface(style: state.style, tintOpacity: state.tintOpacity))
+            .panelScale(state.scale)
             .animation(.easeInOut(duration: 0.8), value: state.tintOpacity)
-            // The panel follows the content when rows appear, e.g. the opacity slider.
+            // The panel follows the scaled content when rows appear (e.g. the control bars) or the size changes.
             .background(GeometryReader { geo in
                 Color.clear.onChange(of: geo.size) { onResize() }
             })
