@@ -47,25 +47,10 @@ struct ProviderCard: View {
         }
     }
 
-    @ViewBuilder
     private func titleRow(tint: Color) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            switch style {
-            case .iris:
-                Text(usage.title).font(Theme.font(13, .semibold))
-            case .dot:
-                Text(String(format: "%02d", index + 1)).font(Theme.mono(9, .medium)).foregroundStyle(Theme.faintText)
-                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
-            case .mono:
-                Rectangle().fill(tint).frame(width: 6, height: 6).alignmentGuide(.firstTextBaseline) { $0[.bottom] }
-                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
-            }
-            if let plan = usage.plan {
-                Text(plan.uppercased())
-                    .font(Theme.label(8.5, .semibold, style: style))
-                    .tracking(0.9)
-                    .foregroundStyle(Theme.faintText)
-            }
+            ProviderName(usage: usage, index: index, tint: tint)
+            PlanTag(plan: usage.plan)
         }
     }
 
@@ -202,11 +187,7 @@ struct LongWindowBar: View {
                     .font(Theme.figure(9.5, .regular, style: style))
                     .foregroundStyle(Theme.faintText)
             }
-            switch style {
-            case .iris: CometBar(remainingPercent: remaining, thickness: 3, color: tint, frozenAt: frozenAt)
-            case .dot: DotBar(remainingPercent: remaining, color: tint)
-            case .mono: TickBar(remainingPercent: remaining, color: tint)
-            }
+            WindowBar(remainingPercent: remaining, tint: tint, frozenAt: frozenAt)
         }
     }
 }
@@ -227,4 +208,75 @@ private struct DialGlow: View {
             .offset(x: dial / 2 - dial * Self.reach)
             .allowsHitTesting(false)
     }
+}
+
+/// The tool's name in the style's voice: a brand square (mono), "01" numbering (dot) or plain type
+/// (iris, which can take a small brand dot where the name stands alone under a chart).
+struct ProviderName: View {
+    let usage: ProviderUsage
+    /// Position in the panel, shown as "01", "02", … by the dot style.
+    let index: Int
+    let tint: Color
+    var marksBrand = false
+
+    @Environment(\.panelStyle) private var style
+
+    var body: some View {
+        switch style {
+        case .iris:
+            HStack(spacing: 5) {
+                if marksBrand { Circle().fill(tint).frame(width: 6, height: 6) }
+                Text(usage.title).font(Theme.font(13, .semibold))
+            }
+        case .dot:
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(String(format: "%02d", index + 1)).font(Theme.mono(9, .medium)).foregroundStyle(Theme.faintText)
+                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
+            }
+        case .mono:
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Rectangle().fill(tint).frame(width: 6, height: 6).alignmentGuide(.firstTextBaseline) { $0[.bottom] }
+                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
+            }
+        }
+    }
+}
+
+/// The subscription plan in small caps beside a tool's name; nothing when the plan is unknown.
+struct PlanTag: View {
+    let plan: String?
+
+    @Environment(\.panelStyle) private var style
+
+    var body: some View {
+        if let plan {
+            Text(plan.uppercased())
+                .font(Theme.label(8.5, .semibold, style: style))
+                .tracking(0.9)
+                .foregroundStyle(Theme.faintText)
+        }
+    }
+}
+
+/// The remaining share as the style's horizontal bar: a light streak, a strip of dots or a row of
+/// ticks, in the tool's colour.
+struct WindowBar: View {
+    let remainingPercent: Double
+    let tint: Color
+    let frozenAt: TimeInterval?
+
+    @Environment(\.panelStyle) private var style
+
+    var body: some View {
+        switch style {
+        case .iris: CometBar(remainingPercent: remainingPercent, thickness: 3, color: tint, frozenAt: frozenAt)
+        case .dot: DotBar(remainingPercent: remainingPercent, color: tint)
+        case .mono: TickBar(remainingPercent: remainingPercent, color: tint)
+        }
+    }
+}
+
+/// "37%", or a dash for a window the tool does not report.
+func percentText(_ window: UsageWindow?) -> String {
+    window.map { "\($0.displayPercent)%" } ?? ResetCountdown.unknown
 }

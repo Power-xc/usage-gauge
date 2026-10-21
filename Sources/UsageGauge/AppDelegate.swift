@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var opacitySlider: NSSlider?
     private var adaptiveTintItem: NSMenuItem?
     private var styleItems: [NSMenuItem] = []
+    private var layoutItems: [NSMenuItem] = []
     private var menuBarBarsItem: NSMenuItem?
     private var backdropSampler: BackdropSampler?
 
@@ -128,6 +129,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         adaptiveTintItem?.toolTip = message
     }
 
+    @objc private func chooseLayout(_ sender: NSMenuItem) {
+        guard let layout = sender.representedObject as? String, let chosen = PanelLayout(rawValue: layout) else { return }
+        Preferences.panelLayout = chosen
+        panelState.layout = chosen
+        syncLayoutItems()
+    }
+
+    private func syncLayoutItems() {
+        layoutItems.forEach { $0.state = $0.representedObject as? String == Preferences.panelLayout.rawValue ? .on : .off }
+    }
+
     @objc private func chooseStyle(_ sender: NSMenuItem) {
         guard let style = sender.representedObject as? String, let chosen = PanelStyle(rawValue: style) else { return }
         Preferences.panelStyle = chosen
@@ -166,6 +178,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(item("게이지 켜기/끄기 (⌥⌘U)", #selector(togglePanel)))
         menu.addItem(item("지금 새로고침", #selector(refreshNow)))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem.sectionHeader(title: "그래프"))
+        layoutItems = PanelLayout.allCases.map { layout in
+            let entry = item(layout.title, #selector(chooseLayout(_:)))
+            entry.representedObject = layout.rawValue
+            return entry
+        }
+        layoutItems.forEach(menu.addItem)
+        syncLayoutItems()
         menu.addItem(.separator())
         menu.addItem(NSMenuItem.sectionHeader(title: "스타일"))
         styleItems = PanelStyle.allCases.map { style in
@@ -220,11 +241,12 @@ private final class FirstMouseHostingView<Content: View>: NSHostingView<Content>
 }
 
 /// Panel state the view follows: whether it is on screen (the animation stops while hidden),
-/// its opacity and style, and how dark the glass is for the current backdrop.
+/// its opacity, style and layout, and how dark the glass is for the current backdrop.
 private final class PanelState: ObservableObject {
     @Published var isShown = false
     @Published var opacity = Preferences.panelOpacity
     @Published var style = Preferences.panelStyle
+    @Published var layout = Preferences.panelLayout
     @Published var tintOpacity = BackdropTone.fallbackTint
 }
 
@@ -238,7 +260,7 @@ private struct PanelRoot: View {
     var body: some View {
         GaugeView(providers: store.providers, status: store.statusText, now: store.now, onClose: onClose,
                   opacity: Binding(get: { state.opacity }, set: onOpacity),
-                  opacityRange: Preferences.opacityRange, style: state.style,
+                  opacityRange: Preferences.opacityRange, style: state.style, layout: state.layout,
                   frozenAt: state.isShown ? nil : 0)
             .modifier(PanelSurface(style: state.style, tintOpacity: state.tintOpacity))
             .animation(.easeInOut(duration: 0.8), value: state.tintOpacity)

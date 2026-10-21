@@ -3,7 +3,7 @@ import SwiftUI
 
 // Usage:
 //   PromoRenderer preview <out.jpg|png>  static hero image
-//   PromoRenderer stills  <dir>          all-providers, menu-bar, levels and styles images
+//   PromoRenderer stills  <dir>          all-providers, menu-bar, levels, styles and layouts images
 //   PromoRenderer readme  <frames-dir>   README loop frames (PNG sequence, encode with ffmpeg)
 //   PromoRenderer reel    <frames-dir>   9:16 reel frames
 
@@ -54,6 +54,7 @@ do {
             try writeImage(MenuBarScene(), size: MenuBarScene.size, scale: 2, to: output.appendingPathComponent("menu-bar.jpg"))
             try writeImage(LevelsScene(), size: LevelsScene.size, scale: 2, to: output.appendingPathComponent("levels.jpg"))
             try writeImage(StylesScene(), size: StylesScene.size, scale: 2, to: output.appendingPathComponent("styles.jpg"))
+            try writeImage(LayoutsScene(), size: LayoutsScene.size, scale: 2, to: output.appendingPathComponent("layouts.jpg"))
         case "readme":
             try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":

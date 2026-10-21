@@ -1,14 +1,9 @@
 import SwiftUI
 import UsageGaugeCore
 
-/// Panel content: a wide, low grid of providers. Each puts the dial for the short window beside
-/// its reset time and a bar for the long one, so the panel grows sideways instead of crowding the
-/// dial. The style picks the drawing; the mono style also sets every block in a hairline grid.
+/// Panel content: a header over the providers, arranged by the layout (dials, bars, columns or
+/// figures). The style picks the drawing; the mono style also sets every block in a hairline grid.
 public struct GaugeView: View {
-    public static let cardsPerRow = 2
-    private static let rowSpacing: CGFloat = 10
-    private static let columnSpacing: CGFloat = 24
-
     let providers: [ProviderUsage]
     let status: String
     let now: Date
@@ -16,6 +11,7 @@ public struct GaugeView: View {
     let opacity: Binding<Double>?
     let opacityRange: ClosedRange<Double>
     let style: PanelStyle
+    let layout: PanelLayout
     let frozenAt: TimeInterval?
 
     @State private var isAdjustingOpacity = false
@@ -26,7 +22,7 @@ public struct GaugeView: View {
     public init(providers: [ProviderUsage], status: String, now: Date,
                 onClose: (() -> Void)? = nil, opacity: Binding<Double>? = nil,
                 opacityRange: ClosedRange<Double> = 0.3...1.0, style: PanelStyle = .mono,
-                frozenAt: TimeInterval? = nil) {
+                layout: PanelLayout = .dial, frozenAt: TimeInterval? = nil) {
         self.providers = providers
         self.status = status
         self.now = now
@@ -34,6 +30,7 @@ public struct GaugeView: View {
         self.opacity = opacity
         self.opacityRange = opacityRange
         self.style = style
+        self.layout = layout
         self.frozenAt = frozenAt
     }
 
@@ -49,17 +46,11 @@ public struct GaugeView: View {
     }
 
     private var flowLayout: some View {
-        VStack(spacing: Self.rowSpacing) {
+        VStack(spacing: PanelLayout.blockSpacing) {
             header.modifier(WindowDragArea())
             opacityControl
             emptyNote
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(alignment: .top, spacing: Self.columnSpacing) {
-                    ForEach(row, id: \.usage.id) { card($0) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .modifier(WindowDragArea())
-            }
+            content.modifier(WindowDragArea())
         }
         .padding(Theme.panelPadding)
     }
@@ -67,29 +58,25 @@ public struct GaugeView: View {
     /// Mono: header and providers each sit in a cell of a hairline grid that runs edge to edge.
     private var gridLayout: some View {
         VStack(spacing: 0) {
-            VStack(spacing: Self.rowSpacing) {
+            VStack(spacing: PanelLayout.blockSpacing) {
                 header.modifier(WindowDragArea())
                 opacityControl
             }
             .padding(.horizontal, Theme.panelPadding)
             .padding(.vertical, 10)
             emptyNote
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                GridRule(isVertical: false)
-                HStack(spacing: 0) {
-                    ForEach(row, id: \.usage.id) { entry in
-                        if entry.index % Self.cardsPerRow > 0 { GridRule(isVertical: true) }
-                        card(entry).padding(Theme.panelPadding)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .modifier(WindowDragArea())
-            }
+            content.modifier(WindowDragArea())
         }
     }
 
-    private func card(_ entry: (index: Int, usage: ProviderUsage)) -> some View {
-        ProviderCard(usage: entry.usage, index: entry.index, now: now, frozenAt: frozenAt)
+    @ViewBuilder
+    private var content: some View {
+        switch layout {
+        case .dial: DialLayout(providers: providers, now: now, frozenAt: frozenAt)
+        case .bars: BarsLayout(providers: providers, now: now, frozenAt: frozenAt)
+        case .columns: ColumnsLayout(providers: providers, now: now, frozenAt: frozenAt)
+        case .figures: FiguresLayout(providers: providers, now: now)
+        }
     }
 
     @ViewBuilder
@@ -107,13 +94,6 @@ public struct GaugeView: View {
                 .foregroundStyle(Theme.mutedText)
                 .frame(height: Theme.dialSize)
                 .padding(.horizontal, Theme.panelPadding)
-        }
-    }
-
-    private var rows: [[(index: Int, usage: ProviderUsage)]] {
-        let entries = providers.enumerated().map { (index: $0.offset, usage: $0.element) }
-        return stride(from: 0, to: entries.count, by: Self.cardsPerRow).map {
-            Array(entries[$0..<min($0 + Self.cardsPerRow, entries.count)])
         }
     }
 
@@ -137,17 +117,6 @@ public struct GaugeView: View {
                 HeaderButton(symbol: "xmark", help: "숨기기 (⌥⌘U)", action: onClose)
             }
         }
-    }
-}
-
-/// One-point line of the mono style's grid.
-private struct GridRule: View {
-    let isVertical: Bool
-
-    var body: some View {
-        Rectangle()
-            .fill(Theme.hairline)
-            .frame(width: isVertical ? 1 : nil, height: isVertical ? nil : 1)
     }
 }
 
