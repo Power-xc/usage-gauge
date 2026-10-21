@@ -79,10 +79,18 @@ pub enum PanelLayout {
     Constellation,
     /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
     Ruler,
+    /// A line chart of each tool's short window over its period, from the recorded history.
+    Trend,
+    /// Per tool, the short window's recent use as a row of columns.
+    Histogram,
+    /// A list of tools, each with its short-window bar and a strip of how much was left over time.
+    Spark,
+    /// Per tool a starburst of the short window's use around its remaining share.
+    Burst,
 }
 
 impl PanelLayout {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 12] = [
         Self::Dial,
         Self::Bars,
         Self::Columns,
@@ -91,6 +99,10 @@ impl PanelLayout {
         Self::Capsule,
         Self::Constellation,
         Self::Ruler,
+        Self::Trend,
+        Self::Histogram,
+        Self::Spark,
+        Self::Burst,
     ];
 
     pub fn title(self) -> &'static str {
@@ -103,6 +115,10 @@ impl PanelLayout {
             Self::Capsule => "캡슐",
             Self::Constellation => "별자리",
             Self::Ruler => "눈금자",
+            Self::Trend => "추이",
+            Self::Histogram => "히스토그램",
+            Self::Spark => "스파크 바",
+            Self::Burst => "버스트",
         }
     }
 
@@ -116,6 +132,10 @@ impl PanelLayout {
             Self::Capsule => "capsule",
             Self::Constellation => "constellation",
             Self::Ruler => "ruler",
+            Self::Trend => "trend",
+            Self::Histogram => "histogram",
+            Self::Spark => "spark",
+            Self::Burst => "burst",
         }
     }
 

@@ -3,9 +3,10 @@
 // mono, then bars and columns in iris and dot) and preview-shapes.png (orbit, capsule,
 // constellation and ruler, each in mono, iris and dot), all at 2x.
 // The real frontend code runs unchanged; only the Tauri bridge is replaced by a mock.
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, extname, join, normalize } from "node:path";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
@@ -17,6 +18,8 @@ const output = join(root, "preview.png");
 const stylesOutput = join(root, "preview-styles.png");
 const layoutsOutput = join(root, "preview-layouts.png");
 const shapesOutput = join(root, "preview-shapes.png");
+const historyOutput = join(root, "preview-history.png");
+const historyFixture = join(tmpdir(), "usage-gauge-preview-history.json");
 const chrome =
   process.env.CHROME_PATH ??
   join(homedir(), ".cache/puppeteer/chrome-headless-shell/mac_arm-155.0.8059.84/chrome-headless-shell-mac-arm64/chrome-headless-shell");
@@ -34,9 +37,20 @@ const LAYOUT_ROWS = 4;
 /** The shape forms, each in the three styles, a form per half column. */
 const SHAPE_LAYOUTS = ["orbit", "capsule", "constellation", "ruler"];
 const SHAPE_ROWS = 6;
+const HISTORY_LAYOUTS = ["trend", "histogram", "spark", "burst"];
 const STACK_BACKGROUND = "#0b101a";
 const STACK_PADDING = { x: 72, y: 77, gap: 29 };
 const LAYOUTS_PADDING = { x: 72, y: 77, gap: 29 };
+
+// The sample history comes from the Rust history code itself, so the preview shows what the app would send.
+function attachSampleHistory() {
+  execFileSync("cargo", ["test", "--manifest-path", join(root, "src-tauri/Cargo.toml"), "dump_preview_history", "--", "--ignored"], {
+    env: { ...process.env, USAGE_GAUGE_PREVIEW_HISTORY: historyFixture },
+    stdio: "ignore",
+  });
+  const histories = JSON.parse(readFileSync(historyFixture, "utf8"));
+  for (const provider of providers) provider.history = histories[provider.id] ?? null;
+}
 
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
 
@@ -155,6 +169,7 @@ async function stackPanels(browser, panels, path, { x, y, gap }, rows = panels.l
   }
 }
 
+attachSampleHistory();
 const server = await serve();
 const browser = await puppeteer.launch({ executablePath: chrome, headless: "shell" });
 try {
@@ -178,6 +193,12 @@ try {
   }
   await stackPanels(browser, shapePanels, shapesOutput, LAYOUTS_PADDING, SHAPE_ROWS);
   console.log(`wrote ${shapesOutput}`);
+  const historyPanels = [];
+  for (const style of STYLES) {
+    for (const layout of HISTORY_LAYOUTS) historyPanels.push(await renderPanel(browser, port, style, STACK_BACKGROUND, 0, layout, providers.length));
+  }
+  await stackPanels(browser, historyPanels, historyOutput, LAYOUTS_PADDING, HISTORY_LAYOUTS.length);
+  console.log(`wrote ${historyOutput}`);
 } finally {
   await browser.close();
   server.close();

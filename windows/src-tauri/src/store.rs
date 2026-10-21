@@ -1,5 +1,6 @@
 //! Latest usage and the rules for when to fetch again. Pure state: the app layer runs the fetches.
 
+use crate::history::UsageHistory;
 use crate::model::{merge, ProviderUsage};
 
 /// A refresh asked for (panel shown, woken from sleep) is skipped when the data is newer than this.
@@ -16,9 +17,18 @@ pub struct Store {
     last_attempt: Option<i64>,
     now: i64,
     is_fetching: bool,
+    history: UsageHistory,
 }
 
 impl Store {
+    pub fn with_history(history: UsageHistory) -> Self {
+        Self { history, ..Self::default() }
+    }
+
+    pub fn history(&self) -> &UsageHistory {
+        &self.history
+    }
+
     pub fn now(&self) -> i64 {
         self.now
     }
@@ -46,6 +56,7 @@ impl Store {
     pub fn finish_fetch(&mut self, latest: Vec<ProviderUsage>, now: i64) {
         self.is_fetching = false;
         self.now = now;
+        self.history.record(&latest, now);
         self.fetched = merge(latest, &self.fetched);
         self.last_fetched = Some(now);
     }

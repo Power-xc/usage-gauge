@@ -21,7 +21,7 @@ export const OPACITY_RANGE = { min: 0.3, max: 1 } as const;
 export const SCALE_RANGE = { min: 0.7, max: 1.6 } as const;
 
 const ACCENT: Rgb = [201, 182, 255];
-const WARNING: Rgb = [255, 206, 122];
+export const WARNING: Rgb = [255, 206, 122];
 const CRITICAL: Rgb = [255, 128, 128];
 
 /** Deep signature colour of each tool; unknown providers fall back to the accent. */

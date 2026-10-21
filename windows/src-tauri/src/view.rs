@@ -2,6 +2,8 @@
 
 use serde::Serialize;
 
+use crate::history::UsageHistory;
+use crate::history_view::{history_view, HistoryView};
 use crate::model::{compact_countdown_text, countdown_text, ProviderUsage, UsageLevel, UsageWindow};
 use crate::store::Store;
 
@@ -31,6 +33,8 @@ pub struct ProviderView {
     pub weekly: Option<WindowView>,
     /// Why the provider is not connected; `None` while it has readings.
     pub message: Option<String>,
+    /// How the short window drained so far; `None` for a provider without readings.
+    pub history: Option<HistoryView>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,7 +57,7 @@ fn window_view(window: &UsageWindow, default_label: &str, now: i64) -> WindowVie
     }
 }
 
-fn provider_view(usage: &ProviderUsage, now: i64) -> ProviderView {
+fn provider_view(usage: &ProviderUsage, history: &UsageHistory, now: i64) -> ProviderView {
     let is_available = usage.is_available();
     ProviderView {
         id: usage.id,
@@ -62,13 +66,18 @@ fn provider_view(usage: &ProviderUsage, now: i64) -> ProviderView {
         session: usage.session.as_ref().map(|window| window_view(window, DEFAULT_SESSION_LABEL, now)),
         weekly: usage.weekly.as_ref().map(|window| window_view(window, DEFAULT_WEEKLY_LABEL, now)),
         message: (!is_available).then(|| usage.error_message.clone().unwrap_or_default()),
+        history: usage
+            .session
+            .as_ref()
+            .or(usage.weekly.as_ref())
+            .map(|window| history_view(history, usage.id, window, now)),
     }
 }
 
 pub fn usage_view(store: &Store) -> UsageView {
     let now = store.now();
     UsageView {
-        providers: store.providers().iter().map(|usage| provider_view(usage, now)).collect(),
+        providers: store.providers().iter().map(|usage| provider_view(usage, store.history(), now)).collect(),
         measured_at: store.measured_at().map(|seconds| seconds * 1000),
     }
 }
@@ -100,7 +109,7 @@ mod tests {
             countdown_compact: "1m".into(),
             level: UsageLevel::Comfortable,
         });
-        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None }
+        ProviderView { id: "claude", title, plan: None, session, weekly: None, message: None, history: None }
     }
 
     #[test]

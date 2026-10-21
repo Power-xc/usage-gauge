@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
+use crate::history::UsageHistory;
 use crate::prefs::{PanelLayout, PanelStyle, Prefs};
 use crate::providers;
 use crate::store::Store;
@@ -22,17 +23,19 @@ pub struct AppState {
     store: Mutex<Store>,
     prefs: Mutex<Prefs>,
     config_dir: PathBuf,
+    data_dir: PathBuf,
     has_glass: AtomicBool,
     is_revealed: AtomicBool,
     save_generation: AtomicU64,
 }
 
 impl AppState {
-    pub fn new(config_dir: PathBuf) -> Self {
+    pub fn new(config_dir: PathBuf, data_dir: PathBuf) -> Self {
         Self {
-            store: Mutex::default(),
+            store: Mutex::new(Store::with_history(UsageHistory::load(&data_dir, unix_now()))),
             prefs: Mutex::new(Prefs::load(&config_dir)),
             config_dir,
+            data_dir,
             has_glass: AtomicBool::new(false),
             is_revealed: AtomicBool::new(false),
             save_generation: AtomicU64::new(0),
@@ -98,7 +101,13 @@ pub fn refresh(app: &AppHandle) {
     let app = app.clone();
     thread::spawn(move || {
         let latest = providers::fetch_all(started);
-        app.state::<AppState>().store().finish_fetch(latest, unix_now());
+        let state = app.state::<AppState>();
+        let history = {
+            let mut store = state.store();
+            store.finish_fetch(latest, unix_now());
+            store.history().clone()
+        };
+        history.save(&state.data_dir);
         publish(&app);
     });
 }

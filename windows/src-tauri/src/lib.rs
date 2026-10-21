@@ -1,5 +1,7 @@
 mod app;
 mod credentials;
+mod history;
+mod history_view;
 mod http;
 mod model;
 mod panel;
@@ -37,7 +39,7 @@ pub fn run() {
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
-            app.manage(AppState::new(app.path().app_config_dir()?));
+            app.manage(AppState::new(app.path().app_config_dir()?, app.path().app_data_dir()?));
             let window = main_window(&handle).ok_or("main window is missing")?;
             let state = handle.state::<AppState>();
             state.set_has_glass(panel::apply_glass(&window));

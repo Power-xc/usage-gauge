@@ -1,0 +1,244 @@
+/* Shared by the four history layouts: trend, histogram, spark and burst. */
+.history-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-block canvas {
+  display: block;
+}
+
+.history-block.unavailable {
+  opacity: 0.5;
+}
+
+.history-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* A large figure in the style's type with a small "%" after it. */
+.style-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.style-figure.dotted {
+  align-items: flex-end;
+}
+
+.style-figure .digits {
+  font-size: calc(var(--size) * 1px);
+  font-weight: 600;
+  letter-spacing: calc(var(--size) * -0.025px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.style-figure .pct {
+  font-size: calc(var(--size) * 0.44px);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.panel[data-style="mono"] .style-figure .digits {
+  font-size: calc(var(--size) * 0.94px);
+  letter-spacing: 0;
+}
+
+.panel[data-style="mono"] .style-figure .pct {
+  font-size: calc(var(--size) * 0.41px);
+}
+
+.figure-band {
+  display: flex;
+  align-items: center;
+  height: 36px;
+}
+
+.figure-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.figure-note {
+  font-size: 9.5px;
+  color: var(--text-faint);
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.status-detail {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.caption-line {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.axis-line {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.chart-slot {
+  position: relative;
+  align-self: stretch;
+}
+
+.recording-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Footer under a chart: label and share on the left, a status at the end. */
+.footer-line {
+  display: flex;
+  align-items: baseline;
+  align-self: stretch;
+  gap: 6px;
+}
+
+.footer-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.footer-share {
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.footer-line .status-pill {
+  margin-left: auto;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-pill i {
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.panel[data-style="mono"] .status-pill i {
+  border-radius: 0;
+}
+
+/* Spark: one full-width row per tool. */
+.spark-title {
+  display: flex;
+  align-items: baseline;
+  align-self: stretch;
+  gap: 6px;
+}
+
+.spark-share {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.spark-caption {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* Burst: the starburst with its figure in the middle, the details beside it. */
+.burst-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.burst-block.unavailable {
+  opacity: 0.5;
+}
+
+.burst-mark {
+  position: relative;
+  flex: none;
+}
+
+.burst-mark canvas {
+  display: block;
+}
+
+.burst-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.burst-label {
+  font-size: 8px;
+  color: var(--text-faint);
+}
+
+.burst-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.burst-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.burst-details .muted {
+  color: var(--text-muted);
+}
+
+.burst-details .faint {
+  color: var(--text-faint);
+}

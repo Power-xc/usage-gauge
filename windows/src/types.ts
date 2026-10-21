@@ -5,7 +5,19 @@ export type UsageLevel = "comfortable" | "low" | "critical";
 export type PanelStyle = "iris" | "dot" | "mono";
 
 /** How the panel arranges the tools; mirrors the Rust `PanelLayout`. */
-export type PanelLayout = "dial" | "bars" | "columns" | "figures" | "orbit" | "capsule" | "constellation" | "ruler";
+export type PanelLayout =
+  | "dial"
+  | "bars"
+  | "columns"
+  | "figures"
+  | "orbit"
+  | "capsule"
+  | "constellation"
+  | "ruler"
+  | "trend"
+  | "histogram"
+  | "spark"
+  | "burst";
 
 /** One rate-limit window, already resolved and formatted by the backend. */
 export interface WindowView {
@@ -18,6 +30,37 @@ export interface WindowView {
   /** Terse form for the monospaced styles, e.g. "3h 50m". */
   countdownCompact: string;
   level: UsageLevel;
+}
+
+/** One reading of a window's remaining share; `at` is epoch milliseconds. */
+export interface HistoryPoint {
+  at: number;
+  remaining: number;
+}
+
+/** Remaining % per slice of the spark strip, for each style's bar pitch. */
+export interface SparkSlices {
+  iris: (number | null)[];
+  dot: (number | null)[];
+  mono: (number | null)[];
+}
+
+/** How a provider's short window (its long one when that is the only one) drained in its current period. Times are epoch milliseconds. */
+export interface HistoryView {
+  now: number;
+  periodStart: number | null;
+  periodEnd: number | null;
+  points: HistoryPoint[];
+  /** Too little recorded to draw a chart. */
+  isRecording: boolean;
+  /** % per hour over the last 60 min; null without enough data or use. */
+  burnRate: number | null;
+  /** Null when the allowance lasts past the reset. */
+  projectedEmpty: number | null;
+  /** % used per histogram column and per burst ray; null after now. */
+  usedSlices: (number | null)[];
+  burstSlices: (number | null)[];
+  remainingSlices: SparkSlices;
 }
 
 export interface ProviderView {
@@ -33,6 +76,7 @@ export interface ProviderView {
    * constellation draws a trail from there when it is present; absent until history is recorded.
    */
   hourAgo?: HourAgo | null;
+  history: HistoryView | null;
 }
 
 /** Where a tool stood an hour ago; null for a window without a sample that far back. */
