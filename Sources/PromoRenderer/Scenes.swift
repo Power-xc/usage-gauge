@@ -99,36 +99,58 @@ struct LevelsScene: View {
     }
 }
 
-/// README loop across several tools: values fill in, two providers drain into the warning
-/// colours, then everything eases back.
+/// README loop: the same four tools in each style in turn — iris, dot, mono — each filling in and
+/// one tool draining into the warning colours, with the style's name underneath.
 struct ReadmeScene: View {
-    static let size = CGSize(width: 800, height: 360)
-    static let duration = 9.0
+    static let size = CGSize(width: 800, height: 400)
+    static let phase = 4.0
+    static let duration = phase * Double(PanelStyle.allCases.count)
+    private static let fade = 0.45
 
     let time: Double
 
     var body: some View {
-        let fill = Motion.progress(time, from: 0.2, to: 2.4)
-        let drain = Motion.progress(time, from: 3.6, to: 6.0)
-        let recover = Motion.progress(time, from: 7.4, to: 8.9)
-        let level = fill * (1 - recover)
-        let others = SampleData.extras(scale: level)
-        let providers = [
-            SampleData.claude(session: 94 * level, weekly: 37 * level),
-            SampleData.codex(session: Motion.mix(62, 8, drain) * level, weekly: 26 * level),
-            others[0],
-            SampleData.cursor(session: Motion.mix(46, 22, drain) * level, weekly: 53 * level),
-        ]
         ZStack(alignment: .top) {
             Backdrop()
-            MenuBarStrip(providers: Array(providers.prefix(3)), width: Self.size.width)
-            GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1),
-                      frozenAt: time)
-                .modifier(RenderedGlass())
-                .padding(.top, 92)
+            // The menu bar holds steady while the panel changes style above it.
+            MenuBarStrip(providers: Array(providers(at: Self.phase / 2).prefix(3)), width: Self.size.width)
+            ForEach(Array(PanelStyle.allCases.enumerated()), id: \.element) { index, style in
+                let start = Double(index) * Self.phase
+                let local = time - start
+                let visibility = Motion.visibility(time, start: start - Self.fade / 2, end: start + Self.phase + Self.fade / 2,
+                                                   fade: Self.fade)
+                    + (index == 0 ? Motion.visibility(time, start: Self.duration - Self.fade / 2,
+                                                      end: Self.duration + Self.phase, fade: Self.fade) : 0)
+                if visibility > 0 {
+                    VStack(spacing: 22) {
+                        GaugeView(providers: providers(at: local < 0 ? local + Self.duration : local), status: "오후 12:04 기준",
+                                  now: SampleData.now, onClose: {}, opacity: .constant(1), style: style, frozenAt: time)
+                            .modifier(RenderedSurface(style: style))
+                        GlassChip {
+                            Text(style.title).font(Theme.font(13, .semibold)).foregroundStyle(Theme.mutedText)
+                        }
+                    }
+                    .padding(.top, 74)
+                    .opacity(visibility)
+                    .blur(radius: (1 - visibility) * 6)
+                }
+            }
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .environment(\.colorScheme, .dark)
+    }
+
+    /// Values for one phase: everything fills in, then Codex and Cursor drain into the warning colours.
+    private func providers(at local: Double) -> [ProviderUsage] {
+        let fill = Motion.progress(local, from: 0.1, to: 1.6)
+        let drain = Motion.progress(local, from: 2.0, to: 3.4)
+        let others = SampleData.extras(scale: fill)
+        return [
+            SampleData.claude(session: 94 * fill, weekly: 37 * fill),
+            SampleData.codex(session: Motion.mix(62, 8, drain) * fill, weekly: 26 * fill),
+            others[0],
+            SampleData.cursor(session: Motion.mix(46, 22, drain) * fill, weekly: 53 * fill),
+        ]
     }
 }
 
