@@ -9,6 +9,8 @@ public enum Theme {
     public static let accent = Color(red: 201 / 255, green: 182 / 255, blue: 255 / 255)
     public static let warning = Color(red: 255 / 255, green: 206 / 255, blue: 122 / 255)
     public static let critical = Color(red: 255 / 255, green: 128 / 255, blue: 128 / 255)
+    /// Live-status lamp of the dot style.
+    public static let signal = Color(red: 255 / 255, green: 90 / 255, blue: 54 / 255)
 
     public static let primaryText = Color.white
     public static let mutedText = Color.white.opacity(0.62)
@@ -28,6 +30,20 @@ public enum Theme {
     /// Large display figures: tight, fixed-width digits that read as type, not as a readout.
     public static func display(_ size: CGFloat) -> Font {
         .system(size: size, weight: .semibold).monospacedDigit()
+    }
+
+    /// Type for labels: the system face, or a monospaced one for the dot and mono styles.
+    public static func label(_ size: CGFloat, _ weight: Font.Weight = .regular, style: PanelStyle) -> Font {
+        style.isMonospaced ? mono(size, weight) : font(size, weight)
+    }
+
+    /// Type for figures and countdowns: rounded digits, or monospaced ones for the dot and mono styles.
+    public static func figure(_ size: CGFloat, _ weight: Font.Weight = .semibold, style: PanelStyle) -> Font {
+        style.isMonospaced ? mono(size, weight) : number(size, weight)
+    }
+
+    public static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        .system(size: size, weight: weight, design: .monospaced)
     }
 
     /// Rounded, fixed-width digits, as in Apple's activity and battery readouts.

@@ -130,6 +130,9 @@ expect(ResetCountdown.text(until: now.addingTimeInterval(-600), now: now) == "�
 expect(ResetCountdown.text(until: now.addingTimeInterval(59 * 60), now: now) == "59분", "minutes only")
 expect(ResetCountdown.text(until: now.addingTimeInterval(230 * 60), now: now) == "3시간 50분", "hours and minutes")
 expect(ResetCountdown.text(until: now.addingTimeInterval(76 * 3600), now: now) == "3일 4시간", "days and hours")
+expect(ResetCountdown.compact(until: now.addingTimeInterval(230 * 60), now: now) == "3h 50m", "compact hours and minutes")
+expect(ResetCountdown.compact(until: now.addingTimeInterval(76 * 3600), now: now) == "3d 4h", "compact days and hours")
+expect(ResetCountdown.compact(until: now.addingTimeInterval(30), now: now) == "<1m", "compact under a minute")
 
 print(failures.isEmpty ? "\nall checks passed" : "\n\(failures.count) check(s) failed")
 exit(failures.isEmpty ? 0 : 1)

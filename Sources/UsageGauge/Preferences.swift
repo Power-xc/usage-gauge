@@ -1,4 +1,5 @@
 import Foundation
+import UsageGaugeUI
 
 enum Preferences {
     static let opacityRange: ClosedRange<Double> = 0.3...1.0
@@ -7,6 +8,7 @@ enum Preferences {
     private static let panelVisibleKey = "panelVisible"
     private static let panelOpacityKey = "panelOpacity"
     private static let adaptiveTintKey = "adaptiveTint"
+    private static let panelStyleKey = "panelStyle"
     private static let panelLeftKey = "panelLeft"
     private static let panelTopKey = "panelTop"
 
@@ -21,6 +23,11 @@ enum Preferences {
             defaults.set(newValue.map { Double($0.x) }, forKey: panelLeftKey)
             defaults.set(newValue.map { Double($0.y) }, forKey: panelTopKey)
         }
+    }
+
+    static var panelStyle: PanelStyle {
+        get { defaults.string(forKey: panelStyleKey).flatMap(PanelStyle.init(rawValue:)) ?? .iris }
+        set { defaults.set(newValue.rawValue, forKey: panelStyleKey) }
     }
 
     static var isPanelVisible: Bool {

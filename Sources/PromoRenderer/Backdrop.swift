@@ -22,3 +22,16 @@ struct RenderedGlass: ViewModifier {
             .shadow(color: .black.opacity(0.5), radius: 24, y: 12)
     }
 }
+
+/// Off-screen backing for a style: the glass stand-in for iris, the real surface for the opaque
+/// styles (which render fine off screen).
+struct RenderedSurface: ViewModifier {
+    let style: PanelStyle
+
+    func body(content: Content) -> some View {
+        switch style {
+        case .iris: content.modifier(RenderedGlass())
+        default: content.modifier(PanelSurface(style: style)).shadow(color: .black.opacity(0.5), radius: 24, y: 12)
+        }
+    }
+}

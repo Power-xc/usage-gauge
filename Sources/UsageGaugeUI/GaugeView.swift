@@ -1,9 +1,9 @@
 import SwiftUI
 import UsageGaugeCore
 
-/// Panel content: a wide, low grid of providers. Each puts the iris dial for the short window
-/// beside its reset time and a light-streak bar for the long one, so the panel grows sideways
-/// instead of crowding the dial.
+/// Panel content: a wide, low grid of providers. Each puts the dial for the short window beside
+/// its reset time and a bar for the long one, so the panel grows sideways instead of crowding the
+/// dial. The style picks the drawing; the mono style also sets every block in a hairline grid.
 public struct GaugeView: View {
     public static let cardsPerRow = 2
     private static let rowSpacing: CGFloat = 10
@@ -15,6 +15,7 @@ public struct GaugeView: View {
     let onClose: (() -> Void)?
     let opacity: Binding<Double>?
     let opacityRange: ClosedRange<Double>
+    let style: PanelStyle
     let frozenAt: TimeInterval?
 
     @State private var isAdjustingOpacity = false
@@ -24,57 +25,109 @@ public struct GaugeView: View {
     ///   - frozenAt: fixed animation time for still renders; nil animates.
     public init(providers: [ProviderUsage], status: String, now: Date,
                 onClose: (() -> Void)? = nil, opacity: Binding<Double>? = nil,
-                opacityRange: ClosedRange<Double> = 0.3...1.0, frozenAt: TimeInterval? = nil) {
+                opacityRange: ClosedRange<Double> = 0.3...1.0, style: PanelStyle = .iris,
+                frozenAt: TimeInterval? = nil) {
         self.providers = providers
         self.status = status
         self.now = now
         self.onClose = onClose
         self.opacity = opacity
         self.opacityRange = opacityRange
+        self.style = style
         self.frozenAt = frozenAt
     }
 
     public var body: some View {
+        Group {
+            if style == .mono { gridLayout } else { flowLayout }
+        }
+        .foregroundStyle(Theme.primaryText)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .fixedSize()
+        .environment(\.panelStyle, style)
+    }
+
+    private var flowLayout: some View {
         VStack(spacing: Self.rowSpacing) {
             header.modifier(WindowDragArea())
-            if isAdjustingOpacity, let opacity {
-                OpacityControl(value: opacity, range: opacityRange)
-            }
-            if providers.isEmpty {
-                Text("CodexBar에서 켠 서비스가 없어요")
-                    .font(Theme.font(12))
-                    .foregroundStyle(Theme.mutedText)
-                    .frame(height: Theme.dialSize)
-            }
+            opacityControl
+            emptyNote
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 HStack(alignment: .top, spacing: Self.columnSpacing) {
-                    ForEach(row) { ProviderCard(usage: $0, now: now, frozenAt: frozenAt) }
+                    ForEach(row, id: \.usage.id) { card($0) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .modifier(WindowDragArea())
             }
         }
         .padding(Theme.panelPadding)
-        .foregroundStyle(Theme.primaryText)
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .fixedSize()
     }
 
-    private var rows: [[ProviderUsage]] {
-        stride(from: 0, to: providers.count, by: Self.cardsPerRow).map {
-            Array(providers[$0..<min($0 + Self.cardsPerRow, providers.count)])
+    /// Mono: header and providers each sit in a cell of a hairline grid that runs edge to edge.
+    private var gridLayout: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: Self.rowSpacing) {
+                header.modifier(WindowDragArea())
+                opacityControl
+            }
+            .padding(.horizontal, Theme.panelPadding)
+            .padding(.vertical, 10)
+            emptyNote
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                GridRule(isVertical: false)
+                HStack(spacing: 0) {
+                    ForEach(row, id: \.usage.id) { entry in
+                        if entry.index % Self.cardsPerRow > 0 { GridRule(isVertical: true) }
+                        card(entry).padding(Theme.panelPadding)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(WindowDragArea())
+            }
+        }
+    }
+
+    private func card(_ entry: (index: Int, usage: ProviderUsage)) -> some View {
+        ProviderCard(usage: entry.usage, index: entry.index, now: now, frozenAt: frozenAt)
+    }
+
+    @ViewBuilder
+    private var opacityControl: some View {
+        if isAdjustingOpacity, let opacity {
+            OpacityControl(value: opacity, range: opacityRange)
+        }
+    }
+
+    @ViewBuilder
+    private var emptyNote: some View {
+        if providers.isEmpty {
+            Text("CodexBar에서 켠 서비스가 없어요")
+                .font(Theme.label(12, style: style))
+                .foregroundStyle(Theme.mutedText)
+                .frame(height: Theme.dialSize)
+                .padding(.horizontal, Theme.panelPadding)
+        }
+    }
+
+    private var rows: [[(index: Int, usage: ProviderUsage)]] {
+        let entries = providers.enumerated().map { (index: $0.offset, usage: $0.element) }
+        return stride(from: 0, to: entries.count, by: Self.cardsPerRow).map {
+            Array(entries[$0..<min($0 + Self.cardsPerRow, entries.count)])
         }
     }
 
     private var header: some View {
         HStack(spacing: 8) {
+            if style == .dot {
+                Circle().fill(Theme.signal).frame(width: 5, height: 5)
+            }
             Text("남은 사용량")
-                .font(Theme.font(10, .semibold))
+                .font(Theme.label(10, .semibold, style: style))
                 .tracking(0.6)
                 .foregroundStyle(Theme.faintText)
             Spacer(minLength: 16)
-            Text(status).font(Theme.number(10, .regular)).foregroundStyle(Theme.faintText)
+            Text(status).font(Theme.figure(10, .regular, style: style)).foregroundStyle(Theme.faintText)
             if opacity != nil {
                 HeaderButton(symbol: "circle.lefthalf.filled", help: "투명도", isOn: isAdjustingOpacity) {
                     withAnimation(.easeOut(duration: 0.2)) { isAdjustingOpacity.toggle() }
@@ -84,6 +137,17 @@ public struct GaugeView: View {
                 HeaderButton(symbol: "xmark", help: "숨기기 (⌥⌘U)", action: onClose)
             }
         }
+    }
+}
+
+/// One-point line of the mono style's grid.
+private struct GridRule: View {
+    let isVertical: Bool
+
+    var body: some View {
+        Rectangle()
+            .fill(Theme.hairline)
+            .frame(width: isVertical ? 1 : nil, height: isVertical ? nil : 1)
     }
 }
 
@@ -99,7 +163,8 @@ private struct WindowDragArea: ViewModifier {
     }
 }
 
-/// Bare glyph that brightens under the pointer; a faint disc marks it while its control is open.
+/// Bare glyph that brightens under the pointer; a faint disc (a square in the mono style) marks
+/// it while its control is open.
 private struct HeaderButton: View {
     let symbol: String
     let help: String
@@ -107,15 +172,17 @@ private struct HeaderButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.panelStyle) private var style
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: style == .mono ? 3 : 10, style: .continuous)
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(isOn || isHovered ? Theme.primaryText : Theme.faintText)
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(.white.opacity(isOn ? 0.12 : isHovered ? 0.07 : 0)))
-                .contentShape(Circle())
+                .background(shape.fill(.white.opacity(isOn ? 0.12 : isHovered ? 0.07 : 0)))
+                .contentShape(shape)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
@@ -142,171 +209,6 @@ private struct OpacityControl: View {
         .background(Capsule().fill(.white.opacity(0.05)))
         .overlay(Capsule().strokeBorder(GlassEdge.gradient, lineWidth: 0.8))
         .transition(.opacity.combined(with: .move(edge: .top)))
-    }
-}
-
-/// One provider: the dial on the left, reset time and the long window on the right.
-private struct ProviderCard: View {
-    let usage: ProviderUsage
-    let now: Date
-    let frozenAt: TimeInterval?
-
-    var body: some View {
-        let tint = Theme.brand(for: usage.id)
-        HStack(spacing: 12) {
-            SessionGauge(window: usage.isAvailable ? usage.session : nil, tint: tint, size: Theme.dialSize,
-                         now: now, showsLabel: false, frozenAt: frozenAt)
-            VStack(alignment: .leading, spacing: 0) {
-                titleRow
-                if usage.isAvailable {
-                    Text(sessionLine)
-                        .font(Theme.number(10, .regular))
-                        .foregroundStyle(Theme.mutedText)
-                        .padding(.top, 4)
-                    Spacer(minLength: 6)
-                    LongWindowBar(window: usage.weekly, tint: tint, now: now, frozenAt: frozenAt)
-                } else {
-                    Text("연결 안 됨")
-                        .font(Theme.font(11, .semibold))
-                        .foregroundStyle(Theme.mutedText)
-                        .padding(.top, 6)
-                    Text(usage.errorMessage ?? "CodexBar 로그인을 확인하세요")
-                        .font(Theme.font(10))
-                        .foregroundStyle(Theme.faintText)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 2)
-                    Spacer(minLength: 0)
-                }
-            }
-            .frame(width: Theme.detailWidth, height: Theme.dialSize, alignment: .topLeading)
-        }
-        .background(alignment: .leading) { DialGlow(tint: tint) }
-    }
-
-    private var titleRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(usage.title).font(Theme.font(13, .semibold))
-            if let plan = usage.plan {
-                Text(plan.uppercased())
-                    .font(Theme.font(8.5, .semibold))
-                    .tracking(0.9)
-                    .foregroundStyle(Theme.faintText)
-            }
-        }
-    }
-
-    /// "5시간 · 3시간 50분 후 초기화": which window the dial shows and when it resets.
-    private var sessionLine: String {
-        let label = usage.session?.label ?? "단기"
-        return "\(label) · \(ResetCountdown.text(until: usage.session?.resetsAt, now: now)) 후 초기화"
-    }
-}
-
-/// Iris dial + remaining percent for one window. The figure sits in the pupil, lit from below
-/// by the tool's colour.
-public struct SessionGauge: View {
-    /// Widest the figure may run, as a share of the dial, so "100%" stays inside the pupil.
-    private static let pupilTextWidth: CGFloat = 0.52
-
-    let window: UsageWindow?
-    let tint: Color
-    let size: CGFloat
-    let now: Date
-    let showsLabel: Bool
-    let frozenAt: TimeInterval?
-
-    /// - Parameter showsLabel: names the window ("5시간") under the figure; off when the caller
-    ///   names it beside the dial, which leaves the pupil to the figure alone.
-    public init(window: UsageWindow?, tint: Color, size: CGFloat, now: Date = Date(), showsLabel: Bool = true,
-                frozenAt: TimeInterval? = nil) {
-        self.window = window
-        self.tint = tint
-        self.size = size
-        self.now = now
-        self.showsLabel = showsLabel
-        self.frozenAt = frozenAt
-    }
-
-    public var body: some View {
-        let remaining = window?.remainingPercent ?? 0
-        let color = window.flatMap { Theme.alert($0.remainingPercent) } ?? tint
-        ZStack {
-            IrisDial(remainingPercent: remaining, elapsedFraction: window?.elapsedFraction(now: now),
-                      color: tint, frozenAt: frozenAt)
-            VStack(spacing: size * 0.01) {
-                HStack(alignment: .firstTextBaseline, spacing: 1) {
-                    figure(window.map { "\($0.displayPercent)" } ?? ResetCountdown.unknown, color: color)
-                    if window != nil {
-                        Text("%").font(Theme.font(size * (showsLabel ? 0.1 : 0.085), .medium))
-                            .foregroundStyle(Theme.mutedText)
-                    }
-                }
-                if showsLabel {
-                    Text(window?.label ?? "단기")
-                        .font(Theme.font(size * 0.105, .medium))
-                        .tracking(size * 0.004)
-                        .foregroundStyle(Theme.faintText)
-                }
-            }
-            .frame(maxWidth: size * Self.pupilTextWidth)
-            .minimumScaleFactor(0.7)
-        }
-        .frame(width: size, height: size)
-    }
-
-    private func figure(_ text: String, color: Color) -> some View {
-        let type = Text(text).font(Theme.display(size * (showsLabel ? 0.27 : 0.22))).tracking(-size * 0.004)
-        return type
-            .foregroundStyle(LinearGradient(stops: [
-                .init(color: .white, location: 0.4),
-                .init(color: color, location: 1.15),
-            ], startPoint: .top, endPoint: .bottom))
-            .background(type.foregroundStyle(color).blur(radius: size * 0.05).opacity(0.55).offset(y: size * 0.02))
-    }
-}
-
-/// The long window (weekly, monthly): label, share and reset time over a light-streak bar in the
-/// tool's colour.
-private struct LongWindowBar: View {
-    let window: UsageWindow?
-    let tint: Color
-    let now: Date
-    let frozenAt: TimeInterval?
-
-    var body: some View {
-        let remaining = window?.remainingPercent ?? 0
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(window?.label ?? "장기").font(Theme.font(10, .medium)).foregroundStyle(Theme.mutedText)
-                Text(window.map { "\($0.displayPercent)%" } ?? ResetCountdown.unknown)
-                    .font(Theme.number(11, .semibold))
-                    .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
-                Spacer(minLength: 6)
-                Text("\(ResetCountdown.text(until: window?.resetsAt, now: now)) 후")
-                    .font(Theme.number(9.5, .regular))
-                    .foregroundStyle(Theme.faintText)
-            }
-            CometBar(remainingPercent: window == nil ? 0 : remaining, thickness: 3, color: tint, frozenAt: frozenAt)
-        }
-    }
-}
-
-/// The tool's colour glowing through the glass from behind the dial. It fades out within the
-/// panel's padding, so it never spills past the glass.
-private struct DialGlow: View {
-    let tint: Color
-
-    private static let opacity = 0.28
-    private static let reach = 0.7
-
-    var body: some View {
-        let dial = Theme.dialSize
-        RadialGradient(colors: [tint.opacity(Self.opacity), tint.opacity(0)], center: .center,
-                       startRadius: dial * 0.3, endRadius: dial * Self.reach)
-            .frame(width: dial * Self.reach * 2, height: dial * Self.reach * 2)
-            .offset(x: dial / 2 - dial * Self.reach)
-            .allowsHitTesting(false)
     }
 }
 

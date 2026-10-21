@@ -35,6 +35,26 @@ struct AllProvidersScene: View {
     }
 }
 
+/// The three styles stacked, same numbers in each.
+struct StylesScene: View {
+    static let size = CGSize(width: 640, height: 600)
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(spacing: 28) {
+                ForEach(PanelStyle.allCases, id: \.self) { style in
+                    GaugeView(providers: SampleData.still, status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                              opacity: .constant(1), style: style, frozenAt: 3)
+                        .modifier(RenderedSurface(style: style))
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+}
+
 /// The menu bar companion on its own, enlarged.
 struct MenuBarScene: View {
     static let size = CGSize(width: 1280, height: 240)

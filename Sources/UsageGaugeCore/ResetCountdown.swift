@@ -20,4 +20,18 @@ public enum ResetCountdown {
         }
         return "\(minutes)분"
     }
+
+    /// Terse form for the monospaced styles, e.g. "3h 50m", "2d 4h", "47m", "<1m".
+    public static func compact(until date: Date?, now: Date = Date()) -> String {
+        guard let date else { return unknown }
+        let minutes = Int(date.timeIntervalSince(now) / 60)
+        if minutes < 1 { return "<1m" }
+        if minutes >= minutesPerDay {
+            return "\(minutes / minutesPerDay)d \(minutes % minutesPerDay / minutesPerHour)h"
+        }
+        if minutes >= minutesPerHour {
+            return "\(minutes / minutesPerHour)h \(minutes % minutesPerHour)m"
+        }
+        return "\(minutes)m"
+    }
 }

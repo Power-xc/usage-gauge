@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var storeObservation: AnyCancellable?
     private var opacitySlider: NSSlider?
     private var adaptiveTintItem: NSMenuItem?
+    private var styleItems: [NSMenuItem] = []
     private var backdropSampler: BackdropSampler?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -126,6 +127,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         adaptiveTintItem?.toolTip = message
     }
 
+    @objc private func chooseStyle(_ sender: NSMenuItem) {
+        guard let style = sender.representedObject as? String, let chosen = PanelStyle(rawValue: style) else { return }
+        Preferences.panelStyle = chosen
+        panelState.style = chosen
+        syncStyleItems()
+    }
+
+    private func syncStyleItems() {
+        styleItems.forEach { $0.state = $0.representedObject as? String == Preferences.panelStyle.rawValue ? .on : .off }
+    }
+
     @objc private func refreshNow() {
         store.refresh()
     }
@@ -147,6 +159,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(item("게이지 켜기/끄기 (⌥⌘U)", #selector(togglePanel)))
         menu.addItem(item("지금 새로고침", #selector(refreshNow)))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem.sectionHeader(title: "스타일"))
+        styleItems = PanelStyle.allCases.map { style in
+            let entry = item(style.title, #selector(chooseStyle(_:)))
+            entry.representedObject = style.rawValue
+            return entry
+        }
+        styleItems.forEach(menu.addItem)
+        syncStyleItems()
         menu.addItem(.separator())
         menu.addItem(NSMenuItem.sectionHeader(title: "게이지 투명도"))
         menu.addItem(opacitySliderItem())
@@ -187,10 +208,11 @@ private final class FirstMouseHostingView<Content: View>: NSHostingView<Content>
 }
 
 /// Panel state the view follows: whether it is on screen (the animation stops while hidden),
-/// its opacity, and how dark the glass is for the current backdrop.
+/// its opacity and style, and how dark the glass is for the current backdrop.
 private final class PanelState: ObservableObject {
     @Published var isShown = false
     @Published var opacity = Preferences.panelOpacity
+    @Published var style = Preferences.panelStyle
     @Published var tintOpacity = BackdropTone.fallbackTint
 }
 
@@ -204,9 +226,9 @@ private struct PanelRoot: View {
     var body: some View {
         GaugeView(providers: store.providers, status: store.statusText, now: store.now, onClose: onClose,
                   opacity: Binding(get: { state.opacity }, set: onOpacity),
-                  opacityRange: Preferences.opacityRange,
+                  opacityRange: Preferences.opacityRange, style: state.style,
                   frozenAt: state.isShown ? nil : 0)
-            .modifier(GlassBackground(tintOpacity: state.tintOpacity))
+            .modifier(PanelSurface(style: state.style, tintOpacity: state.tintOpacity))
             .animation(.easeInOut(duration: 0.8), value: state.tintOpacity)
             // The panel follows the content when rows appear, e.g. the opacity slider.
             .background(GeometryReader { geo in
