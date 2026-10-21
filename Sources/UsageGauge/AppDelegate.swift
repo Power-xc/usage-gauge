@@ -116,7 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func adaptiveTintUnavailable(_ message: String) {
         panelState.tintOpacity = BackdropTone.fallbackTint
-        adaptiveTintItem?.title = "\(Self.adaptiveTintTitle) — \(message)"
+        adaptiveTintItem?.toolTip = message
     }
 
     @objc private func refreshNow() {

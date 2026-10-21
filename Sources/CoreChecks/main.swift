@@ -80,11 +80,26 @@ expect(ahead.resolved(at: start) == ahead, "a window before its reset is unchang
 expect(ProviderUsage(id: "claude", session: past, weekly: ahead).nextReset(after: start) == ahead.resetsAt,
        "the next reset is the soonest one still ahead")
 
+// A failed provider keeps its last good reading
+let good = ProviderUsage(id: "codex", session: ahead, weekly: nil)
+let failed = ProviderUsage(id: "codex", session: nil, weekly: nil, errorMessage: "timeout")
+expect(ProviderCatalog.merge(latest: [failed], previous: [good]) == [good], "a dropped request keeps the last good numbers")
+expect(ProviderCatalog.merge(latest: [failed], previous: []) == [failed], "with nothing to keep, the error shows")
+
 // Glass tint follows the backdrop
 expect(BackdropTone.tintOpacity(luminance: 1) > BackdropTone.tintOpacity(luminance: 0), "glass is darker over a bright backdrop")
 expect(BackdropTone.tintOpacity(luminance: 5) == BackdropTone.tintRange.upperBound, "brightness above 1 clamps to the darkest tint")
 expect(abs((BackdropTone.averageLuminance(of: solidImage(gray: 255)) ?? 0) - 1) < 0.01, "a white image measures as bright")
 expect((BackdropTone.averageLuminance(of: solidImage(gray: 0)) ?? 1) < 0.01, "a black image measures as dark")
+
+// Wallpaper behind the panel
+let screen = CGRect(x: 0, y: 0, width: 1000, height: 500)
+expect(BackdropTone.wallpaperRegion(behind: CGRect(x: 0, y: 250, width: 500, height: 250), on: screen,
+                                    imageSize: CGSize(width: 2000, height: 1000)) == CGRect(x: 0, y: 0, width: 1000, height: 500),
+       "a panel in the top-left quarter reads the wallpaper's top-left quarter")
+expect(BackdropTone.wallpaperRegion(behind: CGRect(x: 0, y: 0, width: 1000, height: 500), on: screen,
+                                    imageSize: CGSize(width: 1000, height: 1000)) == CGRect(x: 0, y: 250, width: 1000, height: 500),
+       "a taller wallpaper is cropped top and bottom, as macOS fills the screen")
 
 // Window labels
 expect(UsageWindow(usedPercent: 0, resetsAt: nil, windowMinutes: 300).label == "5시간", "300 minutes reads as 5시간")
