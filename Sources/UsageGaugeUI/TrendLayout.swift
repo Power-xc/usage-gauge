@@ -88,6 +88,7 @@ private struct TrendBlock: View {
         }
         .font(Theme.figure(9, .regular, style: style))
         .foregroundStyle(Theme.faintText)
+        .padding(.leading, TrendChart.axisInset)
         .opacity(window == nil ? 0 : 1)
     }
 }

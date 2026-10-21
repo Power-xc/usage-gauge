@@ -169,6 +169,7 @@ public struct GaugeView: View {
         case .trend: TrendLayout(providers: providers, history: history, now: now)
         case .histogram: HistogramLayout(providers: providers, now: now, history: history)
         case .spark: SparkLayout(providers: providers, now: now, history: history, frozenAt: frozenAt)
+        case .burst: BurstLayout(providers: providers, now: now, history: history)
         }
     }
 

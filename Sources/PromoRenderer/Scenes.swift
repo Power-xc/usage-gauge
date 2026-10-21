@@ -494,3 +494,31 @@ struct InteractionScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// The four history forms (trend, histogram, spark, burst), one row each, in mono, iris and dot.
+struct HistoryFormsScene: View {
+    static let size = CGSize(width: 1640, height: 1800)
+    private static let forms: [PanelLayout] = [.trend, .histogram, .spark, .burst]
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(spacing: 28) {
+                ForEach(Self.forms, id: \.self) { layout in
+                    HStack(alignment: .top, spacing: 28) {
+                        ForEach(PanelStyle.allCases, id: \.self) { panel($0, layout) }
+                    }
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle, _ layout: PanelLayout) -> some View {
+        GaugeView(providers: SampleData.still + SampleData.extras(scale: 1).prefix(2), status: "오후 12:04 기준",
+                  now: SampleData.now, onClose: {}, opacity: .constant(1), style: style, layout: layout,
+                  history: SampleData.history, frozenAt: 3)
+            .modifier(RenderedSurface(style: style))
+    }
+}

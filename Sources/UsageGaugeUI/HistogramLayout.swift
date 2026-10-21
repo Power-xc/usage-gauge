@@ -22,6 +22,7 @@ struct HistogramLayout: View {
 private struct HistogramBlock: View {
     private static let figureHeight: CGFloat = 36
     private static let figureSize: CGFloat = 32
+    private static let hour: TimeInterval = 3600
 
     let usage: ProviderUsage
     let index: Int
@@ -54,9 +55,10 @@ private struct HistogramBlock: View {
     private func chart(_ window: UsageWindow, tint: Color) -> some View {
         let isRecording = history.samples(for: usage.id, in: window, now: now).count < 2
         let used = history.usedPerSlice(for: usage.id, window: window, now: now, slices: HistogramLayout.slices)
+        let usedLastHour = isRecording ? nil : self.usedLastHour(window)
         HStack(alignment: .lastTextBaseline, spacing: 6) {
-            usedFigure(isRecording ? nil : history.burnRate(for: usage.id, window: window, now: now))
-            Text("최근 1시간 사용")
+            usedFigure(usedLastHour)
+            Text(usedLastHour == 0 ? "최근 1시간 사용 없음" : "최근 1시간 사용")
                 .font(Theme.label(9.5, style: style))
                 .foregroundStyle(Theme.faintText)
         }
@@ -64,6 +66,12 @@ private struct HistogramBlock: View {
         HistogramColumns(values: isRecording ? [] : used, tint: tint)
             .overlay { if isRecording { RecordingNote() } }
         footer(window)
+    }
+
+    /// What the window lost over the last hour, summed from the recorded drops.
+    private func usedLastHour(_ window: UsageWindow) -> Double {
+        let recent = history.points(for: usage.id, window: window, now: now).filter { $0.at >= now.addingTimeInterval(-Self.hour) }
+        return zip(recent, recent.dropFirst()).reduce(0) { $0 + max(0, $1.0.remaining - $1.1.remaining) }
     }
 
     private func footer(_ window: UsageWindow) -> some View {
@@ -93,7 +101,8 @@ private struct HistogramBlock: View {
     }
 }
 
-/// Small outlined label at the end of a footer: the projected run-out in the alert colour, or "여유".
+/// Small status at the end of a footer: a dot and the projected run-out in the alert colour, or
+/// "여유". Light and colour only, no frame.
 struct StatusPill: View {
     let text: String
     let color: Color
@@ -101,14 +110,15 @@ struct StatusPill: View {
     @Environment(\.panelStyle) private var style
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: style == .mono ? 2 : 8, style: .continuous)
-        Text(text)
-            .font(Theme.figure(9.5, .semibold, style: style))
-            .foregroundStyle(color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(shape.fill(color.opacity(0.12)))
-            .overlay(shape.strokeBorder(color.opacity(0.35), lineWidth: 0.6))
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: style == .mono ? 0 : 2)
+                .fill(color)
+                .frame(width: 4, height: 4)
+                .shadow(color: style == .iris ? color.opacity(0.9) : .clear, radius: 3)
+            Text(text)
+                .font(Theme.figure(9.5, .semibold, style: style))
+                .foregroundStyle(color)
+        }
     }
 }
 

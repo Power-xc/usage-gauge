@@ -4,7 +4,7 @@ import SwiftUI
 /// point: the tool's colour for the past, a contrasting tick at now and faint baseline marks for
 /// what is still to come. Drawn as soft bars with a glow along their tops (iris), columns of dots
 /// (dot) or 1 pt lines (mono).
-struct SparkStrip: View {
+struct SparkStrip: View, Animatable {
     static let height: CGFloat = 24
 
     private static let dotPitch: CGFloat = 3.6
@@ -31,22 +31,26 @@ struct SparkStrip: View {
     }
 
     /// Remaining % per slice; nil before the first reading and after now.
-    let values: [Double?]
+    var values: [Double?]
     /// Slice that holds now.
     let nowIndex: Int?
     let tint: Color
 
     @Environment(\.panelStyle) private var style
 
+    var animatableData: SliceValues {
+        get { SliceValues(values) }
+        set { values = newValue.slices }
+    }
+
     var body: some View {
         Canvas { canvas, size in
-            let pitch = size.width / CGFloat(max(values.count, 1))
+            let pitch = (size.width - barWidth) / CGFloat(max(values.count - 1, 1))
             var bars = Path(), marks = Path(), tick = Path()
             for (index, value) in values.enumerated() {
                 let rect = columnRect(index: index, pitch: pitch, height: size.height)
                 if index == nowIndex {
-                    tick.addRoundedRect(in: CGRect(x: rect.midX - Self.tickWidth / 2, y: 0, width: Self.tickWidth, height: size.height),
-                                        cornerSize: CGSize(width: 0.8, height: 0.8))
+                    addTick(into: &tick, at: rect.midX, height: size.height)
                 } else if let value {
                     add(into: &bars, rect: rect, fraction: value / 100, height: size.height)
                 } else {
@@ -69,14 +73,31 @@ struct SparkStrip: View {
         .frame(height: Self.height)
     }
 
-    private func columnRect(index: Int, pitch: CGFloat, height: CGFloat) -> CGRect {
-        let width: CGFloat
+    /// Width of one bar; the first bar starts at the strip's left edge and the last ends at its right,
+    /// in line with the window bar above.
+    private var barWidth: CGFloat {
         switch style {
-        case .iris: width = Self.softWidth
-        case .dot: width = Self.dotPitch * CGFloat(Self.dotsAcross - 1) + Self.dotSize
-        case .mono: width = Self.monoWidth
+        case .iris: Self.softWidth
+        case .dot: Self.dotPitch * CGFloat(Self.dotsAcross - 1) + Self.dotSize
+        case .mono: Self.monoWidth
         }
-        return CGRect(x: CGFloat(index) * pitch + (pitch - width) / 2, y: 0, width: width, height: height)
+    }
+
+    private func columnRect(index: Int, pitch: CGFloat, height: CGFloat) -> CGRect {
+        CGRect(x: CGFloat(index) * pitch, y: 0, width: barWidth, height: height)
+    }
+
+    /// The marker of now: a solid line, or a column of larger dots in the dot style.
+    private func addTick(into path: inout Path, at x: CGFloat, height: CGFloat) {
+        if style == .dot {
+            for row in 0..<Int(height / Self.dotPitch) {
+                let size = Self.dotSize * 1.3
+                path.addEllipse(in: CGRect(x: x - size / 2, y: height - CGFloat(row) * Self.dotPitch - Self.dotSize, width: size, height: size))
+            }
+        } else {
+            path.addRoundedRect(in: CGRect(x: x - Self.tickWidth / 2, y: 0, width: Self.tickWidth, height: height),
+                                cornerSize: CGSize(width: 0.8, height: 0.8))
+        }
     }
 
     /// Adds one column filled to `fraction` of the height; zero draws the baseline mark.
