@@ -23,15 +23,28 @@ extension SampleData {
         "copilot": Profile(session: [(540, 100), (470, 90), (300, 90), (240, 62), (120, 62), (60, 40), (0, 24)], longNow: 62),
     ]
 
+    /// Codex's session 25 minutes on: the same keyframes, 25 minutes older, then the drain from 8%
+    /// down to 1%. At about 19% an hour that runs out in three minutes.
+    private static let laterCodex = Profile(
+        session: [(278, 100), (225, 66), (175, 52), (135, 52), (110, 30), (75, 22), (45, 19), (33, 9), (25, 8), (0, 1)],
+        longNow: 25)
+
     /// Deterministic sample histories for the sample tools, relative to `SampleData.now`.
-    static let history = UsageHistory(samples: profiles.mapValues { profile in
-        let oldest = profile.session[0].ago
-        return stride(from: oldest, through: 0, by: -sampleStep).map { ago in
-            UsageSample(at: now.addingTimeInterval(-Double(ago) * 60),
-                        session: interpolated(profile.session, at: ago).rounded(),
-                        long: (profile.longNow + longDrift * Double(ago) / Double(oldest)).rounded())
-        }
-    })
+    static let history = recorded(profiles)
+
+    /// The histories behind `nearlyOut`.
+    static let nearlyOutHistory = recorded(profiles.merging(["codex": laterCodex]) { $1 })
+
+    private static func recorded(_ profiles: [String: Profile]) -> UsageHistory {
+        UsageHistory(samples: profiles.mapValues { profile in
+            let oldest = profile.session[0].ago
+            return stride(from: oldest, through: 0, by: -sampleStep).map { ago in
+                UsageSample(at: now.addingTimeInterval(-Double(ago) * 60),
+                            session: interpolated(profile.session, at: ago).rounded(),
+                            long: (profile.longNow + longDrift * Double(ago) / Double(oldest)).rounded())
+            }
+        })
+    }
 
     private static func interpolated(_ keyframes: [(ago: Int, remaining: Double)], at ago: Int) -> Double {
         guard let next = keyframes.firstIndex(where: { $0.ago <= ago }) ?? keyframes.indices.last else { return 100 }

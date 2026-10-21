@@ -15,9 +15,9 @@ enum SampleData {
                       weekly: window(remaining: weekly, minutes: 10080, resetIn: 72 * 3600))
     }
 
-    static func codex(session: Double, weekly: Double) -> ProviderUsage {
+    static func codex(session: Double, weekly: Double, resetIn seconds: TimeInterval = 47 * 60) -> ProviderUsage {
         ProviderUsage(id: "codex", plan: "Plus",
-                      session: window(remaining: session, minutes: 300, resetIn: 47 * 60),
+                      session: window(remaining: session, minutes: 300, resetIn: seconds),
                       weekly: window(remaining: weekly, minutes: 10080, resetIn: 160 * 3600))
     }
 
@@ -62,6 +62,10 @@ enum SampleData {
 
     /// The four sample tools of the stills, each stamped with the measuring time.
     static let tools = stamped(still + extras(scale: 1).prefix(2))
+
+    /// The stills' two tools for the cover, 25 minutes on: Codex's session has drained on at its
+    /// pace down to its last percent (its record is `nearlyOutHistory`).
+    static let nearlyOut = stamped([still[0], codex(session: 1, weekly: 25, resetIn: 22 * 60)])
 
     /// A wider line-up for the reel: the stills' tools, then more of the services the usage CLI reads.
     static let lineup = stamped(still + extras(scale: 1) + [

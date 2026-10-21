@@ -14,8 +14,8 @@ struct CoverScene: View {
     private static let focus = CGRect(x: 250, y: 82, width: 244, height: 186)
     private static let zoom: CGFloat = 4
     private static let closeUpTop: CGFloat = 900
-    /// Where "28m 후 소진" sits in the panel, for the marker loop around it.
-    private static let projection = CGRect(x: 327, y: 152, width: 54, height: 11)
+    /// Where "3m 후 소진" sits in the panel, for the marker loop around it.
+    private static let projection = CGRect(x: 327, y: 152, width: 47, height: 11)
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -33,8 +33,8 @@ struct CoverScene: View {
     }
 
     private var title: AttributedString {
-        var text = AttributedString("한도 터지기\n28분 전")
-        if let range = text.range(of: "28분") { text[range].foregroundColor = Theme.critical }
+        var text = AttributedString("한도 터지기\n3분 전")
+        if let range = text.range(of: "3분") { text[range].foregroundColor = Theme.critical }
         return text
     }
 
@@ -44,7 +44,7 @@ struct CoverScene: View {
         let size = CGSize(width: Self.focus.width * Self.zoom, height: Self.focus.height * Self.zoom)
         let loop = Self.projection.insetBy(dx: -9, dy: -8)
         return ZStack(alignment: .topLeading) {
-            SamplePanel(tools: Array(SampleData.tools.prefix(2)), layout: .trend)
+            SamplePanel(tools: SampleData.nearlyOut, history: SampleData.nearlyOutHistory, layout: .trend)
                 .scaleEffect(Self.zoom, anchor: .topLeading)
                 .offset(x: -Self.focus.minX * Self.zoom, y: -Self.focus.minY * Self.zoom)
                 .frame(width: size.width, height: size.height, alignment: .topLeading)

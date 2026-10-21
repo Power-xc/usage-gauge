@@ -7,9 +7,11 @@ import UsageGaugeUI
 struct ReelScene: View {
     static let size = CGSize(width: 1080, height: 1920)
     static let duration = ReelScript.duration
-    private static let videoTop: CGFloat = 200
+    /// Low enough that the whole filmed area clears Instagram's header and stays inside the 4:5
+    /// crop the feed shows (from y 285).
+    private static let videoTop: CGFloat = 290
     private static let videoHeight: CGFloat = 680
-    private static let captionTop: CGFloat = 910
+    private static let captionTop: CGFloat = 1000
     /// The menu bar shows the first three tools of the line-up, filling and draining with them.
     private static let menuBarTools = Array(SampleData.lineup.prefix(3))
 

@@ -6,6 +6,7 @@ import UsageGaugeUI
 /// The `scale` is both what the size bar shows and how large the panel is drawn.
 struct SamplePanel: View {
     var tools = SampleData.tools
+    var history = SampleData.history
     var style = PanelStyle.mono
     var layout = PanelLayout.dial
     var tool: String?
@@ -20,7 +21,7 @@ struct SamplePanel: View {
     var body: some View {
         GaugeView(providers: tools, status: SampleData.status, now: SampleData.now, onClose: {},
                   opacity: .constant(opacity), scale: .constant(scale), style: style, layout: layout,
-                  history: SampleData.history, frozenAt: frozenAt, onLayout: { _ in })
+                  history: history, frozenAt: frozenAt, onLayout: { _ in })
             .panelPreset(tool: tool, hovered: hovered, picker: showsPicker, controls: showsControls)
             .modifier(RenderedSurface(style: style))
             .panelScale(scale)
