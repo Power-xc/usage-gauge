@@ -170,6 +170,8 @@ public struct GaugeView: View {
         case .histogram: HistogramLayout(providers: providers, now: now, history: history)
         case .spark: SparkLayout(providers: providers, now: now, history: history, frozenAt: frozenAt)
         case .burst: BurstLayout(providers: providers, now: now, history: history)
+        case .constellation: ConstellationLayout(providers: providers, history: history, now: now)
+        case .ruler: RulerLayout(providers: providers, now: now)
         }
     }
 

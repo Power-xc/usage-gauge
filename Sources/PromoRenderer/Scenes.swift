@@ -522,3 +522,43 @@ struct HistoryFormsScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// The constellation and ruler layouts, each in mono, iris and dot with four tools, and the
+/// constellation again with six tools in iris and mono.
+struct ConstellationRulerScene: View {
+    static let size = CGSize(width: 1160, height: 1280)
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            VStack(spacing: 28) {
+                ForEach(PanelStyle.allCases, id: \.self) { style in
+                    HStack(alignment: .top, spacing: 28) {
+                        panel(style, .constellation, tools: four)
+                        panel(style, .ruler, tools: four)
+                    }
+                }
+                HStack(alignment: .top, spacing: 28) {
+                    panel(.iris, .constellation, tools: six)
+                    panel(.mono, .constellation, tools: six)
+                }
+            }
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var four: [ProviderUsage] { SampleData.still + SampleData.extras(scale: 1).prefix(2) }
+
+    private var six: [ProviderUsage] {
+        let windsurf = ProviderUsage(id: "windsurf", plan: "Pro", session: SampleData.window(remaining: 60, minutes: 300, resetIn: 200 * 60),
+                                     weekly: SampleData.window(remaining: 40, minutes: 10080, resetIn: 90 * 3600))
+        return SampleData.still + SampleData.extras(scale: 1) + [windsurf]
+    }
+
+    private func panel(_ style: PanelStyle, _ layout: PanelLayout, tools: [ProviderUsage]) -> some View {
+        GaugeView(providers: tools, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1),
+                  style: style, layout: layout, history: SampleData.history, frozenAt: 3)
+            .modifier(RenderedSurface(style: style))
+    }
+}

@@ -23,6 +23,10 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case spark
     /// Per tool a starburst of the short window's use around its remaining share.
     case burst
+    /// One field for every tool: short window across, long window up, tools linked into a constellation.
+    case constellation
+    /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
+    case ruler
 
     public var title: String {
         switch self {
@@ -36,6 +40,8 @@ public enum PanelLayout: String, CaseIterable, Sendable {
         case .histogram: "히스토그램"
         case .spark: "스파크 바"
         case .burst: "버스트"
+        case .constellation: "별자리"
+        case .ruler: "눈금자"
         }
     }
 

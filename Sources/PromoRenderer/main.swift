@@ -61,6 +61,7 @@ do {
             try writeImage(SizesScene(), size: SizesScene.size, scale: 2, to: output.appendingPathComponent("sizes.jpg"))
             try writeImage(HistoryBarsScene(), size: HistoryBarsScene.size, scale: 2, to: output.appendingPathComponent("history-bars.jpg"))
             try writeImage(HistoryFormsScene(), size: HistoryFormsScene.size, scale: 2, to: output.appendingPathComponent("history-forms.jpg"))
+            try writeImage(ConstellationRulerScene(), size: ConstellationRulerScene.size, scale: 2, to: output.appendingPathComponent("constellation-ruler.jpg"))
         case "readme":
             try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":
