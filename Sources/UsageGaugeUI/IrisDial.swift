@@ -13,7 +13,7 @@ public struct IrisDial: View {
 
     private static let frameInterval: TimeInterval = 1.0 / 12
     /// Densities per point of radius, so a small dial stays clear instead of crowded.
-    private static let fibresPerPoint = 2.8
+    private static let fibresPerPoint = 1.8
     private static let grainPerPoint = 2.2
     private static let meshDotsPerPoint = 1.3
     private static let pupilRatio = 0.6
@@ -35,7 +35,7 @@ public struct IrisDial: View {
         let share: Double, depth: Double, flicker: Double
     }
 
-    private static let strands: [Strand] = (0..<420).map { index in
+    private static let strands: [Strand] = (0..<300).map { index in
         let seed = noise(Double(index))
         return Strand(jitter: (seed - 0.5) * 0.02, reach: 0.4 + 0.45 * seed, inset: 0.04 * noise(seed * 91),
                       bend: (noise(seed * 17) - 0.5) * 0.12, rate: 0.6 + seed * 0.9, phase: seed * 40)
@@ -90,9 +90,7 @@ public struct IrisDial: View {
         drawRimClock(in: canvas, center: center, radius: pupil * 0.96)
     }
 
-    /// Strands are grouped into a few paths by shade, so a frame is a handful of strokes. They are
-    /// fine and many, each fading in from the pupil and out towards the rim over a faint pool of the
-    /// tool's colour, so the lit share reads as silk rather than drawn lines.
+    /// Strands are grouped into a few paths by shade, so a frame is a handful of strokes.
     private func drawStrands(in canvas: GraphicsContext, center: CGPoint, pupil: Double, outer: Double,
                              litShare: Double, time: Double) {
         var dim = Path(), bright = Path(), tinted = Path(), soft = Path()
@@ -115,25 +113,10 @@ public struct IrisDial: View {
             default: tinted.addPath(path)
             }
         }
-        let fade = { (shade: Color, opacity: Double) in
-            GraphicsContext.Shading.radialGradient(Gradient(stops: [
-                .init(color: shade.opacity(0), location: 0),
-                .init(color: shade.opacity(opacity), location: 0.3),
-                .init(color: shade.opacity(opacity * 0.55), location: 0.75),
-                .init(color: shade.opacity(0), location: 1),
-            ]), center: center, startRadius: pupil, endRadius: outer * 0.95)
-        }
-        if litShare > 0 {
-            var pool = Path()
-            pool.addArc(center: center, radius: (pupil + outer * 0.9) / 2, startAngle: .degrees(-90),
-                        endAngle: .degrees(-90 + 360 * litShare), clockwise: false)
-            canvas.stroke(pool, with: fade(color, 0.16), style: StrokeStyle(lineWidth: outer * 0.9 - pupil, lineCap: .butt))
-        }
-        let line = { (width: Double) in StrokeStyle(lineWidth: width, lineCap: .round) }
-        canvas.stroke(dim, with: fade(.white, 0.1), style: line(0.5))
-        canvas.stroke(soft, with: fade(.white, 0.42), style: line(0.55))
-        canvas.stroke(tinted, with: fade(color, 0.9), style: line(0.65))
-        canvas.stroke(bright, with: fade(.white, 0.75), style: line(0.55))
+        canvas.stroke(dim, with: .color(.white.opacity(0.14)), lineWidth: 0.8)
+        canvas.stroke(soft, with: .color(.white.opacity(0.5)), lineWidth: 0.9)
+        canvas.stroke(tinted, with: .color(color.opacity(0.95)), lineWidth: 1.1)
+        canvas.stroke(bright, with: .color(.white.opacity(0.95)), lineWidth: 1.0)
     }
 
     /// Soft rays across the lit share, every other one in the tool's colour and the rest in faint
@@ -168,8 +151,8 @@ public struct IrisDial: View {
                 if share < litShare { lit.addEllipse(in: rect) } else { dark.addEllipse(in: rect) }
             }
         }
-        canvas.fill(dark, with: .color(.white.opacity(0.14)))
-        canvas.fill(lit, with: .color(.white.opacity(0.6)))
+        canvas.fill(dark, with: .color(.white.opacity(0.18)))
+        canvas.fill(lit, with: .color(.white.opacity(0.85)))
     }
 
     /// Two rings of dots at the rim, lit warm white inside and in the tool's colour outside.
@@ -183,10 +166,10 @@ public struct IrisDial: View {
                 let rect = CGRect(x: spot.x - 0.75, y: spot.y - 0.75, width: 1.5, height: 1.5)
                 if share < litShare { lit.addEllipse(in: rect) } else { dark.addEllipse(in: rect) }
             }
-            let isOuter = index == Self.edgeRings.count - 1
-            canvas.fill(lit, with: .color(isOuter ? color.opacity(0.8) : Self.warmWhite.opacity(0.55)))
+            let shade = index == Self.edgeRings.count - 1 ? color : Self.warmWhite
+            canvas.fill(lit, with: .color(shade.opacity(0.92)))
         }
-        canvas.fill(dark, with: .color(.white.opacity(0.14)))
+        canvas.fill(dark, with: .color(.white.opacity(0.2)))
     }
 
     /// Stippled grain, densest mid-ring, shimmering as each speck fades in and out.
@@ -206,12 +189,12 @@ public struct IrisDial: View {
 
     /// The pupil's rim as a clock: faint all round, bright from 12 o'clock to now, dot at now.
     private func drawRimClock(in canvas: GraphicsContext, center: CGPoint, radius: Double) {
-        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.07)), lineWidth: 0.8)
+        canvas.stroke(circle(center, radius), with: .color(.white.opacity(0.1)), lineWidth: 0.8)
         guard let elapsedFraction else { return }
         var passed = Path()
         passed.addArc(center: center, radius: radius, startAngle: .degrees(-90),
                       endAngle: .degrees(-90 + 360 * elapsedFraction), clockwise: false)
-        canvas.stroke(passed, with: .color(.white.opacity(0.3)), style: StrokeStyle(lineWidth: 1, lineCap: .round))
+        canvas.stroke(passed, with: .color(.white.opacity(0.4)), style: StrokeStyle(lineWidth: 1, lineCap: .round))
         let dot = point(center, radius, elapsedFraction * 2 * .pi - .pi / 2)
         canvas.fill(circle(dot, 4.5), with: .radialGradient(Gradient(colors: [color.opacity(0.7), color.opacity(0)]),
                                                             center: dot, startRadius: 0, endRadius: 4.5))
