@@ -21,14 +21,18 @@ enum SampleData {
                       weekly: window(remaining: weekly, minutes: 10080, resetIn: 160 * 3600))
     }
 
+    static func cursor(session: Double, weekly: Double) -> ProviderUsage {
+        ProviderUsage(id: "cursor", plan: "Pro",
+                      session: window(remaining: session, minutes: 300, resetIn: 130 * 60),
+                      weekly: window(remaining: weekly, minutes: 43200, resetIn: 400 * 3600))
+    }
+
     static func extras(scale: Double) -> [ProviderUsage] {
         [
             ProviderUsage(id: "gemini", plan: "Pro",
                           session: window(remaining: 71 * scale, minutes: 1440, resetIn: 9 * 3600),
                           weekly: window(remaining: 88 * scale, minutes: 10080, resetIn: 120 * 3600)),
-            ProviderUsage(id: "cursor", plan: "Pro",
-                          session: window(remaining: 46 * scale, minutes: 300, resetIn: 130 * 60),
-                          weekly: window(remaining: 53 * scale, minutes: 43200, resetIn: 400 * 3600)),
+            cursor(session: 46 * scale, weekly: 53 * scale),
             ProviderUsage(id: "copilot", plan: "Pro",
                           session: window(remaining: 24 * scale, minutes: 1440, resetIn: 15 * 3600),
                           weekly: window(remaining: 62 * scale, minutes: 43200, resetIn: 500 * 3600)),

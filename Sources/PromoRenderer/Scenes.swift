@@ -79,9 +79,10 @@ struct LevelsScene: View {
     }
 }
 
-/// README loop: values fill in, one provider drains into the warning colours, then it eases back.
+/// README loop across several tools: values fill in, two providers drain into the warning
+/// colours, then everything eases back.
 struct ReadmeScene: View {
-    static let size = CGSize(width: 720, height: 280)
+    static let size = CGSize(width: 800, height: 360)
     static let duration = 9.0
 
     let time: Double
@@ -91,13 +92,16 @@ struct ReadmeScene: View {
         let drain = Motion.progress(time, from: 3.6, to: 6.0)
         let recover = Motion.progress(time, from: 7.4, to: 8.9)
         let level = fill * (1 - recover)
+        let others = SampleData.extras(scale: level)
         let providers = [
             SampleData.claude(session: 94 * level, weekly: 37 * level),
             SampleData.codex(session: Motion.mix(62, 8, drain) * level, weekly: 26 * level),
+            others[0],
+            SampleData.cursor(session: Motion.mix(46, 22, drain) * level, weekly: 53 * level),
         ]
         ZStack(alignment: .top) {
             Backdrop()
-            MenuBarStrip(providers: providers, width: Self.size.width)
+            MenuBarStrip(providers: Array(providers.prefix(3)), width: Self.size.width)
             GaugeView(providers: providers, status: "오후 12:04 기준", now: SampleData.now, onClose: {}, opacity: .constant(1),
                       frozenAt: time)
                 .modifier(RenderedGlass())

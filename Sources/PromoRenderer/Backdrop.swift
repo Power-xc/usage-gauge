@@ -17,6 +17,7 @@ struct RenderedGlass: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: Theme.panelCornerRadius, style: .continuous)
         content
             .background(shape.fill(Theme.smoke.opacity(0.72)))
+            .overlay(GlassSheen(shape: shape))
             .overlay(GlassSlabEdge(shape: shape))
             .shadow(color: .black.opacity(0.5), radius: 24, y: 12)
     }

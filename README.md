@@ -4,19 +4,20 @@
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111?logo=apple)
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Claude·Codex 같은 AI 코딩 도구의 **남은 사용량**을 macOS 화면 위에 떠 있는 유리 게이지와 메뉴바로 보여주는 앱입니다. 한도가 얼마나 남았는지, 언제 초기화되는지를 작업 중에 시선만 돌려 확인할 수 있습니다.
+쓰고 있는 **모든 AI 서비스의 남은 사용량**을 화면 위에 떠 있는 유리 게이지와 메뉴바로 보여주는 앱입니다. Claude·Codex·Gemini·Cursor·Copilot·Windsurf·Grok·OpenRouter 등 [CodexBar](https://github.com/steipete/CodexBar)가 읽을 수 있는 100여 개 서비스를 한 패널에 모아, 한도가 얼마나 남았는지와 언제 초기화되는지를 작업 중에 시선만 돌려 확인할 수 있습니다.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/demo.gif" width="720" alt="usage-gauge 패널: Claude와 Codex의 남은 사용량 다이얼과 주간 바, 위쪽 메뉴바 막대">
+  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/demo.gif" width="800" alt="usage-gauge 패널: Claude·Codex·Gemini·Cursor의 남은 사용량 다이얼과 주간·월간 바, 위쪽 메뉴바 막대">
 </p>
 
 ## 기능
 
-- **남은 사용량 다이얼** — 5시간 같은 짧은 창은 홍채 모양 다이얼로, 주간·월간 창은 옆의 빛줄기 바로 보여줍니다. 남은 만큼 결이 켜지고, 다이얼과 바는 도구마다 고유색(Claude 주황, Codex 초록 등)이라 한눈에 구분됩니다.
+- **모든 AI 서비스를 한 패널에** — CodexBar에서 켜 둔 서비스를 한 줄에 두 개씩 보여줍니다. 자주 쓰는 Claude와 Codex가 앞에 오고, 나머지는 켠 순서대로 이어집니다.
+- **남은 사용량 다이얼** — 5시간·일간 같은 짧은 창은 홍채 모양 다이얼로, 주간·월간 창은 옆의 빛줄기 바로 보여줍니다. 남은 만큼 결이 켜집니다.
+- **AI마다 고유색** — Claude 테라코타, Codex 에메랄드, Gemini 블루, Copilot 바이올렛처럼 서비스마다 깊은 고유색이 다이얼·바·유리 너머 빛에 입혀집니다. 전용 색이 없는 서비스도 이름에서 정해지는 고유한 색을 받아 늘 같은 색으로 보입니다.
 - **초기화까지 남은 시간** — 동공 테두리가 시계 역할을 합니다. 창이 시작된 12시 방향부터 지금까지가 밝아지고, 점이 한 바퀴를 돌면 초기화됩니다. 옆에 "3시간 50분 후 초기화"처럼 글로도 표시합니다.
-- **연결한 모든 서비스** — CodexBar에 켜 둔 서비스(Claude, Codex, Gemini, Cursor, Copilot 등)를 한 줄에 두 개씩 보여줍니다. Claude와 Codex가 항상 앞에 옵니다.
-- **숫자로 먼저 알림** — 30% 이하는 노랑, 10% 이하는 산호색으로 숫자가 바뀝니다. 다이얼은 도구 색을 그대로 지켜 어느 도구인지 헷갈리지 않습니다.
-- **메뉴바 세트** — 패널을 꺼 두어도 메뉴바에 도구별 막대 두 줄(짧은 창·주간)과 남은 %가 항상 보입니다.
+- **숫자로 먼저 알림** — 30% 이하는 노랑, 10% 이하는 산호색으로 숫자가 바뀝니다. 다이얼은 서비스 색을 그대로 지켜 어느 서비스인지 헷갈리지 않습니다.
+- **메뉴바 세트** — 패널을 꺼 두어도 메뉴바에 서비스별 막대 두 줄(짧은 창·긴 창)과 남은 %가 항상 보입니다.
 - **배경에 맞춘 유리** — 바탕화면이 밝으면 유리가 진해지고 어두우면 맑아집니다. 바탕화면 이미지 파일만 읽어서 권한이 필요 없습니다.
 - **투명도 조절** — 패널의 ◐ 버튼을 누르면 나오는 바를 드래그하거나, 우클릭 메뉴의 슬라이더로 조절합니다.
 
@@ -29,14 +30,14 @@ Claude·Codex 같은 AI 코딩 도구의 **남은 사용량**을 macOS 화면 �
 ## 요구 사항
 
 - macOS 14 이상 (Liquid Glass 유리는 macOS 26부터, 그 이전은 블러 유리로 대체)
-- [CodexBar](https://codexbar.app) — 사용량을 읽어 오는 CLI가 함께 설치됩니다
+- [CodexBar](https://codexbar.app) — 서비스별 사용량을 읽어 오는 CLI가 함께 설치됩니다
 - Swift 5.9 이상 (Xcode 또는 Command Line Tools)
 
 ```sh
 brew install --cask codexbar
 ```
 
-CodexBar에서 보고 싶은 서비스에 로그인해 두면 됩니다. 메뉴바 앱 자체는 켜 둘 필요가 없습니다 — 게이지는 CLI만 사용합니다.
+CodexBar에서 보고 싶은 서비스를 켜고 로그인해 두면, 게이지에 그대로 나타납니다. 메뉴바 앱 자체는 켜 둘 필요가 없습니다 — 게이지는 CLI만 사용합니다.
 
 ## 설치
 
