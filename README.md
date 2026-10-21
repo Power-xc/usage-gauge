@@ -8,13 +8,14 @@
 쓰고 있는 **모든 AI 서비스의 남은 사용량**을 화면 위에 떠 있는 유리 게이지와 메뉴바로 보여주는 앱입니다. Claude·Codex·Gemini·Cursor·Copilot·Windsurf·Grok·OpenRouter 등 [CodexBar](https://github.com/steipete/CodexBar)가 읽을 수 있는 100여 개 서비스를 한 패널에 모아, 한도가 얼마나 남았는지와 언제 초기화되는지를 작업 중에 시선만 돌려 확인할 수 있습니다.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/demo.gif" width="800" alt="usage-gauge 패널: Claude·Codex·Gemini·Cursor의 남은 사용량 다이얼과 주간·월간 바, 위쪽 메뉴바 막대">
+  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/demo.gif" width="800" alt="usage-gauge 패널이 홍채·도트 매트릭스·모노 터미널 스타일로 차례로 바뀌며 Claude·Codex·Gemini·Cursor의 남은 사용량을 보여준다">
 </p>
 
 ## 기능
 
 - **모든 AI 서비스를 한 패널에** — CodexBar에서 켜 둔 서비스를 한 줄에 두 개씩 보여줍니다. 자주 쓰는 Claude와 Codex가 앞에 오고, 나머지는 켠 순서대로 이어집니다.
-- **남은 사용량 다이얼** — 5시간·일간 같은 짧은 창은 홍채 모양 다이얼로, 주간·월간 창은 옆의 빛줄기 바로 보여줍니다. 남은 만큼 결이 켜집니다.
+- **남은 사용량 다이얼** — 5시간·일간 같은 짧은 창은 다이얼로, 주간·월간 창은 옆의 바로 보여줍니다. 남은 만큼 다이얼과 바가 켜집니다.
+- **스타일 3종** — 스모크 유리 위 홍채 다이얼, 무광 카드 위 도트 매트릭스, 검은 격자 위 모노 터미널 중에서 고르면 기억합니다. 어느 스타일이든 숫자와 규칙은 같습니다.
 - **AI마다 고유색** — Claude 테라코타, Codex 에메랄드, Gemini 블루, Copilot 바이올렛처럼 서비스마다 깊은 고유색이 다이얼·바·유리 너머 빛에 입혀집니다. 전용 색이 없는 서비스도 이름에서 정해지는 고유한 색을 받아 늘 같은 색으로 보입니다.
 - **초기화까지 남은 시간** — 동공 테두리가 시계 역할을 합니다. 창이 시작된 12시 방향부터 지금까지가 밝아지고, 점이 한 바퀴를 돌면 초기화됩니다. 옆에 "3시간 50분 후 초기화"처럼 글로도 표시합니다.
 - **숫자로 먼저 알림** — 30% 이하는 노랑, 10% 이하는 산호색으로 숫자가 바뀝니다. 다이얼은 서비스 색을 그대로 지켜 어느 서비스인지 헷갈리지 않습니다.
@@ -27,6 +28,18 @@
 | ![모든 서비스](docs/all-providers.jpg) | ![레벨별 색](docs/levels.jpg) |
 
 ![메뉴바](docs/menu-bar.jpg)
+
+## 스타일
+
+우클릭 메뉴(또는 메뉴바 아이템 우클릭) → **스타일**에서 고릅니다. 고른 스타일은 다음 실행에도 그대로입니다.
+
+| 스타일        | 표면                                    | 짧은 창                        | 긴 창        | 글자             |
+| ------------- | --------------------------------------- | ------------------------------ | ------------ | ---------------- |
+| 홍채 · 글래스 | 스모크 유리, 다이얼 뒤로 서비스 색 번짐 | 실크 결 홍채, 동공 테두리 시계 | 빛줄기 바    | 시스템 글꼴      |
+| 도트 매트릭스 | 무광 차콜 카드, 왼쪽 위의 따뜻한 빛     | 점 기둥 고리, 점 숫자, 점 시계 | 두 줄 점 띠  | 고정폭, `3h 50m` |
+| 모노 터미널   | 검은 판과 칸을 나누는 가는 격자선       | 방사 눈금, 안쪽 원 시계        | 세로 눈금 바 | 고정폭, `3h 50m` |
+
+![스타일 3종](docs/styles.jpg)
 
 ## 요구 사항 (macOS)
 
@@ -65,13 +78,14 @@ scripts/install.sh
 
 ## 사용법
 
-| 동작             | 방법                                                 |
-| ---------------- | ---------------------------------------------------- |
-| 게이지 켜기/끄기 | 메뉴바 아이템 클릭 · `⌥⌘U` · 앱 다시 열기 · 패널의 × |
-| 투명도           | 패널의 ◐ 버튼 → 바 드래그, 또는 우클릭 메뉴 슬라이더 |
-| 배경 맞춤 유리   | 우클릭 메뉴 → 배경에 맞춰 유리 진하기 조절           |
-| 지금 새로고침    | 우클릭 메뉴 → 지금 새로고침                          |
-| 위치 옮기기      | 머리글이나 서비스 카드를 드래그 (위치는 기억됩니다)  |
+| 동작             | 방법                                                      |
+| ---------------- | --------------------------------------------------------- |
+| 게이지 켜기/끄기 | 메뉴바 아이템 클릭 · `⌥⌘U` · 앱 다시 열기 · 패널의 ×      |
+| 스타일           | 우클릭 메뉴 → 스타일 (홍채 · 도트 매트릭스 · 모노 터미널) |
+| 투명도           | 패널의 ◐ 버튼 → 바 드래그, 또는 우클릭 메뉴 슬라이더      |
+| 배경 맞춤 유리   | 우클릭 메뉴 → 배경에 맞춰 유리 진하기 조절                |
+| 지금 새로고침    | 우클릭 메뉴 → 지금 새로고침                               |
+| 위치 옮기기      | 머리글이나 서비스 카드를 드래그 (위치는 기억됩니다)       |
 
 ## 정확도
 
@@ -93,19 +107,19 @@ scripts/install.sh
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/architecture-dark.svg">
-  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/architecture-light.svg" width="836" alt="두 갈래 흐름: 사용량 API → codexbar CLI → UsageModel → UsageStore → GaugeView, 바탕화면 이미지 → BackdropSampler → BackdropTone → PanelState → GlassBackground, 두 결과가 한 패널로 겹쳐 그려진다">
+  <img src="https://raw.githubusercontent.com/Power-xc/usage-gauge/main/docs/architecture-light.svg" width="836" alt="두 갈래 흐름: 사용량 API → codexbar CLI → UsageModel → UsageStore → GaugeView, 바탕화면 이미지 → BackdropSampler → BackdropTone → PanelState → PanelSurface, 두 결과가 한 패널로 겹쳐 그려진다">
 </picture>
 
-흐름은 두 갈래입니다. 위쪽은 **숫자**입니다 — CLI가 돌려준 JSON을 `UsageModel`이 남은 비율과 초기화 시각으로 해석하고, `UsageStore`가 갱신 시점과 마지막 정상값을 관리해 다이얼과 메뉴바에 넘깁니다. 아래쪽은 **유리**입니다 — 패널 뒤에 해당하는 바탕화면 영역의 밝기를 읽어 유리 진하기를 정합니다. 두 결과는 한 패널 안에서 겹쳐 그려집니다.
+흐름은 두 갈래입니다. 위쪽은 **숫자**입니다 — CLI가 돌려준 JSON을 `UsageModel`이 남은 비율과 초기화 시각으로 해석하고, `UsageStore`가 갱신 시점과 마지막 정상값을 관리해 다이얼과 메뉴바에 넘깁니다. 아래쪽은 **표면**입니다 — 패널 뒤에 해당하는 바탕화면 영역의 밝기를 읽어 유리 진하기를 정하고, 고른 스타일에 따라 유리·무광 카드·터미널 격자 중 하나를 깝니다. 두 결과는 한 패널 안에서 겹쳐 그려집니다.
 
 | 모듈             | 역할                                                                                          |
 | ---------------- | --------------------------------------------------------------------------------------------- |
 | `UsageGaugeCore` | CodexBar JSON 디코딩, 남은 비율·표시 반올림, 초기화 해석, 카운트다운, 배경 밝기 → 유리 진하기 |
-| `UsageGaugeUI`   | 패널(`GaugeView`), 홍채 다이얼, 빛줄기 바, 메뉴바 뷰, 유리 배경                               |
+| `UsageGaugeUI`   | 패널(`GaugeView`), 스타일 3종의 다이얼·바·표면(`PanelSurface`), 메뉴바 뷰                     |
 | `UsageGauge`     | 앱 셸 — 패널·메뉴바·단축키·주기 갱신·바탕화면 밝기 판독                                       |
 | `PromoRenderer`  | 실제 뷰를 샘플 데이터로 렌더해 README 이미지와 데모 GIF를 만듭니다                            |
 | `CoreChecks`     | XCTest 없이 도는 검사 실행기 (`swift run CoreChecks`)                                         |
-| `windows/`       | Windows 판 — Rust 쪽이 사용량을 읽고 해석하며, 같은 그림을 Canvas로 그립니다                   |
+| `windows/`       | Windows 판 — Rust 쪽이 사용량을 읽고 해석하며, 같은 그림을 Canvas로 그립니다                  |
 
 ### 스택 선정 이유
 
