@@ -43,10 +43,12 @@ private struct RulerBlock: View {
             }
             .frame(width: content, height: Self.height, alignment: .topLeading)
             VStack(alignment: .leading, spacing: 3) {
-                ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
-                Text(caption)
-                    .font(Theme.figure(9.5, .regular, style: style))
-                    .foregroundStyle(Theme.faintText)
+                ProviderName(usage: usage, index: index, tint: tint)
+                RevealingCaption(usage: usage) {
+                    Text(caption)
+                        .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                        .foregroundStyle(Theme.faintText)
+                }
             }
         }
         .frame(width: content, alignment: .leading)
@@ -65,7 +67,7 @@ private struct RulerBlock: View {
                 .offset(x: RulerTrack.Metrics.figureX + 4, y: RulerTrack.Metrics.y(of: session.remainingPercent, in: Self.height) - size / 2)
         } else if !usage.isAvailable {
             Text("연결 안 됨")
-                .font(Theme.label(10, .semibold, style: style))
+                .font(Theme.label(TypeScale.caption, .semibold, style: style))
                 .foregroundStyle(Theme.mutedText)
                 .offset(x: RulerTrack.Metrics.figureX, y: Self.height / 2)
         }

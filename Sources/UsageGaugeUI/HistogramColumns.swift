@@ -3,7 +3,7 @@ import SwiftUI
 /// A row of vertical columns, one per slice of the window, evenly pitched across the cell and each
 /// as tall as what was used in it relative to the tallest. Past slices are white, the current one
 /// takes the tool's colour, a faint divider marks now and slices still to come are faint baseline
-/// marks. Drawn as soft bars (iris), dotted columns on one lattice (dot) or stacked thin segments
+/// marks. Drawn as flat rounded bars (iris), dotted columns on one lattice (dot) or stacked thin segments
 /// (mono).
 struct HistogramColumns: View, Animatable {
     static let height: CGFloat = 44
@@ -38,7 +38,6 @@ struct HistogramColumns: View, Animatable {
             let peak = values.compactMap { $0 }.max() ?? 0
             let current = values.lastIndex { $0 != nil }
             var paths: [Kind: Path] = [:]
-            var glow = Path()
             for (index, value) in values.enumerated() {
                 let fraction = peak > 0 ? (value ?? 0) / peak : 0
                 let isIdle = fraction <= 0
@@ -48,13 +47,12 @@ struct HistogramColumns: View, Animatable {
                     let height = isIdle ? Self.baselineHeight : max(column.width, column.height * fraction)
                     let bar = CGRect(x: column.minX, y: column.maxY - height, width: column.width, height: height)
                     paths[kind, default: Path()].addRoundedRect(in: bar, cornerSize: CGSize(width: column.width / 2, height: column.width / 2))
-                    if kind == .current { glow.addEllipse(in: CGRect(x: bar.midX - 5, y: bar.minY - 5, width: 10, height: 10)) }
                 } else {
                     addCells(into: &paths[kind, default: Path()], column: column, fraction: fraction, isIdle: isIdle, pitch: pitch, size: size)
                 }
             }
             if let current { drawDivider(canvas, x: CGFloat(current + 1) * pitch, size: size, pitch: pitch) }
-            paint(canvas, paths, glow: glow, size: size)
+            paint(canvas, paths)
         }
         .frame(height: Self.height)
     }
@@ -105,24 +103,14 @@ struct HistogramColumns: View, Animatable {
         }
     }
 
-    private func paint(_ canvas: GraphicsContext, _ paths: [Kind: Path], glow: Path, size: CGSize) {
+    private func paint(_ canvas: GraphicsContext, _ paths: [Kind: Path]) {
         func fill(_ kind: Kind, _ shading: GraphicsContext.Shading) {
             if let path = paths[kind] { canvas.fill(path, with: shading) }
         }
         fill(.future, .color(.white.opacity(Self.futureOpacity)))
         fill(.idlePast, .color(.white.opacity(Self.idleOpacity)))
         fill(.idleCurrent, .color(tint.opacity(0.6)))
-        let top = CGPoint.zero, bottom = CGPoint(x: 0, y: size.height)
-        if style == .iris {
-            fill(.past, .linearGradient(Gradient(colors: [.white.opacity(Self.pastOpacity), .white.opacity(0.32)]), startPoint: top, endPoint: bottom))
-            canvas.drawLayer { layer in
-                layer.addFilter(.blur(radius: 4))
-                layer.fill(glow, with: .color(tint.opacity(0.9)))
-            }
-            fill(.current, .linearGradient(Gradient(colors: [tint, tint.opacity(0.4)]), startPoint: top, endPoint: bottom))
-        } else {
-            fill(.past, .color(.white.opacity(Self.pastOpacity)))
-            fill(.current, .color(tint))
-        }
+        fill(.past, .color(.white.opacity(Self.pastOpacity)))
+        fill(.current, .color(tint))
     }
 }

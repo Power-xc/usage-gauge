@@ -32,10 +32,7 @@ private struct CapsuleBlock: View {
         let tint = Theme.brand(for: usage.id)
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    ProviderName(usage: usage, index: index, tint: tint)
-                    PlanTag(plan: usage.plan)
-                }
+                ProviderTitle(usage: usage, index: index, tint: tint)
                 Spacer(minLength: 8)
                 readout
             }
@@ -51,15 +48,17 @@ private struct CapsuleBlock: View {
         VStack(alignment: .trailing, spacing: 3) {
             if usage.isAvailable {
                 PercentFigure(window: usage.session, size: Self.figureSize).frame(height: Self.figureSize, alignment: .trailing)
-                Text(countdown(until: usage.session?.resetsAt, now: now, style: style))
-                    .font(Theme.figure(9.5, .regular, style: style))
-                    .foregroundStyle(Theme.faintText)
+                RevealingCaption(usage: usage, alignment: .trailing) {
+                    Text(countdown(until: usage.session?.resetsAt, now: now, style: style))
+                        .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                        .foregroundStyle(Theme.faintText)
+                }
             } else {
                 Text("연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
                     .frame(height: Self.figureSize, alignment: .trailing)
-                Text("CodexBar 확인").font(Theme.label(9.5, style: style)).foregroundStyle(Theme.faintText)
+                Text("CodexBar 확인").font(Theme.label(TypeScale.caption, style: style)).foregroundStyle(Theme.faintText)
             }
         }
     }

@@ -78,3 +78,13 @@ public enum Theme {
         }
     }
 }
+
+/// Small type sizes every layout draws from, so captions line up from one form to the next.
+enum TypeScale {
+    /// Axis labels, column headings, plan tags and other fine print.
+    static let micro: CGFloat = 8.5
+    /// Countdowns, captions and window names.
+    static let caption: CGFloat = 9.5
+    /// Figures in rows and short statuses.
+    static let body: CGFloat = 11
+}

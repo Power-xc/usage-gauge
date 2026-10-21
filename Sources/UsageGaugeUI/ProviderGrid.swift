@@ -8,8 +8,7 @@ struct ProviderGrid<Cell: View>: View {
     let columns: Int
     let cell: (_ index: Int, _ usage: ProviderUsage, _ width: CGFloat) -> Cell
 
-    /// Wider than the layouts' block spacing: a hovered cell reveals a line in the gap below it.
-    private static var rowSpacing: CGFloat { PanelLayout.blockSpacing + 8 }
+    private static var rowSpacing: CGFloat { PanelLayout.blockSpacing + 6 }
 
     @Environment(\.panelStyle) private var style
 
@@ -22,23 +21,27 @@ struct ProviderGrid<Cell: View>: View {
                         if style == .mono && entry.index % columns > 0 { GridRule(isVertical: true) }
                         cell(entry.index, entry.usage, cellWidth)
                             .frame(width: cellWidth)
-                            .padding(.horizontal, style == .mono ? Theme.panelPadding : 0)
-                            .padding(.vertical, style == .mono ? Theme.panelPadding : 0)
-                            .modifier(ToolCell(usage: entry.usage))
+                            .modifier(ToolCell(usage: entry.usage, width: cellWidth,
+                                               padding: style == .mono ? Theme.panelPadding : 0))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(width: totalWidth, alignment: .leading)
+    }
+
+    /// The grid always spans the panel, so a lone cell does not narrow it; the mono grid also covers
+    /// the panel padding and one rule.
+    private var totalWidth: CGFloat {
+        style == .mono ? PanelLayout.contentWidth + 2 * Theme.panelPadding + 1 : PanelLayout.contentWidth
     }
 
     /// Mono cells are one point wider each to pay for the rules between them, as in the dial grid.
     private var cellWidth: CGFloat {
         let count = CGFloat(columns)
         if style == .mono {
-            // The grid runs edge to edge, so its cells also cover the panel padding, plus one rule.
-            let total = PanelLayout.contentWidth + 2 * Theme.panelPadding + 1
-            return ((total - (count - 1)) / count - 2 * Theme.panelPadding).rounded(.down)
+            return ((totalWidth - (count - 1)) / count - 2 * Theme.panelPadding).rounded(.down)
         }
         return ((PanelLayout.contentWidth - (count - 1) * PanelLayout.cellSpacing) / count).rounded(.down)
     }

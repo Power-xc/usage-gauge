@@ -34,10 +34,7 @@ private struct BurstBlock: View {
         HStack(alignment: .center, spacing: Self.spacing) {
             mark(tint: tint)
             VStack(alignment: .leading, spacing: 5) {
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
-                    PlanTag(plan: usage.plan)
-                }
+                ProviderTitle(usage: usage, index: index, tint: tint)
                 details
             }
             Spacer(minLength: 0)
@@ -56,7 +53,7 @@ private struct BurstBlock: View {
                 VStack(spacing: 1) {
                     PercentFigure(window: window, size: Self.figureSize)
                     Text(window?.label ?? "")
-                        .font(Theme.label(8, style: style))
+                        .font(Theme.label(TypeScale.micro, style: style))
                         .foregroundStyle(Theme.faintText)
                 }
             }
@@ -78,12 +75,14 @@ private struct BurstBlock: View {
                 } else {
                     Text(burn == nil ? "사용 없음 · 여유" : "여유").foregroundStyle(Theme.mutedText)
                 }
-                Text("초기화 \(countdown(until: window.resetsAt, now: now, style: style))").foregroundStyle(Theme.faintText)
+                RevealingCaption(usage: usage, isCompact: true) {
+                    Text("초기화 \(countdown(until: window.resetsAt, now: now, style: style))").foregroundStyle(Theme.faintText)
+                }
             }
-            .font(Theme.figure(10, .regular, style: style))
+            .font(Theme.figure(TypeScale.caption, .regular, style: style))
         } else {
             Text(usage.isAvailable ? "단기 창 없음" : "연결 안 됨")
-                .font(Theme.label(11, .semibold, style: style))
+                .font(Theme.label(TypeScale.body, .semibold, style: style))
                 .foregroundStyle(Theme.mutedText)
         }
     }

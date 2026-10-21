@@ -3,7 +3,7 @@ import SwiftUI
 /// A starburst of one window's use: the period runs clockwise from 12 o'clock like a clock face, a
 /// ray per slice as long as what was used in it (relative to the heaviest), ending in a dot. Past
 /// rays are white, the current one takes the tool's colour and the time still ahead is a faint arc.
-/// The middle is left open for the caller's figure. Drawn as fine luminous rays (iris), dotted
+/// The middle is left open for the caller's figure. Drawn as fine solid rays (iris), dotted
 /// lines (dot) or hairlines with square ends (mono).
 struct BurstRays: View, Animatable {
     static let size: CGFloat = 108
@@ -18,6 +18,7 @@ struct BurstRays: View, Animatable {
     private static let dotPitch: CGFloat = 3
     private static let pastOpacity = 0.85
     private static let arcOpacity = 0.18
+    private static let irisRayOpacity = 0.7
 
     /// % used per slice; nil for slices after now.
     var values: [Double?]
@@ -75,7 +76,7 @@ struct BurstRays: View, Animatable {
         switch style {
         case .mono: drawHairline(ray, canvas, color, isCurrent: isCurrent)
         case .dot: drawDotted(ray, canvas, color, isCurrent: isCurrent)
-        case .iris: drawLuminous(ray, canvas, color, isCurrent: isCurrent)
+        case .iris: drawSolid(ray, canvas, color, isCurrent: isCurrent)
         }
     }
 
@@ -111,16 +112,10 @@ struct BurstRays: View, Animatable {
 
     // MARK: Iris
 
-    private func drawLuminous(_ ray: Ray, _ canvas: GraphicsContext, _ color: Color, isCurrent: Bool) {
-        let fade = Gradient(colors: [color.opacity(0), color.opacity(isCurrent ? 1 : 0.9)])
-        canvas.stroke(line(ray), with: .linearGradient(fade, startPoint: ray.from, endPoint: ray.tip),
+    private func drawSolid(_ ray: Ray, _ canvas: GraphicsContext, _ color: Color, isCurrent: Bool) {
+        canvas.stroke(line(ray), with: .color(color.opacity(isCurrent ? 1 : Self.irisRayOpacity)),
                       style: StrokeStyle(lineWidth: isCurrent ? 1.4 : 0.9, lineCap: .round))
-        let radius = 1.2 + 1.1 * ray.heaviness + (isCurrent ? 0.6 : 0)
-        canvas.drawLayer { layer in
-            layer.addFilter(.blur(radius: 3))
-            disc(layer, at: ray.tip, radius: radius + 1.5, color.opacity(isCurrent ? 1 : 0.7))
-        }
-        disc(canvas, at: ray.tip, radius: radius, color)
+        disc(canvas, at: ray.tip, radius: 1.2 + 1.1 * ray.heaviness + (isCurrent ? 0.6 : 0), color)
     }
 
     // MARK: Arc

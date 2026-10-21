@@ -8,15 +8,27 @@ struct TrendSeries {
     static let gap: TimeInterval = 20 * 60
 
     /// Runs of connected points, oldest first.
-    let segments: [[CGPoint]]
+    private(set) var segments: [[CGPoint]]
     /// The latest reading, at now.
-    let head: CGPoint
+    private(set) var head: CGPoint
     /// Where the burn rate leads from now: the empty point, or the reset when it lasts.
-    let projection: CGPoint?
+    private(set) var projection: CGPoint?
     let burnRate: Double?
     let projectedEmpty: Date?
     /// How much time the recorded points cover.
     let recordedSpan: TimeInterval
+
+    /// The series with its latest reading and projection end moved, for the frames in between two readings.
+    func moving(head newHead: CGPoint, projectionEnd: CGPoint?) -> TrendSeries {
+        var moved = self
+        if var run = moved.segments.last, !run.isEmpty {
+            run[run.count - 1] = newHead
+            moved.segments[moved.segments.count - 1] = run
+        }
+        moved.head = newHead
+        moved.projection = projection == nil ? nil : projectionEnd
+        return moved
+    }
 
     init?(id: String, window: UsageWindow, history: UsageHistory, now: Date) {
         guard let resetsAt = window.resetsAt, let minutes = window.windowMinutes, minutes > 0 else { return nil }

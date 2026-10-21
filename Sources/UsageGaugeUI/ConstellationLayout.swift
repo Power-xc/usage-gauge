@@ -23,6 +23,7 @@ struct ConstellationLayout: View {
                 .frame(width: PanelLayout.contentWidth)
                 .padding(style == .mono ? Theme.panelPadding : 0)
         }
+        .toolFocusScope()
     }
 }
 
@@ -35,6 +36,7 @@ private struct ConstellationField: View {
     let unavailable: [ProviderUsage]
 
     @Environment(\.panelStyle) private var style
+    @Environment(\.toolFocus) private var focus
 
     var body: some View {
         let points = stars.map { ConstellationPlot.point($0.position) }
@@ -61,19 +63,29 @@ private struct ConstellationField: View {
         let marker = ConstellationNode.markerOffset(tagWidth: tagWidth, placement: placement)
         return ConstellationNode(usage: star.usage, placement: placement, tagWidth: tagWidth)
             .frame(width: size.width, height: size.height)
+            .toolMark(star.id)
             .offset(x: point.x - marker.x, y: point.y - marker.y)
             .opacity(star.usage.isAvailable ? 1 : 0.5)
     }
 
-    /// Tools that report nothing cannot be placed; they are named under the field instead.
-    @ViewBuilder
+    /// Under the field: the tools that report nothing and so cannot be placed, or the focused
+    /// tool's reset and measuring times while one is pointed at.
     private var footnote: some View {
-        if !unavailable.isEmpty || stars.isEmpty {
-            Text("연결 안 됨 · " + unavailable.map { style == .iris ? $0.title : $0.title.uppercased() }.joined(separator: ", "))
-                .font(Theme.label(8.5, .medium, style: style))
-                .foregroundStyle(Theme.faintText)
-                .frame(width: Self.footnoteWidth, alignment: .leading)
-                .position(x: ConstellationPlot.field.minX + Self.footnoteWidth / 2, y: ConstellationPlot.field.maxY + 14)
+        let shown = focus.tool.flatMap { id in stars.first { $0.id == id }?.usage }
+        return ZStack(alignment: .leading) {
+            if !unavailable.isEmpty || stars.isEmpty {
+                Text("연결 안 됨 · " + unavailable.map { style == .iris ? $0.title : $0.title.uppercased() }.joined(separator: ", "))
+                    .font(Theme.label(TypeScale.micro, .medium, style: style))
+                    .foregroundStyle(Theme.faintText)
+                    .opacity(shown == nil ? 1 : 0)
+            }
+            Text(shown.map { HoverDetail.line(for: $0) } ?? "")
+                .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                .foregroundStyle(Theme.mutedText)
+                .opacity(shown == nil ? 0 : 1)
         }
+        .frame(width: Self.footnoteWidth, alignment: .leading)
+        .position(x: ConstellationPlot.field.minX + Self.footnoteWidth / 2, y: ConstellationPlot.field.maxY + 14)
+        .animation(ToolFocus.motion, value: focus.tool)
     }
 }

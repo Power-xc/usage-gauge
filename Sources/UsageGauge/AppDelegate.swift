@@ -201,14 +201,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(item("게이지 켜기/끄기 (⌥⌘U)", #selector(togglePanel)))
         menu.addItem(item("지금 새로고침", #selector(refreshNow)))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem.sectionHeader(title: "그래프"))
+        let layoutMenu = NSMenu()
         layoutItems = PanelLayout.allCases.map { layout in
             let entry = item(layout.title, #selector(chooseLayout(_:)))
             entry.representedObject = layout.rawValue
             return entry
         }
-        layoutItems.forEach(menu.addItem)
+        layoutItems.forEach(layoutMenu.addItem)
         syncLayoutItems()
+        let layoutEntry = NSMenuItem(title: "그래프", action: nil, keyEquivalent: "")
+        layoutEntry.submenu = layoutMenu
+        menu.addItem(layoutEntry)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem.sectionHeader(title: "스타일"))
         styleItems = PanelStyle.allCases.map { style in

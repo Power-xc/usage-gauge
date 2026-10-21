@@ -31,7 +31,8 @@ private struct BarsBlock: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 ProviderName(usage: usage, index: index, tint: tint)
-                PlanTag(plan: usage.plan)
+                RevealingCaption(usage: usage, isCompact: true) { PlanTag(plan: usage.plan) }
+                    .frame(minHeight: TypeScale.micro)
             }
             .frame(width: Self.nameWidth, alignment: .leading)
             if usage.isAvailable {
@@ -41,7 +42,7 @@ private struct BarsBlock: View {
                 }
             } else {
                 Text("연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
                 Spacer(minLength: 0)
             }
@@ -68,16 +69,16 @@ private struct BarRow: View {
         let remaining = window?.remainingPercent ?? 0
         HStack(spacing: 8) {
             Text(window?.label ?? fallbackLabel)
-                .font(Theme.label(10, .medium, style: style))
+                .font(Theme.label(TypeScale.caption, .medium, style: style))
                 .foregroundStyle(Theme.mutedText)
                 .frame(width: Self.labelWidth, alignment: .leading)
             WindowBar(remainingPercent: remaining, tint: tint, frozenAt: frozenAt)
             Text(percentText(window))
-                .font(Theme.figure(11, .semibold, style: style))
+                .font(Theme.figure(TypeScale.body, .semibold, style: style))
                 .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
                 .frame(width: Self.figureWidth, alignment: .trailing)
             Text(countdown(until: window?.resetsAt, now: now, style: style))
-                .font(Theme.figure(9.5, .regular, style: style))
+                .font(Theme.figure(TypeScale.caption, .regular, style: style))
                 .foregroundStyle(Theme.faintText)
                 .frame(width: Self.countdownWidth, alignment: .trailing)
         }

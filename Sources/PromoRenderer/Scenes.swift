@@ -562,3 +562,141 @@ struct ConstellationRulerScene: View {
             .modifier(RenderedSurface(style: style))
     }
 }
+
+/// Every graph form in every style: one row per form, mono, iris and dot side by side. The variant
+/// picks the tools and the state: four tools with the Codex cell (or mark) hovered in every panel,
+/// the same at rest, and the edge cases (one tool, eight tools, a tool that is not connected, no
+/// recorded history).
+struct AllFormsScene: View {
+    enum Variant: CaseIterable {
+        case hovered, rest, single, eight, offline, recording
+
+        var fileName: String {
+            switch self {
+            case .hovered: "all-forms.jpg"
+            case .rest: "all-forms-rest.jpg"
+            case .single: "all-forms-single.jpg"
+            case .eight: "all-forms-eight.jpg"
+            case .offline: "all-forms-offline.jpg"
+            case .recording: "all-forms-recording.jpg"
+            }
+        }
+    }
+
+    static let margin: CGFloat = 40
+    private static let width: CGFloat = 1680
+
+    private static let fourTools = (SampleData.still + SampleData.extras(scale: 1).prefix(2)).map { usage in
+        ProviderUsage(id: usage.id, plan: usage.plan, session: usage.session, weekly: usage.weekly,
+                      measuredAt: SampleData.now.addingTimeInterval(-600))
+    }
+
+    let variant: Variant
+
+    var size: CGSize {
+        CGSize(width: Self.width, height: variant == .eight ? 6300 : variant == .single ? 3300 : 4500)
+    }
+
+    private var tools: [ProviderUsage] {
+        switch variant {
+        case .hovered, .rest, .recording: Self.fourTools
+        case .single: Array(Self.fourTools.prefix(1))
+        case .eight: Array(TabsCheckScene.pool.prefix(8))
+        case .offline:
+            Self.fourTools.map { $0.id == "codex" ? ProviderUsage(id: "codex", plan: nil, session: nil, weekly: nil) : $0 }
+        }
+    }
+
+    private var history: UsageHistory { variant == .recording ? UsageHistory() : SampleData.history }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Backdrop()
+            VStack(alignment: .leading, spacing: 30) {
+                ForEach(Array(PanelLayout.allCases.enumerated()), id: \.element) { index, layout in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(String(format: "%02d  %@", index + 1, layout.title))
+                            .font(Theme.mono(11, .medium))
+                            .foregroundStyle(.white.opacity(0.5))
+                        HStack(alignment: .top, spacing: 24) {
+                            ForEach(PanelStyle.allCases, id: \.self) { panel($0, layout) }
+                        }
+                    }
+                }
+            }
+            .padding(Self.margin)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle, _ layout: PanelLayout) -> some View {
+        GaugeView(providers: tools, status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                  opacity: .constant(1), style: style, layout: layout, history: history, frozenAt: 3,
+                  onLayout: { _ in })
+            .panelPreset(hovered: variant == .hovered ? "codex" : nil)
+            .modifier(RenderedSurface(style: style))
+    }
+}
+
+/// The tab row with 2, 4, 6 and 8 tools in each style.
+struct TabsCheckScene: View {
+    static let size = CGSize(width: 1680, height: 1080)
+    private static let counts = [2, 4, 6, 8]
+
+    static let pool: [ProviderUsage] = SampleData.still + SampleData.extras(scale: 1) + ["windsurf", "zai", "kiro"].map {
+        ProviderUsage(id: $0, plan: "Pro", session: SampleData.window(remaining: 60, minutes: 300, resetIn: 200 * 60),
+                      weekly: SampleData.window(remaining: 40, minutes: 10080, resetIn: 90 * 3600))
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Backdrop()
+            VStack(alignment: .leading, spacing: 24) {
+                ForEach(Self.counts, id: \.self) { count in
+                    HStack(alignment: .top, spacing: 24) {
+                        ForEach(PanelStyle.allCases, id: \.self) { panel($0, count: count) }
+                    }
+                }
+            }
+            .padding(AllFormsScene.margin)
+        }
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle, count: Int) -> some View {
+        GaugeView(providers: Array(Self.pool.prefix(count)), status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                  opacity: .constant(1), style: style, layout: .figures, history: SampleData.history, frozenAt: 3)
+            .modifier(RenderedSurface(style: style))
+    }
+}
+
+/// The header's graph picker (twelve forms) and the opacity and size bars, open, in each style.
+struct ChromeScene: View {
+    static let size = CGSize(width: 1680, height: 700)
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Backdrop()
+            VStack(alignment: .leading, spacing: 24) {
+                ForEach([true, false], id: \.self) { isPicker in
+                    HStack(alignment: .top, spacing: 24) {
+                        ForEach(PanelStyle.allCases, id: \.self) { panel($0, isPicker: isPicker) }
+                    }
+                }
+            }
+            .padding(AllFormsScene.margin)
+        }
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func panel(_ style: PanelStyle, isPicker: Bool) -> some View {
+        GaugeView(providers: Array(SampleData.still.prefix(2)), status: "오후 12:04 기준", now: SampleData.now, onClose: {},
+                  opacity: .constant(0.9), scale: .constant(1), style: style, layout: .orbit, history: SampleData.history,
+                  frozenAt: 3, onLayout: { _ in })
+            .panelPreset(picker: isPicker, controls: !isPicker)
+            .modifier(RenderedSurface(style: style))
+    }
+}

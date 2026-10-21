@@ -36,7 +36,7 @@ private struct ColumnsBlock: View {
                 column(usage.weekly, label: "장", tint: tint)
             }
             VStack(spacing: 2) {
-                ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
+                ProviderName(usage: usage, index: index, tint: tint)
                 caption
             }
         }
@@ -47,11 +47,13 @@ private struct ColumnsBlock: View {
     @ViewBuilder
     private var caption: some View {
         if usage.isAvailable {
-            Text(countdown(until: usage.session?.resetsAt, now: now, style: style))
-                .font(Theme.figure(9.5, .regular, style: style))
-                .foregroundStyle(Theme.faintText)
+            RevealingCaption(usage: usage, alignment: .center) {
+                Text(countdown(until: usage.session?.resetsAt, now: now, style: style))
+                    .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                    .foregroundStyle(Theme.faintText)
+            }
         } else {
-            Text("연결 안 됨").font(Theme.label(9.5, style: style)).foregroundStyle(Theme.faintText)
+            Text("연결 안 됨").font(Theme.label(TypeScale.caption, style: style)).foregroundStyle(Theme.faintText)
         }
     }
 
@@ -59,13 +61,13 @@ private struct ColumnsBlock: View {
         let remaining = window?.remainingPercent ?? 0
         return VStack(spacing: 5) {
             Text(percentText(window))
-                .font(Theme.figure(10.5, .semibold, style: style))
+                .font(Theme.figure(TypeScale.body, .semibold, style: style))
                 .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
                 .fixedSize()
                 .frame(width: Self.columnSize.width)
             VerticalMeter(remainingPercent: remaining, tint: tint, size: Self.columnSize)
             Text(window?.shortLabel ?? fallback)
-                .font(Theme.label(9, .medium, style: style))
+                .font(Theme.label(TypeScale.micro, .medium, style: style))
                 .foregroundStyle(Theme.faintText)
         }
     }

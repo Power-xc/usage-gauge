@@ -25,16 +25,13 @@ struct ToolDetail<Extras: View>: View {
             HStack(alignment: .top, spacing: DetailMetrics.columnSpacing) {
                 SessionGauge(window: usage.isAvailable ? usage.session : nil, tint: tint, size: DetailMetrics.dialSize,
                              now: now, frozenAt: frozenAt)
-                    .background {
-                        if style == .iris { DetailGlow(tint: tint, dialSize: DetailMetrics.dialSize) }
-                    }
                 VStack(alignment: .leading, spacing: DetailMetrics.windowSpacing) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         ProviderName(usage: usage, index: index, tint: tint)
                         PlanTag(plan: usage.plan)
                         Spacer(minLength: 0)
                         if let measured = HoverDetail.measured(usage) {
-                            Text(measured).font(Theme.figure(9.5, .regular, style: style)).foregroundStyle(Theme.faintText)
+                            Text(measured).font(Theme.figure(TypeScale.caption, .regular, style: style)).foregroundStyle(Theme.faintText)
                         }
                     }
                     if usage.isAvailable {
@@ -55,7 +52,7 @@ struct ToolDetail<Extras: View>: View {
         VStack(alignment: .leading, spacing: 3) {
             Text("연결 안 됨").font(Theme.label(12, .semibold, style: style)).foregroundStyle(Theme.mutedText)
             Text(usage.errorMessage ?? "CodexBar 로그인을 확인하세요")
-                .font(Theme.label(10, style: style))
+                .font(Theme.label(TypeScale.caption, style: style))
                 .foregroundStyle(Theme.faintText)
                 .lineLimit(2)
         }
@@ -77,7 +74,7 @@ private struct DetailWindow: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(window?.label ?? fallbackLabel)
-                    .font(Theme.label(10.5, .medium, style: style))
+                    .font(Theme.label(TypeScale.body, .medium, style: style))
                     .foregroundStyle(Theme.mutedText)
                 Text(percentText(window))
                     .font(Theme.figure(18, .semibold, style: style))
@@ -86,7 +83,7 @@ private struct DetailWindow: View {
             }
             WindowBar(remainingPercent: remaining, tint: tint, frozenAt: frozenAt)
             Text(resetLine)
-                .font(Theme.figure(10, .regular, style: style))
+                .font(Theme.figure(TypeScale.caption, .regular, style: style))
                 .foregroundStyle(Theme.faintText)
         }
     }
@@ -94,18 +91,5 @@ private struct DetailWindow: View {
     private var resetLine: String {
         guard let reset = window?.resetsAt else { return "초기화 시각 모름" }
         return "\(HoverDetail.clock(reset)) 초기화 · \(countdown(until: reset, now: now, style: style)) 후"
-    }
-}
-
-/// The tool's colour glowing through the glass from behind the large dial.
-private struct DetailGlow: View {
-    let tint: Color
-    let dialSize: CGFloat
-
-    var body: some View {
-        RadialGradient(colors: [tint.opacity(0.28), tint.opacity(0)], center: .center,
-                       startRadius: dialSize * 0.3, endRadius: dialSize * 0.7)
-            .frame(width: dialSize * 1.4, height: dialSize * 1.4)
-            .allowsHitTesting(false)
     }
 }

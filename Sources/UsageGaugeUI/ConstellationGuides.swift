@@ -51,11 +51,11 @@ struct ConstellationGuides: View {
     }
 
     private func hint(_ text: String) -> some View {
-        Text(text).font(Theme.label(8.5, .medium, style: style)).tracking(0.6).foregroundStyle(.white.opacity(Self.hintOpacity))
+        Text(text).font(Theme.label(TypeScale.micro, .medium, style: style)).tracking(0.6).foregroundStyle(.white.opacity(Self.hintOpacity))
     }
 
     private func caption(_ text: String) -> some View {
-        Text(text).font(Theme.label(8.5, .medium, style: style)).foregroundStyle(Theme.faintText)
+        Text(text).font(Theme.label(TypeScale.micro, .medium, style: style)).foregroundStyle(Theme.faintText)
     }
 
     /// Mono and iris: an L of hairlines with ticks outside, and a cross through the middle.

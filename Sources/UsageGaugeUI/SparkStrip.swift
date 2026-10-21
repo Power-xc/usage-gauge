@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A strip of thin vertical bars over the window's period, each as tall as what was left at that
 /// point: the tool's colour for the past, a contrasting tick at now and faint baseline marks for
-/// what is still to come. Drawn as soft bars with a glow along their tops (iris), columns of dots
+/// what is still to come. Drawn as flat rounded bars (iris), columns of dots
 /// (dot) or 1 pt lines (mono).
 struct SparkStrip: View, Animatable {
     static let height: CGFloat = 24
@@ -58,16 +58,7 @@ struct SparkStrip: View, Animatable {
                 }
             }
             canvas.fill(marks, with: .color(.white.opacity(Self.baselineOpacity)))
-            if style == .iris {
-                canvas.drawLayer { layer in
-                    layer.addFilter(.blur(radius: 3))
-                    layer.fill(bars, with: .color(tint.opacity(0.55)))
-                }
-                canvas.fill(bars, with: .linearGradient(Gradient(colors: [tint, tint.opacity(0.45)]),
-                                                        startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
-            } else {
-                canvas.fill(bars, with: .color(tint))
-            }
+            canvas.fill(bars, with: .color(tint))
             canvas.fill(tick, with: .color(.white.opacity(0.95)))
         }
         .frame(height: Self.height)

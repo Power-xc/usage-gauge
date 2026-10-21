@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Glass track you grab and drag to set a value in a range (the panel's opacity or size); fill and
+/// Flat track you grab and drag to set a value in a range (the panel's opacity or size); fill and
 /// knob follow the pointer.
 struct ValueBar: View {
     @Binding var value: Double
@@ -17,12 +17,11 @@ struct ValueBar: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.track).frame(height: trackHeight)
                 Capsule()
-                    .fill(LinearGradient(colors: [Theme.accent.opacity(0.25), Theme.accent], startPoint: .leading, endPoint: .trailing))
+                    .fill(Theme.accent)
                     .frame(width: knobSize / 2 + travel * fraction, height: trackHeight)
                 Circle()
                     .fill(.white)
                     .frame(width: knobSize, height: knobSize)
-                    .shadow(color: Theme.accent.opacity(0.7), radius: 5)
                     .offset(x: travel * fraction)
             }
             .frame(maxHeight: .infinity)

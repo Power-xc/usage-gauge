@@ -2,21 +2,46 @@ import SwiftUI
 import UsageGaugeCore
 
 /// The line chart of one window's remaining share: a smooth curve over its area, with the axis
-/// labels at the left, drawn in the panel's style. Iris lights the curve and the area under it,
-/// mono draws a crisp 1 px line over hairline rules and dot sets the curve and its area in dots.
+/// labels at the left, drawn in the panel's style. Iris draws a solid curve over one flat tint,
+/// mono a crisp 1 px line over hairline rules and dot sets the curve and its area in dots.
 /// The right part, after now, stays empty except for the faint projection.
-struct TrendChart: View {
+struct TrendChart: View, Animatable {
     static let height: CGFloat = 76
     /// Room for the "100" labels; the footer under the chart starts at the same x.
     static let axisInset: CGFloat = 24
 
     let series: TrendSeries?
     let tint: Color
+    /// Latest reading and the projection's end (x, y, x, y), which ease to the series' new ones.
+    private var motion: AnimatableValues
 
     @Environment(\.panelStyle) private var style
 
+    init(series: TrendSeries?, tint: Color) {
+        self.series = series
+        self.tint = tint
+        motion = Self.motion(of: series)
+    }
+
+    var animatableData: AnimatableValues {
+        get { motion }
+        set { motion = newValue }
+    }
+
+    private static func motion(of series: TrendSeries?) -> AnimatableValues {
+        guard let series else { return AnimatableValues([0, 0, 0, 0]) }
+        let end = series.projection ?? series.head
+        return AnimatableValues([series.head.x, series.head.y, end.x, end.y])
+    }
+
     var body: some View {
-        Canvas { canvas, size in
+        let series = series.map { current in
+            motion.values.count == 4
+                ? current.moving(head: CGPoint(x: motion.values[0], y: motion.values[1]),
+                                 projectionEnd: CGPoint(x: motion.values[2], y: motion.values[3]))
+                : current
+        }
+        return Canvas { canvas, size in
             let frame = CGRect(x: Self.axisInset, y: Self.edgeInset, width: size.width - Self.axisInset - Self.edgeInset,
                                height: size.height - 2 * Self.edgeInset)
             drawAxis(canvas, frame, width: size.width)
@@ -26,7 +51,7 @@ struct TrendChart: View {
             }
             switch style {
             case .mono: drawCrisp(canvas, frame, curves: curves, series: series)
-            case .iris: drawLuminous(canvas, frame, curves: curves, series: series)
+            case .iris: drawFlat(canvas, frame, curves: curves, series: series)
             case .dot: drawDotted(canvas, frame, curves: curves, series: series)
             }
         }
@@ -39,7 +64,7 @@ struct TrendChart: View {
     private static let projectionOpacity = 0.55
     private static let dotPitch: CGFloat = 4
     private static let newestDots = 8
-    private static let haloRadius: CGFloat = 10
+    private static let irisAreaOpacity = 0.14
     /// Readings closer than this on screen are merged, so the curve flows instead of twitching.
     private static let minimumSpacing: CGFloat = 8
 
@@ -68,7 +93,7 @@ struct TrendChart: View {
     private func drawAxis(_ canvas: GraphicsContext, _ frame: CGRect, width: CGFloat) {
         for fraction in Self.guideLevels {
             let y = level(fraction, in: frame)
-            canvas.draw(Text("\(Int(fraction * 100))").font(Theme.figure(8, .regular, style: style)).foregroundStyle(Theme.faintText),
+            canvas.draw(Text("\(Int(fraction * 100))").font(Theme.figure(TypeScale.micro, .regular, style: style)).foregroundStyle(Theme.faintText),
                         at: CGPoint(x: 0, y: y), anchor: .leading)
             let opacity = fraction == 0 ? 0.16 : 0.07
             switch style {
@@ -106,12 +131,6 @@ struct TrendChart: View {
         canvas.fill(Path(ellipseIn: CGRect(x: center.x - 1.5, y: center.y - 1.5, width: 3, height: 3)), with: .color(tint))
     }
 
-    /// A soft light of the tool's colour around `center`.
-    private func halo(_ canvas: GraphicsContext, at center: CGPoint, radius: CGFloat = Self.haloRadius, opacity: Double) {
-        canvas.fill(Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: 2 * radius, height: 2 * radius)),
-                    with: .radialGradient(Gradient(colors: [tint.opacity(opacity), .clear]), center: center, startRadius: 0, endRadius: radius))
-    }
-
     // MARK: Mono
 
     private func drawCrisp(_ canvas: GraphicsContext, _ frame: CGRect, curves: [MonotoneCurve], series: TrendSeries) {
@@ -128,26 +147,16 @@ struct TrendChart: View {
 
     // MARK: Iris
 
-    private func drawLuminous(_ canvas: GraphicsContext, _ frame: CGRect, curves: [MonotoneCurve], series: TrendSeries) {
-        let fade = Gradient(colors: [tint.opacity(0.46), tint.opacity(0.14), tint.opacity(0)])
+    private func drawFlat(_ canvas: GraphicsContext, _ frame: CGRect, curves: [MonotoneCurve], series: TrendSeries) {
         for curve in curves {
-            canvas.fill(curve.area(down: frame.maxY), with: .linearGradient(
-                fade, startPoint: CGPoint(x: 0, y: frame.minY), endPoint: CGPoint(x: 0, y: frame.maxY)))
-            canvas.drawLayer { layer in
-                layer.addFilter(.blur(radius: 4))
-                layer.stroke(curve.path, with: .color(tint), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            }
+            canvas.fill(curve.area(down: frame.maxY), with: .color(tint.opacity(Self.irisAreaOpacity)))
             canvas.stroke(curve.path, with: .color(tint), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
-            canvas.stroke(curve.path, with: .color(.white.opacity(0.35)), style: StrokeStyle(lineWidth: 0.6, lineCap: .round, lineJoin: .round))
         }
         dashedProjection(canvas, series, frame, width: 1.2)
         if let start = curves.first?.start {
-            halo(canvas, at: start, opacity: 0.9)
             canvas.fill(Path(ellipseIn: CGRect(x: start.x - 2.5, y: start.y - 2.5, width: 5, height: 5)), with: .color(.white))
         }
-        let head = place(series.head, in: frame)
-        halo(canvas, at: head, opacity: 0.6)
-        marker(canvas, at: head)
+        marker(canvas, at: place(series.head, in: frame))
     }
 
     // MARK: Dot

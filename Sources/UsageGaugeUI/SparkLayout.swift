@@ -45,8 +45,7 @@ private struct SparkBlock: View {
     private func titleRow(tint: Color) -> some View {
         let remaining = usage.session?.remainingPercent ?? 0
         return HStack(alignment: .firstTextBaseline, spacing: 6) {
-            ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
-            PlanTag(plan: usage.plan)
+            ProviderTitle(usage: usage, index: index, tint: tint)
             Spacer(minLength: 6)
             if usage.isAvailable {
                 Text(percentText(usage.session))
@@ -54,7 +53,7 @@ private struct SparkBlock: View {
                     .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
             } else {
                 Text("연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
             }
         }
@@ -65,13 +64,15 @@ private struct SparkBlock: View {
         let longLine = [usage.weekly?.label, usage.weekly.map { percentText($0) },
                         usage.weekly.map { countdown(until: $0.resetsAt, now: now, style: style) }]
             .compactMap { $0 }
-        return HStack {
-            Text("\(window.label ?? "단기") · \(countdown(until: window.resetsAt, now: now, style: style)) 후 초기화")
-            Spacer(minLength: 6)
-            Text(longLine.joined(separator: " · "))
+        return RevealingCaption(usage: usage) {
+            HStack {
+                Text("\(window.label ?? "단기") · \(countdown(until: window.resetsAt, now: now, style: style)) 후 초기화")
+                Spacer(minLength: 6)
+                Text(longLine.joined(separator: " · "))
+            }
+            .font(Theme.figure(TypeScale.caption, .regular, style: style))
+            .foregroundStyle(Theme.faintText)
         }
-        .font(Theme.figure(9.5, .regular, style: style))
-        .foregroundStyle(Theme.faintText)
     }
 
     @ViewBuilder

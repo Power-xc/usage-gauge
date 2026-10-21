@@ -2,8 +2,9 @@ import SwiftUI
 import UsageGaugeCore
 
 /// One tool's mark on the field: a marker, a short leader and a tag with its name and both
-/// shares ("CLAUDE 94 · 37"). In the mono style that is a solid square and a 1 px outlined tag, in
-/// dot a cluster of dots and bare dot-matrix figures, in iris a solid point in a thin ring and a flat chip.
+/// shares ("CLAUDE 94 · 37"), underlined in the tool's colour. In the mono style that is a solid
+/// square and a black tag, in dot a cluster of dots and bare dot-matrix figures, in iris a solid
+/// point in a thin ring and a flat tag.
 /// The view is as large as marker and tag together and centred on neither: the marker sits at the
 /// end the tag leaves from, so the field places it by `markerOffset`.
 struct ConstellationNode: View {
@@ -12,8 +13,9 @@ struct ConstellationNode: View {
     private static let ringSize: CGFloat = 13
     private static let figurePitch: CGFloat = 1.2
     private static let chipRadius: CGFloat = 6
-    /// Iris chips are one flat tone, dark enough to hide the links behind them.
-    private static let irisChip = Color(white: 0.14).opacity(0.94)
+    /// Iris tags are one flat tone of the glass's smoke, dark enough to hide the links behind them.
+    private static let irisChip = Theme.smoke.opacity(0.92)
+    private static let underlineOpacity = 0.85
     /// Dot-style tags are knocked out of the card's tone so dotted links do not run through them.
     private static let cardTone = Color(white: 0.1)
 
@@ -107,7 +109,7 @@ struct ConstellationNode: View {
             .padding(.horizontal, 6)
             .frame(height: TagLayout.height)
             .background(Color.black)
-            .overlay(Rectangle().strokeBorder(tint.opacity(0.85), lineWidth: 1))
+            .overlay(alignment: .bottom) { underline(tint) }
         case .dot:
             HStack(spacing: 5) {
                 Text(usage.title.uppercased()).font(Theme.mono(9, .semibold)).tracking(0.5).foregroundStyle(.white.opacity(0.7))
@@ -118,6 +120,7 @@ struct ConstellationNode: View {
             .padding(.horizontal, 4)
             .frame(height: TagLayout.height)
             .background(Self.cardTone)
+            .overlay(alignment: .bottom) { underline(tint) }
         case .iris:
             HStack(spacing: 5) {
                 Text(usage.title).font(Theme.font(10, .semibold)).foregroundStyle(.white.opacity(0.88))
@@ -128,7 +131,12 @@ struct ConstellationNode: View {
             .padding(.horizontal, 8)
             .frame(height: TagLayout.height)
             .background(RoundedRectangle(cornerRadius: Self.chipRadius, style: .continuous).fill(Self.irisChip))
+            .overlay(alignment: .bottom) { underline(tint).padding(.horizontal, Self.chipRadius) }
         }
+    }
+
+    private func underline(_ tint: Color) -> some View {
+        Rectangle().fill(tint.opacity(Self.underlineOpacity)).frame(height: 1)
     }
 
     private func figure(_ window: UsageWindow?, fallback: Color, font: Font) -> some View {

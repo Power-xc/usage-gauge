@@ -2,13 +2,11 @@ import SwiftUI
 import UsageGaugeCore
 
 /// "전체" plus one tab per tool, with a short underline in the selected tool's colour (white for
-/// the overview). With many tools the names shorten, then drop, so the row never wraps.
+/// the overview). The row shows full names while they fit, then short names, then marks only,
+/// spaced evenly with a minimum gap, so tabs never run into each other.
 struct PanelTabs: View {
-    /// Approximate advance of one character at the tab type size, per style family.
-    private static let monoAdvance: CGFloat = 7
-    private static let proportionalAdvance: CGFloat = 6.4
-    private static let tabChrome: CGFloat = 26
     private static let shortNameLength = 4
+    private static let minimumGap: CGFloat = 12
 
     let providers: [ProviderUsage]
     /// The selected tool's id; nil is the overview.
@@ -18,29 +16,28 @@ struct PanelTabs: View {
     @Environment(\.panelStyle) private var style
     @Namespace private var underline
 
+    private enum Density { case full, short, marksOnly }
+
     var body: some View {
-        HStack(spacing: 0) {
-            tab(id: nil, title: "전체", tint: .white, mark: nil)
-            ForEach(Array(providers.enumerated()), id: \.element.id) { index, usage in
-                tab(id: usage.id, title: name(of: usage), tint: Theme.brand(for: usage.id), mark: mark(index))
-            }
+        ViewThatFits(in: .horizontal) {
+            row(.full)
+            row(.short)
+            row(.marksOnly)
         }
         .frame(width: PanelLayout.contentWidth)
     }
 
-    private enum Density { case full, short, marksOnly }
-
-    private var density: Density {
-        let advance = style.isMonospaced ? Self.monoAdvance : Self.proportionalAdvance
-        func fits(_ length: (ProviderUsage) -> Int) -> Bool {
-            let letters = providers.map(length).reduce(2, +)
-            return CGFloat(letters) * advance + CGFloat(providers.count + 1) * Self.tabChrome <= PanelLayout.contentWidth
+    private func row(_ density: Density) -> some View {
+        HStack(spacing: 0) {
+            tab(id: nil, title: "전체", tint: .white, mark: nil)
+            ForEach(Array(providers.enumerated()), id: \.element.id) { index, usage in
+                Spacer(minLength: Self.minimumGap)
+                tab(id: usage.id, title: name(of: usage, density), tint: Theme.brand(for: usage.id), mark: mark(index))
+            }
         }
-        if fits({ $0.title.count }) { return .full }
-        return fits({ min($0.title.count, Self.shortNameLength) }) ? .short : .marksOnly
     }
 
-    private func name(of usage: ProviderUsage) -> String {
+    private func name(of usage: ProviderUsage, _ density: Density) -> String {
         switch density {
         case .full: usage.title
         case .short: String(usage.title.prefix(Self.shortNameLength))
@@ -65,6 +62,8 @@ enum TabMark {
 
 private struct PanelTab: View {
     private static let underlineWidth: CGFloat = 18
+    /// Room around a tab that still counts as it, taken out of the gap between tabs.
+    private static let hitPadding: CGFloat = 4
 
     let title: String
     let tint: Color
@@ -89,13 +88,13 @@ private struct PanelTab: View {
                 }
                 .foregroundStyle(isSelected || isHovered ? Theme.primaryText : Theme.mutedText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .fixedSize()
                 ZStack {
                     Color.clear.frame(height: 2)
                     if isSelected { underlineBar.matchedGeometryEffect(id: "selection", in: underline) }
                 }
             }
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, Self.hitPadding)
             .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
@@ -120,11 +119,9 @@ private struct PanelTab: View {
         }
     }
 
-    /// Iris lets the underline glow; dot and mono keep it a clean line.
     private var underlineBar: some View {
         Capsule()
             .fill(tint)
             .frame(width: Self.underlineWidth, height: style == .mono ? 1.5 : 2)
-            .shadow(color: style == .iris ? tint.opacity(0.9) : .clear, radius: 4)
     }
 }

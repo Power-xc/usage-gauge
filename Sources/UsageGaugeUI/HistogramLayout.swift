@@ -35,15 +35,12 @@ private struct HistogramBlock: View {
     var body: some View {
         let tint = Theme.brand(for: usage.id)
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
-                PlanTag(plan: usage.plan)
-            }
+            ProviderTitle(usage: usage, index: index, tint: tint, revealsTimes: true)
             if let window = usage.session {
                 chart(window, tint: tint)
             } else {
                 Text(usage.isAvailable ? "단기 창 없음" : "연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
                     .frame(height: Self.figureHeight + 6 + HistogramColumns.height, alignment: .topLeading)
             }
@@ -59,7 +56,7 @@ private struct HistogramBlock: View {
         HStack(alignment: .lastTextBaseline, spacing: 6) {
             usedFigure(usedLastHour)
             Text(usedLastHour == 0 ? "최근 1시간 사용 없음" : "최근 1시간 사용")
-                .font(Theme.label(9.5, style: style))
+                .font(Theme.label(TypeScale.caption, style: style))
                 .foregroundStyle(Theme.faintText)
         }
         .frame(height: Self.figureHeight, alignment: .leading)
@@ -79,10 +76,10 @@ private struct HistogramBlock: View {
         let empty = history.projectedEmpty(for: usage.id, window: window, now: now)
         return HStack(spacing: 6) {
             Text("\(window.label ?? "단기") · 남은")
-                .font(Theme.label(10, .medium, style: style))
+                .font(Theme.label(TypeScale.caption, .medium, style: style))
                 .foregroundStyle(Theme.mutedText)
             Text(percentText(window))
-                .font(Theme.figure(10.5, .semibold, style: style))
+                .font(Theme.figure(TypeScale.body, .semibold, style: style))
                 .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
             Spacer(minLength: 6)
             if let empty {
@@ -114,9 +111,8 @@ struct StatusPill: View {
             RoundedRectangle(cornerRadius: style == .mono ? 0 : 2)
                 .fill(color)
                 .frame(width: 4, height: 4)
-                .shadow(color: style == .iris ? color.opacity(0.9) : .clear, radius: 3)
             Text(text)
-                .font(Theme.figure(9.5, .semibold, style: style))
+                .font(Theme.figure(TypeScale.caption, .semibold, style: style))
                 .foregroundStyle(color)
         }
     }
@@ -128,7 +124,7 @@ struct RecordingNote: View {
 
     var body: some View {
         Text("기록 중 · 2분마다 쌓여요")
-            .font(Theme.label(10, style: style))
+            .font(Theme.label(TypeScale.caption, style: style))
             .foregroundStyle(Theme.faintText)
     }
 }

@@ -30,19 +30,21 @@ private struct FiguresBlock: View {
     var body: some View {
         let tint = Theme.brand(for: usage.id)
         VStack(alignment: .leading, spacing: 6) {
-            ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
+            ProviderName(usage: usage, index: index, tint: tint)
             if usage.isAvailable {
                 PercentFigure(window: usage.session, size: Self.figureSize).frame(height: Self.figureHeight, alignment: .leading)
-                Text(detailLine)
-                    .font(Theme.figure(10, .regular, style: style))
-                    .foregroundStyle(Theme.mutedText)
+                RevealingCaption(usage: usage) {
+                    Text(detailLine)
+                        .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                        .foregroundStyle(Theme.mutedText)
+                }
             } else {
                 Text("연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
                     .frame(height: Self.figureHeight, alignment: .leading)
                 Text("CodexBar 확인")
-                    .font(Theme.label(10, style: style))
+                    .font(Theme.label(TypeScale.caption, style: style))
                     .foregroundStyle(Theme.faintText)
             }
         }

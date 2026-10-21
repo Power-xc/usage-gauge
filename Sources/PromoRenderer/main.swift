@@ -6,6 +6,7 @@ import SwiftUI
 //   PromoRenderer stills  <dir>          all-providers, menu-bar, levels, styles and layouts images
 //   PromoRenderer readme  <frames-dir>   README loop frames (PNG sequence, encode with ffmpeg)
 //   PromoRenderer reel    <frames-dir>   9:16 reel frames
+//   PromoRenderer forms   <dir>          every graph form in every style (plus edge cases), and the tab row with 2 to 8 tools
 
 /// JPEG keeps the README images light; the dark, soft renders show no visible artefacts at this level.
 let jpegQuality = 0.9
@@ -62,6 +63,14 @@ do {
             try writeImage(HistoryBarsScene(), size: HistoryBarsScene.size, scale: 2, to: output.appendingPathComponent("history-bars.jpg"))
             try writeImage(HistoryFormsScene(), size: HistoryFormsScene.size, scale: 2, to: output.appendingPathComponent("history-forms.jpg"))
             try writeImage(ConstellationRulerScene(), size: ConstellationRulerScene.size, scale: 2, to: output.appendingPathComponent("constellation-ruler.jpg"))
+        case "forms":
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            for variant in AllFormsScene.Variant.allCases {
+                let scene = AllFormsScene(variant: variant)
+                try writeImage(scene, size: scene.size, scale: 2, to: output.appendingPathComponent(variant.fileName))
+            }
+            try writeImage(ChromeScene(), size: ChromeScene.size, scale: 2, to: output.appendingPathComponent("chrome-check.jpg"))
+            try writeImage(TabsCheckScene(), size: TabsCheckScene.size, scale: 2, to: output.appendingPathComponent("tabs-check.jpg"))
         case "readme":
             try writeFrames(duration: ReadmeScene.duration, fps: 20, size: ReadmeScene.size, scale: 2, to: output) { ReadmeScene(time: $0) }
         case "reel":

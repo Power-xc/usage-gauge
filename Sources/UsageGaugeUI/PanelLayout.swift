@@ -7,14 +7,18 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case dial
     /// A compact list: both windows of a tool as labelled bars.
     case bars
-    /// A column chart comparing every tool's two windows.
-    case columns
     /// The smallest form: the short-window figure and one line for the long window.
     case figures
-    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
-    case orbit
+    /// A column chart comparing every tool's two windows.
+    case columns
     /// A capsule per tool filled to the short window's share, the long window under it.
     case capsule
+    /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
+    case ruler
+    /// Concentric rings, one per tool, with the lowest share in the middle and a legend beside.
+    case orbit
+    /// One field for every tool: short window across, long window up, tools linked into a constellation.
+    case constellation
     /// A line chart of each tool's short window over its period, from the recorded history.
     case trend
     /// Per tool, the short window's recent use as a row of columns.
@@ -23,25 +27,39 @@ public enum PanelLayout: String, CaseIterable, Sendable {
     case spark
     /// Per tool a starburst of the short window's use around its remaining share.
     case burst
-    /// One field for every tool: short window across, long window up, tools linked into a constellation.
-    case constellation
-    /// A vertical ruler per tool, its line bulging around a knob at the short window's share.
-    case ruler
 
     public var title: String {
         switch self {
         case .dial: "다이얼"
         case .bars: "바"
-        case .columns: "막대 그래프"
         case .figures: "숫자"
-        case .orbit: "궤도"
+        case .columns: "막대 그래프"
         case .capsule: "캡슐"
+        case .ruler: "눈금자"
+        case .orbit: "궤도"
+        case .constellation: "별자리"
         case .trend: "추이"
         case .histogram: "히스토그램"
         case .spark: "스파크 바"
         case .burst: "버스트"
-        case .constellation: "별자리"
-        case .ruler: "눈금자"
+        }
+    }
+
+    /// SF Symbol of the form in the header's picker.
+    var symbol: String {
+        switch self {
+        case .dial: "gauge.with.dots.needle.67percent"
+        case .bars: "chart.bar.doc.horizontal"
+        case .figures: "number"
+        case .columns: "chart.bar.xaxis"
+        case .capsule: "capsule"
+        case .ruler: "ruler"
+        case .orbit: "circle.circle"
+        case .constellation: "point.3.connected.trianglepath.dotted"
+        case .trend: "chart.xyaxis.line"
+        case .histogram: "chart.bar.fill"
+        case .spark: "waveform"
+        case .burst: "rays"
         }
     }
 

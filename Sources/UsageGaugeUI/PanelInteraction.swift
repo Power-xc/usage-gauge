@@ -17,10 +17,23 @@ private struct ToolInteractionKey: EnvironmentKey {
 struct PanelPreset: Equatable {
     var tool: String?
     var hovered: String?
+    var showsPicker = false
+    var showsControls = false
 }
 
 private struct PanelPresetKey: EnvironmentKey {
     static let defaultValue = PanelPreset()
+}
+
+/// What a cell tells its content: whether the pointer is over it, and how wide it is, so a caption
+/// can give way to the hover line in the room it already has (see `RevealingCaption`).
+struct CellState {
+    var isHovered = false
+    var width: CGFloat = .infinity
+}
+
+private struct CellStateKey: EnvironmentKey {
+    static let defaultValue = CellState()
 }
 
 extension EnvironmentValues {
@@ -33,25 +46,35 @@ extension EnvironmentValues {
         get { self[PanelPresetKey.self] }
         set { self[PanelPresetKey.self] = newValue }
     }
-}
 
-public extension View {
-    /// Starts the panel on a tool's detail page and/or with a cell hovered. For still renders.
-    func panelPreset(tool: String? = nil, hovered: String? = nil) -> some View {
-        environment(\.panelPreset, PanelPreset(tool: tool, hovered: hovered))
+    var cellState: CellState {
+        get { self[CellStateKey.self] }
+        set { self[CellStateKey.self] = newValue }
     }
 }
 
-/// A tool's cell in any layout: brightens under the pointer with a soft glow of the tool's colour,
-/// reveals a line with its reset and measuring times without moving anything, and opens the
-/// detail page on click. Hover is shown by light only, never by a frame.
+public extension View {
+    /// Starts the panel on a tool's detail page, with a cell hovered, or with the graph picker or
+    /// the opacity and size bars open. For still renders.
+    func panelPreset(tool: String? = nil, hovered: String? = nil, picker: Bool = false,
+                     controls: Bool = false) -> some View {
+        environment(\.panelPreset, PanelPreset(tool: tool, hovered: hovered, showsPicker: picker, showsControls: controls))
+    }
+}
+
+/// A tool's cell in any grid layout: brightens under the pointer with a flat tint of the tool's
+/// colour, tells its content so (a caption then gives way to the reset and measuring times, see
+/// `RevealingCaption`) and opens the detail page on click. Hover is shown by light and colour only, never by a frame.
 struct ToolCell: ViewModifier {
-    private static let glowOpacity = 0.16
-    private static let glowBlur: CGFloat = 22
+    private static let tintOpacity = 0.08
+    private static let tintBleed: CGFloat = 8
+    private static let tintRadius: CGFloat = 12
     private static let boost = 0.08
-    private static let revealHeight: CGFloat = 12
 
     let usage: ProviderUsage
+    let width: CGFloat
+    /// Space kept around the content (the mono grid's cell padding); the tint and the hit area cover it.
+    let padding: CGFloat
 
     @State private var isPointerOver = false
     @Environment(\.panelStyle) private var style
@@ -60,34 +83,62 @@ struct ToolCell: ViewModifier {
 
     func body(content: Content) -> some View {
         let isHovered = isPointerOver || preset.hovered == usage.id
-        let tint = Theme.brand(for: usage.id)
         content
+            .environment(\.cellState, CellState(isHovered: isHovered, width: width))
             .brightness(isHovered ? Self.boost : 0)
-            .background {
-                Ellipse()
-                    .fill(tint.opacity(Self.glowOpacity))
-                    .blur(radius: Self.glowBlur)
-                    .padding(.horizontal, 24)
-                    .opacity(isHovered ? 1 : 0)
-                    .allowsHitTesting(false)
-            }
-            .overlay(alignment: .bottom) {
-                Text(HoverDetail.line(for: usage))
-                    .font(Theme.figure(9, .regular, style: style))
-                    .foregroundStyle(Theme.mutedText)
-                    .fixedSize()
-                    .offset(y: style == .mono ? -3 : Self.revealHeight)
-                    .opacity(isHovered ? 1 : 0)
-                    .allowsHitTesting(false)
-            }
+            .padding(padding)
+            .background { tint.opacity(isHovered ? 1 : 0).allowsHitTesting(false) }
             .contentShape(Rectangle())
             .onHover { isPointerOver = $0 }
             .animation(.easeOut(duration: 0.16), value: isHovered)
-            .modifier(OpensTool(id: usage.id, open: interaction.open))
+            .opensTool(usage.id, via: interaction.open)
+    }
+
+    private var tint: some View {
+        let bleed = style == .mono ? 0 : -Self.tintBleed
+        return RoundedRectangle(cornerRadius: style == .mono ? 0 : Self.tintRadius, style: .continuous)
+            .fill(Theme.brand(for: usage.id).opacity(Self.tintOpacity))
+            .padding(bleed)
     }
 }
 
-/// Clickable only when there is somewhere to go; then the pointer turns into a hand.
+/// A caption that gives way to the tool's reset and measuring times while its cell is hovered,
+/// in the same place, so the line never lands on a bar, a rule or the next row.
+struct RevealingCaption<Caption: View>: View {
+    let usage: ProviderUsage
+    var alignment: Alignment = .leading
+    /// Always the short wording, for a caption slot narrower than the cell.
+    var isCompact = false
+    @ViewBuilder let caption: Caption
+
+    @Environment(\.cellState) private var cell
+    @Environment(\.panelStyle) private var style
+
+    var body: some View {
+        let isShown = cell.isHovered && usage.isAvailable
+        caption
+            .opacity(isShown ? 0 : 1)
+            .overlay(alignment: alignment) {
+                Text(HoverDetail.line(for: usage, isCompact: isCompact || cell.width < HoverDetail.fullLineWidth))
+                    .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                    .foregroundStyle(Theme.mutedText)
+                    .fixedSize()
+                    .opacity(isShown ? 1 : 0)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+extension View {
+    /// Clickable only when there is somewhere to go; then the pointer turns into a hand.
+    func opensTool(_ id: String, via open: ((String) -> Void)?) -> some View {
+        modifier(OpensTool(id: id, open: open))
+    }
+
+    /// The pointing-hand cursor while the pointer is over the view (and `isEnabled`).
+    func pointingHand(isEnabled: Bool = true) -> some View { modifier(PointingHand(isEnabled: isEnabled)) }
+}
+
 private struct OpensTool: ViewModifier {
     let id: String
     let open: ((String) -> Void)?
@@ -101,25 +152,27 @@ private struct OpensTool: ViewModifier {
     }
 }
 
-extension View {
-    /// The pointing-hand cursor while the pointer is over the view.
-    func pointingHand() -> some View { modifier(PointingHand()) }
-}
-
 private struct PointingHand: ViewModifier {
+    let isEnabled: Bool
+
+    @State private var isInside = false
     @State private var isPushed = false
 
     func body(content: Content) -> some View {
         content
-            .onHover { inside in
-                guard inside != isPushed else { return }
-                isPushed = inside
-                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-            }
+            .onHover { isInside = $0; sync() }
+            .onChange(of: isEnabled) { sync() }
             .onDisappear {
-                guard isPushed else { return }
-                isPushed = false
-                NSCursor.pop()
+                isInside = false
+                sync()
             }
+    }
+
+    /// Pushes or pops the cursor so pushes and pops stay paired.
+    private func sync() {
+        let shouldPush = isInside && isEnabled
+        guard shouldPush != isPushed else { return }
+        isPushed = shouldPush
+        if shouldPush { NSCursor.pointingHand.push() } else { NSCursor.pop() }
     }
 }

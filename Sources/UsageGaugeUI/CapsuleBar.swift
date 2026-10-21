@@ -3,7 +3,7 @@ import SwiftUI
 /// A horizontal capsule filled from the left to the remaining share in the tool's colour, the
 /// used part faint: dots (dot), upright segments with a brand-coloured last one (mono) or a flat
 /// pane holding a solid fill that ends in a white dot (iris).
-struct CapsuleBar: View {
+struct CapsuleBar: View, Animatable {
     static let height: CGFloat = 22
 
     private static let dotPitch: CGFloat = 4
@@ -16,10 +16,16 @@ struct CapsuleBar: View {
     private static let headShare: CGFloat = 0.4
     private static let dim = Color.white.opacity(0.13)
 
-    let remainingPercent: Double
+    var remainingPercent: Double
     let tint: Color
 
     @Environment(\.panelStyle) private var style
+
+    /// The share eases to a new value, so the capsule fills instead of jumping.
+    var animatableData: Double {
+        get { remainingPercent }
+        set { remainingPercent = newValue }
+    }
 
     var body: some View {
         Canvas { canvas, size in

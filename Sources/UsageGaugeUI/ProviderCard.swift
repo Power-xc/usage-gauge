@@ -18,21 +18,23 @@ struct ProviderCard: View {
             SessionGauge(window: usage.isAvailable ? usage.session : nil, tint: tint, size: Theme.dialSize,
                          now: now, showsLabel: false, frozenAt: frozenAt)
             VStack(alignment: .leading, spacing: 0) {
-                titleRow(tint: tint)
+                ProviderTitle(usage: usage, index: index, tint: tint)
                 if usage.isAvailable {
-                    Text(sessionLine)
-                        .font(Theme.figure(10, .regular, style: style))
-                        .foregroundStyle(Theme.mutedText)
-                        .padding(.top, 4)
+                    RevealingCaption(usage: usage) {
+                        Text(sessionLine)
+                            .font(Theme.figure(TypeScale.caption, .regular, style: style))
+                            .foregroundStyle(Theme.mutedText)
+                    }
+                    .padding(.top, 4)
                     Spacer(minLength: 6)
                     LongWindowBar(window: usage.weekly, tint: tint, now: now, frozenAt: frozenAt)
                 } else {
                     Text("연결 안 됨")
-                        .font(Theme.label(11, .semibold, style: style))
+                        .font(Theme.label(TypeScale.body, .semibold, style: style))
                         .foregroundStyle(Theme.mutedText)
                         .padding(.top, 6)
                     Text(usage.errorMessage ?? "CodexBar 로그인을 확인하세요")
-                        .font(Theme.label(10, style: style))
+                        .font(Theme.label(TypeScale.caption, style: style))
                         .foregroundStyle(Theme.faintText)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -41,13 +43,6 @@ struct ProviderCard: View {
                 }
             }
             .frame(width: Theme.detailWidth, height: Theme.dialSize, alignment: .topLeading)
-        }
-    }
-
-    private func titleRow(tint: Color) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            ProviderName(usage: usage, index: index, tint: tint)
-            PlanTag(plan: usage.plan)
         }
     }
 
@@ -170,65 +165,17 @@ struct LongWindowBar: View {
         let remaining = window == nil ? 0 : window?.remainingPercent ?? 0
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(window?.label ?? "장기").font(Theme.label(10, .medium, style: style)).foregroundStyle(Theme.mutedText)
+                Text(window?.label ?? "장기").font(Theme.label(TypeScale.caption, .medium, style: style)).foregroundStyle(Theme.mutedText)
                 Text(window.map { "\($0.displayPercent)%" } ?? ResetCountdown.unknown)
-                    .font(Theme.figure(11, .semibold, style: style))
+                    .font(Theme.figure(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.alert(remaining) ?? Theme.primaryText)
                 Spacer(minLength: 6)
-                Text(style.isMonospaced ? countdown(until: window?.resetsAt, now: now, style: style)
-                                        : "\(countdown(until: window?.resetsAt, now: now, style: style)) 후")
-                    .font(Theme.figure(9.5, .regular, style: style))
+                Text(style.isMonospaced || window?.resetsAt == nil ? countdown(until: window?.resetsAt, now: now, style: style)
+                                                                   : "\(countdown(until: window?.resetsAt, now: now, style: style)) 후")
+                    .font(Theme.figure(TypeScale.caption, .regular, style: style))
                     .foregroundStyle(Theme.faintText)
             }
             WindowBar(remainingPercent: remaining, tint: tint, frozenAt: frozenAt)
-        }
-    }
-}
-
-/// The tool's name in the style's voice: a brand square (mono), "01" numbering (dot) or plain type
-/// (iris, which can take a small brand dot where the name stands alone under a chart).
-struct ProviderName: View {
-    let usage: ProviderUsage
-    /// Position in the panel, shown as "01", "02", … by the dot style.
-    let index: Int
-    let tint: Color
-    var marksBrand = false
-
-    @Environment(\.panelStyle) private var style
-
-    var body: some View {
-        switch style {
-        case .iris:
-            HStack(spacing: 5) {
-                if marksBrand { Circle().fill(tint).frame(width: 6, height: 6) }
-                Text(usage.title).font(Theme.font(13, .semibold))
-            }
-        case .dot:
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(String(format: "%02d", index + 1)).font(Theme.mono(9, .medium)).foregroundStyle(Theme.faintText)
-                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
-            }
-        case .mono:
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Rectangle().fill(tint).frame(width: 6, height: 6).alignmentGuide(.firstTextBaseline) { $0[.bottom] }
-                Text(usage.title.uppercased()).font(Theme.mono(11.5, .semibold)).tracking(0.6)
-            }
-        }
-    }
-}
-
-/// The subscription plan in small caps beside a tool's name; nothing when the plan is unknown.
-struct PlanTag: View {
-    let plan: String?
-
-    @Environment(\.panelStyle) private var style
-
-    var body: some View {
-        if let plan {
-            Text(plan.uppercased())
-                .font(Theme.label(8.5, .semibold, style: style))
-                .tracking(0.9)
-                .foregroundStyle(Theme.faintText)
         }
     }
 }

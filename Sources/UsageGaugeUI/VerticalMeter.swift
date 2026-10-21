@@ -3,8 +3,8 @@ import SwiftUI
 /// The remaining share as an upright column in the style's voice: a solid fill with a white head
 /// dot (iris), dots lit from the bottom (dot) or stacked segments (mono). The tool's colour
 /// marks the top of what is left.
-struct VerticalMeter: View {
-    let remainingPercent: Double
+struct VerticalMeter: View, Animatable {
+    var remainingPercent: Double
     let tint: Color
     let size: CGSize
 
@@ -21,6 +21,12 @@ struct VerticalMeter: View {
         self.remainingPercent = min(100, max(0, remainingPercent))
         self.tint = tint
         self.size = size
+    }
+
+    /// The share eases to a new value, so the column grows instead of jumping.
+    var animatableData: Double {
+        get { remainingPercent }
+        set { remainingPercent = min(100, max(0, newValue)) }
     }
 
     var body: some View {

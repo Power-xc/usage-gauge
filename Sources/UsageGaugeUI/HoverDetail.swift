@@ -4,6 +4,9 @@ import UsageGaugeCore
 /// Clock-time wording of a tool's reset and measuring times, shared by the hover line and the
 /// detail page.
 enum HoverDetail {
+    /// Cells narrower than this get the short wording of `line(for:isCompact:)`.
+    static let fullLineWidth: CGFloat = 200
+
     private static let resetFormatter = formatter("a h:mm")
     private static let measuredFormatter = formatter("h:mm")
 
@@ -17,10 +20,13 @@ enum HoverDetail {
     /// "오후 4:00"
     static func clock(_ date: Date) -> String { resetFormatter.string(from: date) }
 
-    /// "초기화 오후 4:00 · 측정 12:04"; whichever part is unknown is left out.
-    static func line(for usage: ProviderUsage) -> String {
+    /// "초기화 오후 4:00 · 측정 12:04"; whichever part is unknown is left out. The compact form
+    /// keeps the reset only ("오후 4:00 초기화"), for cells too narrow for both.
+    static func line(for usage: ProviderUsage, isCompact: Bool = false) -> String {
+        let reset = usage.session?.resetsAt ?? usage.weekly?.resetsAt
+        if isCompact, let reset { return "\(clock(reset)) 초기화" }
         var parts: [String] = []
-        if let reset = usage.session?.resetsAt ?? usage.weekly?.resetsAt { parts.append("초기화 \(clock(reset))") }
+        if let reset { parts.append("초기화 \(clock(reset))") }
         if let measured = usage.measuredAt { parts.append("측정 \(measuredFormatter.string(from: measured))") }
         return parts.isEmpty ? "연결 안 됨" : parts.joined(separator: " · ")
     }

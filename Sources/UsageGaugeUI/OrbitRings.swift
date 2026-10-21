@@ -3,14 +3,16 @@ import SwiftUI
 /// One ring of the orbit chart: the short window's remaining share in the tool's colour, or nil
 /// for a tool that reports nothing (an empty track).
 struct OrbitRing {
-    let remainingPercent: Double?
+    var remainingPercent: Double?
     let tint: Color
+    /// 0 for a ring at full strength, 1 for one dimmed because another tool is focused.
+    var dim = 0.0
 }
 
 /// Concentric rings, the first outermost, each lit clockwise from 12 o'clock: rings of dots (dot),
 /// of thin radial ticks (mono) or solid arcs over faint tracks (iris). A white head marks the
 /// end of every lit arc.
-struct OrbitRings: View {
+struct OrbitRings: View, Animatable {
     /// Room kept free in the middle for the figure.
     private static let minInnerRadius: CGFloat = 36
     private static let maxPitch: CGFloat = 8.5
@@ -19,9 +21,32 @@ struct OrbitRings: View {
     private static let tickSpacing: CGFloat = 3.1
     private static let dim = Color.white.opacity(0.13)
 
-    let rings: [OrbitRing]
+    private static let dimmedOpacity = ToolFocus.dimmedOpacity
+
+    /// Shares and dimming of the rings, which ease to new values.
+    var rings: [OrbitRing]
 
     @Environment(\.panelStyle) private var style
+
+    var animatableData: AnimatableValues {
+        get { AnimatableValues(rings.map { $0.remainingPercent ?? 0 } + rings.map(\.dim)) }
+        set {
+            let count = rings.count
+            guard newValue.values.count >= 2 * count else { return }
+            for index in rings.indices {
+                if rings[index].remainingPercent != nil { rings[index].remainingPercent = newValue.values[index] }
+                rings[index].dim = newValue.values[count + index]
+            }
+        }
+    }
+
+    /// The ring under `point` in a chart `size` points wide, if any.
+    static func ringIndex(at point: CGPoint, size: CGFloat, ringCount: Int) -> Int? {
+        let pitch = pitch(ringCount: ringCount, size: size)
+        let reach = hypot(point.x - size / 2, point.y - size / 2)
+        let index = Int(((size / 2 - edgeInset - reach) / pitch).rounded(.down))
+        return (0..<ringCount).contains(index) ? index : nil
+    }
 
     /// Radius of the space left free in the middle.
     static func innerRadius(ringCount: Int, size: CGFloat) -> CGFloat {
@@ -39,10 +64,13 @@ struct OrbitRings: View {
             for (index, ring) in rings.enumerated() {
                 let radius = size.width / 2 - Self.edgeInset - pitch * (CGFloat(index) + 0.5)
                 let share = (ring.remainingPercent ?? 0) / 100
-                switch style {
-                case .dot: drawDots(canvas, center, radius, pitch: pitch, ring: ring, share: share)
-                case .mono: drawTicks(canvas, center, radius, pitch: pitch, ring: ring, share: share)
-                case .iris: drawArc(canvas, center, radius, pitch: pitch, ring: ring, share: share)
+                canvas.drawLayer { layer in
+                    layer.opacity = 1 - (1 - Self.dimmedOpacity) * ring.dim
+                    switch style {
+                    case .dot: drawDots(layer, center, radius, pitch: pitch, ring: ring, share: share)
+                    case .mono: drawTicks(layer, center, radius, pitch: pitch, ring: ring, share: share)
+                    case .iris: drawArc(layer, center, radius, pitch: pitch, ring: ring, share: share)
+                    }
                 }
             }
         }

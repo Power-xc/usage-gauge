@@ -1,16 +1,24 @@
 import SwiftUI
 
-/// One choice per graph form, slid in under the header: a symbol over a short title, the current
-/// one underlined in white.
+/// One glyph per graph form, slid in under the header: the current one underlined in white, and the
+/// title of the form under the pointer (or the current one) in a line below.
 struct LayoutPicker: View {
     let selection: PanelLayout
     let choose: (PanelLayout) -> Void
 
+    @State private var hovered: PanelLayout?
+    @Environment(\.panelStyle) private var style
+
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(PanelLayout.allCases, id: \.self) { layout in
-                LayoutChoice(layout: layout, isSelected: layout == selection) { choose(layout) }
+        VStack(spacing: 2) {
+            HStack(spacing: 0) {
+                ForEach(PanelLayout.allCases, id: \.self) { layout in
+                    LayoutChoice(layout: layout, isSelected: layout == selection, hovered: $hovered) { choose(layout) }
+                }
             }
+            Text((hovered ?? selection).title)
+                .font(Theme.label(TypeScale.caption, .medium, style: style))
+                .foregroundStyle(Theme.mutedText)
         }
         .frame(width: PanelLayout.contentWidth)
         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -20,22 +28,17 @@ struct LayoutPicker: View {
 private struct LayoutChoice: View {
     let layout: PanelLayout
     let isSelected: Bool
+    @Binding var hovered: PanelLayout?
     let action: () -> Void
 
-    @State private var isHovered = false
-    @Environment(\.panelStyle) private var style
-
     var body: some View {
+        let isHovered = hovered == layout
         Button(action: action) {
-            VStack(spacing: 3) {
-                Image(systemName: layout.symbol).font(.system(size: 12, weight: .medium))
-                Text(layout.title)
-                    .font(Theme.label(9, .medium, style: style))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            VStack(spacing: 4) {
+                Image(systemName: layout.symbol).font(.system(size: 13, weight: .medium)).frame(height: 16)
                 Capsule()
                     .fill(.white)
-                    .frame(width: 16, height: 1.5)
+                    .frame(width: 14, height: 1.5)
                     .opacity(isSelected ? 1 : 0)
             }
             .foregroundStyle(isSelected || isHovered ? Theme.primaryText : Theme.faintText)
@@ -44,17 +47,10 @@ private struct LayoutChoice: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
+        .onHover { inside in
+            if inside { hovered = layout } else if hovered == layout { hovered = nil }
+        }
         .pointingHand()
+        .help(layout.title)
     }
-}
-
-extension PanelLayout {
-    private static let symbols: [PanelLayout: String] = [
-        .dial: "gauge.with.dots.needle.67percent", .bars: "chart.bar.doc.horizontal",
-        .columns: "chart.bar.xaxis", .figures: "number",
-    ]
-
-    /// Glyph of the form in the picker; a layout without its own gets the picker's symbol.
-    var symbol: String { Self.symbols[self] ?? "square.grid.2x2" }
 }

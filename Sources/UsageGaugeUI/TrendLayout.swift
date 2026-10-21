@@ -34,20 +34,20 @@ private struct TrendBlock: View {
     var body: some View {
         let tint = Theme.brand(for: usage.id)
         VStack(alignment: .leading, spacing: 6) {
-            ProviderName(usage: usage, index: index, tint: tint, marksBrand: true)
+            ProviderTitle(usage: usage, index: index, tint: tint)
             if let window = usage.session ?? usage.weekly, usage.isAvailable {
                 let series = TrendSeries(id: usage.id, window: window, history: history, now: now)
                 PercentFigure(window: window, size: Self.figureSize).frame(height: Self.figureHeight, alignment: .leading)
                 caption(series, window: window)
                 TrendChart(series: series, tint: tint)
-                axis(window)
+                RevealingCaption(usage: usage) { axis(window) }.padding(.leading, TrendChart.axisInset)
             } else {
                 Text("연결 안 됨")
-                    .font(Theme.label(11, .semibold, style: style))
+                    .font(Theme.label(TypeScale.body, .semibold, style: style))
                     .foregroundStyle(Theme.mutedText)
                     .frame(height: Self.figureHeight, alignment: .leading)
                 Text("CodexBar 확인")
-                    .font(Theme.label(10, style: style))
+                    .font(Theme.label(TypeScale.caption, style: style))
                     .foregroundStyle(Theme.faintText)
                 TrendChart(series: nil, tint: tint).opacity(0.5)
                 axis(nil)
@@ -74,7 +74,7 @@ private struct TrendBlock: View {
             text = "기록 중 · 2분마다 쌓여요"
         }
         return Text(text)
-            .font(Theme.figure(10, .regular, style: style))
+            .font(Theme.figure(TypeScale.caption, .regular, style: style))
             .foregroundStyle(color)
             .minimumScaleFactor(0.8)
     }
@@ -86,9 +86,8 @@ private struct TrendBlock: View {
             Spacer(minLength: 4)
             Text(window?.resetsAt == nil ? "" : "초기화 \(countdown(until: window?.resetsAt, now: now, style: style))")
         }
-        .font(Theme.figure(9, .regular, style: style))
+        .font(Theme.figure(TypeScale.micro, .regular, style: style))
         .foregroundStyle(Theme.faintText)
-        .padding(.leading, TrendChart.axisInset)
         .opacity(window == nil ? 0 : 1)
     }
 }
